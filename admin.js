@@ -1,264 +1,141 @@
 // ======================
-// 1. INISIALISASI SUPABASE
+// 1. INISIALISASI GLOBAL
 // ======================
+let supabase; // Variabel global
 
-const SUPABASE_URL = 'https://znehlqzprtwvhscoeoim.supabase.co'; // GANTI
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpuZWhscXpwcnR3dmhzY29lb2ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0MjQzNzUsImV4cCI6MjA2MTAwMDM3NX0.XsjXAE-mt7RMIncAJuO6XSdZxhQQv79uCUPPVU9mF2A'; // GANTI
-
-// Inisialisasi client Supabase
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: {
-      flowType: 'pkce',
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-      persistSession: true,
-      storage: localStorage
-    }
-  });
-  
-  // ======================
-  // 2. ELEMEN DOM
-  // ======================
-  const loginForm = document.getElementById('login-form');
-  const adminEmail = document.getElementById('admin-email');
-  const adminPassword = document.getElementById('admin-password');
-  const loginError = document.getElementById('login-error');
-  const loginContainer = document.getElementById('login-container');
-  const adminContent = document.getElementById('admin-content');
-  const logoutBtn = document.getElementById('logout-btn');
-  const verifyMessage = document.getElementById('verify-message');
-  
-  // ======================
-  // 3. FUNGSI AUTH UTAMA
-  // ======================
-  
-  // Fungsi initAuth yang diperbaiki
-  async function initAuth() {
-    // Pastikan supabase sudah terinisialisasi
-    if (!supabase) {
-      console.error('Supabase client belum terinisialisasi!');
-      return;
-    }
-  
+// ======================
+// 2. FUNGSI UTAMA
+// ======================
+document.addEventListener('DOMContentLoaded', async () => {
     try {
-      await handleEmailVerification();
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (error) throw error;
-      
-      if (user) {
-        showAdminPanel();
-      } else {
+        // Inisialisasi Supabase
+        supabase = supabase.createClient(
+            'https://znehlqzprtwvhscoeoim.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpuZWhscXpwcnR3dmhzY29lb2ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0MjQzNzUsImV4cCI6MjA2MTAwMDM3NX0.XsjXAE-mt7RMIncAJuO6XSdZxhQQv79uCUPPVU9mF2A',
+            {
+                auth: {
+                    flowType: 'pkce',
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true,
+                    persistSession: true,
+                    storage: localStorage
+                }
+            }
+        );
+
+        // Cek session yang ada
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
+
+        // Inisialisasi event listeners
+        initEventListeners();
+
+        if (session) {
+            showAdminPanel();
+            loadProducts();
+        } else {
+            showLoginForm();
+        }
+
+    } catch (error) {
+        console.error('Initialization error:', error);
         showLoginForm();
-      }
-    } catch (error) {
-      console.error('Init auth error:', error);
-      showLoginForm();
     }
-  }
-// Handle verifikasi email dari link
-async function handleEmailVerification() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const type = urlParams.get('type');
-  const token = urlParams.get('token');
-  
-  if (type === 'signup' && token) {
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        type: 'signup',
-        token_hash: token
-      });
-      
-      if (error) throw error;
-      
-      verifyMessage.textContent = 'Email berhasil diverifikasi! Silakan login.';
-      verifyMessage.style.display = 'block';
-      
-      // Bersihkan URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-    } catch (error) {
-      verifyMessage.textContent = `Verifikasi gagal: ${error.message}`;
-      verifyMessage.style.color = 'red';
-      verifyMessage.style.display = 'block';
-    }
-  }
-}
-
-// Fungsi login
-async function handleLogin(email, password) {
-  try {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if (error) {
-      // Handle email not verified
-      if (error.message.includes('Email not confirmed')) {
-        await resendVerificationEmail(email);
-        throw new Error('Email belum diverifikasi. Cek inbox Anda untuk link verifikasi!');
-      }
-      throw error;
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Login error:', error);
-    showError(error.message);
-    return false;
-  }
-}
-
-// Fungsi logout
-async function handleLogout() {
-  try {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    showLoginForm();
-  } catch (error) {
-    showError(`Logout gagal: ${error.message}`);
-  }
-}
-
-// Kirim ulang email verifikasi
-async function resendVerificationEmail(email) {
-  try {
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email,
-      options: {
-        emailRedirectTo: window.location.origin + '/admin.html'
-      }
-    });
-    if (error) throw error;
-  } catch (error) {
-    console.error('Resend error:', error);
-  }
-}
+});
 
 // ======================
-// 4. FUNGSI TAMPILAN UI
+// 3. FUNGSI BANTUAN
 // ======================
+function initEventListeners() {
+    // Login Form
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = document.getElementById('admin-email').value.trim();
+        const password = document.getElementById('admin-password').value;
+        const errorElement = document.getElementById('login-error');
+
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password
+            });
+
+            if (error) throw error;
+
+            showAdminPanel();
+            loadProducts();
+            
+        } catch (error) {
+            errorElement.textContent = error.message;
+            errorElement.style.display = 'block';
+        }
+    });
+
+    // Logout Button
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+        const { error } = await supabase.auth.signOut();
+        if (!error) showLoginForm();
+    });
+}
+
 function showLoginForm() {
-  loginContainer.style.display = 'flex';
-  adminContent.style.display = 'none';
-  clearError();
+    document.getElementById('login-container').style.display = 'flex';
+    document.getElementById('admin-content').style.display = 'none';
+    document.getElementById('login-error').style.display = 'none';
 }
 
 function showAdminPanel() {
-  loginContainer.style.display = 'none';
-  adminContent.style.display = 'block';
-  loadProducts(); // Muat data produk
+    document.getElementById('login-container').style.display = 'none';
+    document.getElementById('admin-content').style.display = 'block';
 }
 
-function showError(message) {
-  loginError.textContent = message;
-  loginError.style.display = 'block';
-}
-
-function clearError() {
-  loginError.textContent = '';
-  loginError.style.display = 'none';
-}
-
-// ======================
-// 5. EVENT LISTENERS
-// ======================
-document.addEventListener('DOMContentLoaded', initAuth);
-
-loginForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  clearError();
-  
-  const email = adminEmail.value.trim();
-  const password = adminPassword.value;
-
-  if (!email || !password) {
-    showError('Email dan password wajib diisi!');
-    return;
-  }
-
-  const loginSuccess = await handleLogin(email, password);
-  if (loginSuccess) {
-    showAdminPanel();
-  }
-});
-
-logoutBtn.addEventListener('click', handleLogout);
-
-// ======================
-// 6. FUNGSI PRODUK (Contoh)
-// ======================
 async function loadProducts() {
-  try {
-    const { data: products, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+        const { data: products, error } = await supabase
+            .from('products')
+            .select('*')
+            .order('created_at', { ascending: false });
 
-    if (error) throw error;
+        if (error) throw error;
 
-    renderProducts(products || []);
-  } catch (error) {
-    console.error('Load products error:', error);
-    showError(`Gagal memuat produk: ${error.message}`);
-  }
+        renderProducts(products || []);
+    } catch (error) {
+        console.error('Error loading products:', error);
+    }
 }
 
 function renderProducts(products) {
-  const productGrid = document.getElementById('admin-product-grid');
-  
-  if (!products.length) {
-    productGrid.innerHTML = '<p class="no-products">Tidak ada produk ditemukan</p>';
-    return;
-  }
+    const container = document.getElementById('admin-product-grid');
+    
+    if (!products.length) {
+        container.innerHTML = '<p class="no-products">Tidak ada produk</p>';
+        return;
+    }
 
-  productGrid.innerHTML = products.map(product => `
-    <div class="product-card">
-      <img src="${product.image_url}" alt="${product.name}">
-      <h3>${product.name}</h3>
-      <p>Rp ${product.price.toLocaleString('id-ID')}</p>
-      <button class="delete-btn" data-id="${product.id}">
-        <i class="fas fa-trash"></i> Hapus
-      </button>
-    </div>
-  `).join('');
+    container.innerHTML = products.map(product => `
+        <div class="product-card">
+            <img src="${product.image_url}" alt="${product.name}">
+            <h3>${product.name}</h3>
+            <p>Rp ${product.price.toLocaleString('id-ID')}</p>
+            <button class="delete-btn" data-id="${product.id}">
+                <i class="fas fa-trash"></i> Hapus
+            </button>
+        </div>
+    `).join('');
 
-  // Tambahkan event listener untuk tombol hapus
-  document.querySelectorAll('.delete-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
-        try {
-          const { error } = await supabase
-            .from('products')
-            .delete()
-            .eq('id', btn.dataset.id);
-          
-          if (error) throw error;
-          loadProducts();
-        } catch (error) {
-          showError(`Gagal menghapus produk: ${error.message}`);
-        }
-      }
+    // Add delete event listeners
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (confirm('Hapus produk ini?')) {
+                const { error } = await supabase
+                    .from('products')
+                    .delete()
+                    .eq('id', btn.dataset.id);
+                
+                if (!error) loadProducts();
+            }
+        });
     });
-  });
 }
-
-// ======================
-// 7. PANTAU PERUBAHAN SESSION
-// ======================
-supabase.auth.onAuthStateChange((event, session) => {
-  console.log('Auth state changed:', event);
-  switch (event) {
-    case 'SIGNED_IN':
-      showAdminPanel();
-      break;
-    case 'SIGNED_OUT':
-      showLoginForm();
-      break;
-    case 'USER_UPDATED':
-      // Handle user update
-      break;
-  }
-});
