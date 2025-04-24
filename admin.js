@@ -26,7 +26,37 @@ async function initAdmin() {
         showLoginForm();
     }
 }
-
+// Fungsi untuk handle login
+async function handleLogin(email, password) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password
+    });
+  
+    if (error) {
+      // Tampilkan error ke user
+      document.getElementById('login-error').textContent = error.message;
+      document.getElementById('login-error').style.display = 'block';
+      return false;
+    } else {
+      // Login sukses
+      return true;
+    }
+  }
+  
+  // Event listener untuk form login
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const email = document.getElementById('admin-email').value;
+    const password = document.getElementById('admin-password').value;
+    
+    const loginSuccess = await handleLogin(email, password);
+    
+    if (loginSuccess) {
+      window.location.reload(); // Refresh untuk muat admin content
+    }
+  });
 // Tampilkan form login
 function showLoginForm() {
     loginContainer.style.display = 'flex';
