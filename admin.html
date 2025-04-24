@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Luxury Store</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body class="admin-page">
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="luxury">LUXURY</span>
+                    <span class="store">STORE - ADMIN</span>
+                </div>
+                <div class="header-actions">
+                    <a href="index.html" class="admin-link"><i class="fas fa-store"></i> Kembali ke Toko</a>
+                    <button id="logout-btn" class="admin-link"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main admin-main">
+        <div class="container">
+            <div class="admin-panel">
+                <h1><i class="fas fa-cog"></i> Panel Admin</h1>
+                
+                <!-- Tab Navigation -->
+                <div class="admin-tabs">
+                    <button class="tab-btn active" data-tab="add-product">Tambah Produk</button>
+                    <button class="tab-btn" data-tab="manage-products">Kelola Produk</button>
+                    <button class="tab-btn" data-tab="view-orders">Lihat Pesanan</button>
+                </div>
+                
+                <!-- Tab Content -->
+                <div class="tab-content active" id="add-product">
+                    <form id="add-product-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="product-name">Nama Produk</label>
+                                <input type="text" id="product-name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="product-price">Harga (Rp)</label>
+                                <input type="number" id="product-price" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="product-category">Kategori</label>
+                                <select id="product-category" required>
+                                    <option value="fashion">Fashion</option>
+                                    <option value="electronics">Elektronik</option>
+                                    <option value="digital">Digital</option>
+                                    <option value="home">Rumah</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="product-type">Jenis Produk</label>
+                                <select id="product-type" required>
+                                    <option value="physical">Fisik</option>
+                                    <option value="digital">Digital</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-description">Deskripsi</label>
+                            <textarea id="product-description" rows="3" required></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-image">Gambar Produk (URL)</label>
+                            <input type="file" id="image-upload" accept="image/*">
+                        </div>
+                        
+                        <button type="submit" class="btn-submit">
+                            <i class="fas fa-plus"></i> Tambah Produk
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="tab-content" id="manage-products">
+                    <div class="product-list-header">
+                        <h2>Daftar Produk</h2>
+                        <div class="search-box">
+                            <input type="text" placeholder="Cari produk..." id="product-search">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="admin-product-grid" id="admin-product-grid">
+                        <!-- Produk akan muncul di sini -->
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="view-orders">
+                    <h2>Daftar Pesanan</h2>
+                    <div class="orders-table-container">
+                        <table class="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Nama</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-list">
+                                <!-- Pesanan akan muncul di sini -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="admin.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

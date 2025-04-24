@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luxury Store</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="preloader">
+        <div class="loader"></div>
+    </div>
+
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="luxury">LUXURY</span>
+                    <span class="store">STORE</span>
+                </div>
+                <div class="header-actions">
+                    <div class="search-box">
+                        <input type="text" placeholder="Cari produk...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="cart-icon">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span class="cart-count">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="main-nav">
+        <div class="container">
+            <ul class="nav-list">
+                <li><a href="#" class="active" data-category="all">Semua Produk</a></li>
+                <li><a href="#" data-category="fashion">Fashion</a></li>
+                <li><a href="#" data-category="electronics">Elektronik</a></li>
+                <li><a href="#" data-category="digital">Digital</a></li>
+                <li><a href="#" data-category="home">Rumah</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <h1>Koleksi Eksklusif</h1>
+                <p>Temukan produk premium pilihan untuk gaya hidup Anda</p>
+            </div>
+
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label for="sort-by">Urutkan:</label>
+                    <select id="sort-by">
+                        <option value="default">Default</option>
+                        <option value="price-asc">Harga: Rendah ke Tinggi</option>
+                        <option value="price-desc">Harga: Tinggi ke Rendah</option>
+                        <option value="name-asc">Nama: A-Z</option>
+                    </select>
+                </div>
+                <div class="filter-result">
+                    Menampilkan <span id="product-count">0</span> produk
+                </div>
+            </div>
+
+            <div class="product-grid" id="product-grid">
+                <!-- Produk akan dimuat via JavaScript -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Keranjang -->
+    <div class="modal" id="cart-modal">
+        <div class="modal-content cart-content">
+            <span class="close-modal">&times;</span>
+            <h2><i class="fas fa-shopping-bag"></i> Keranjang Belanja</h2>
+            
+            <div class="cart-items" id="cart-items">
+                <!-- Item keranjang akan dimuat di sini -->
+            </div>
+            
+            <div class="cart-summary">
+                <div class="cart-total">
+                    <span>Total:</span>
+                    <span>Rp <span id="cart-total">0</span></span>
+                </div>
+                <button class="btn-checkout" id="checkout-btn">Lanjut ke Pembayaran</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Data Pelanggan -->
+    <div class="modal" id="customer-modal">
+        <div class="modal-content customer-content">
+            <span class="close-modal">&times;</span>
+            <h2><i class="fas fa-user"></i> Data Pelanggan</h2>
+            
+            <form id="customer-form">
+                <div class="form-group">
+                    <label for="customer-name">Nama Lengkap</label>
+                    <input type="text" id="customer-name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="customer-email">Email</label>
+                    <input type="email" id="customer-email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="customer-phone">Nomor WhatsApp</label>
+                    <input type="tel" id="customer-phone" required>
+                </div>
+                
+                <div id="address-fields">
+                    <!-- Alamat akan ditampilkan jika ada produk fisik -->
+                </div>
+                
+                <div class="form-group">
+                    <label for="customer-notes">Catatan (Opsional)</label>
+                    <textarea id="customer-notes" rows="3"></textarea>
+                </div>
+                
+                <button type="submit" class="btn-submit">Lanjut ke Pembayaran</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Pembayaran -->
+    <div class="modal" id="payment-modal">
+        <div class="modal-content payment-content">
+            <span class="close-modal">&times;</span>
+            <h2><i class="fas fa-credit-card"></i> Pembayaran</h2>
+            
+            <div class="order-summary">
+                <h3>Ringkasan Pesanan</h3>
+                <div id="order-items">
+                    <!-- Item pesanan akan dimuat di sini -->
+                </div>
+                <div class="order-total">
+                    <span>Total Pembayaran:</span>
+                    <span>Rp <span id="payment-total">0</span></span>
+                </div>
+            </div>
+            
+            <div class="payment-method">
+                <h3>Metode Pembayaran</h3>
+                <div class="payment-option active" data-method="qris">
+                    <div class="option-header">
+                        <i class="fas fa-qrcode"></i>
+                        <span>QRIS</span>
+                    </div>
+                    <div class="option-content">
+                        <p>Scan QR code berikut menggunakan aplikasi mobile banking atau e-wallet Anda</p>
+                        <img src="images/qris.png" alt="QRIS Payment" class="qris-image">
+                    </div>
+                </div>
+                
+                <div class="payment-instruction">
+                    <h4>Instruksi Pembayaran:</h4>
+                    <ol>
+                        <li>Scan QR Code di atas menggunakan aplikasi mobile banking atau e-wallet</li>
+                        <li>Masukkan jumlah yang tertera</li>
+                        <li>Lakukan pembayaran</li>
+                        <li>Setelah pembayaran, kirim bukti transfer melalui WhatsApp</li>
+                    </ol>
+                </div>
+                
+                <a href="#" id="whatsapp-btn" class="whatsapp-btn" target="_blank">
+                    <i class="fab fa-whatsapp"></i> Kirim Bukti Pembayaran
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Notifikasi -->
+    <div class="notification" id="notification">
+        <div class="notification-content">
+            <span id="notification-message"></span>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>LUXURY STORE</h3>
+                    <p>Toko online premium dengan koleksi terbaik untuk gaya hidup modern.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Kontak</h3>
+                    <p><i class="fas fa-phone"></i> (021) 1234567</p>
+                    <p><i class="fas fa-envelope"></i> info@luxurystore.com</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Ikuti Kami</h3>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 Luxury Store. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
