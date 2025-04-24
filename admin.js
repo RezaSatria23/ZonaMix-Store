@@ -4,47 +4,57 @@
 const SUPABASE_URL = 'https://znehlqzprtwvhscoeoim.supabase.co'; // GANTI
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpuZWhscXpwcnR3dmhzY29lb2ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0MjQzNzUsImV4cCI6MjA2MTAwMDM3NX0.XsjXAE-mt7RMIncAJuO6XSdZxhQQv79uCUPPVU9mF2A'; // GANTI
 
+// Inisialisasi client Supabase
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: {
-    flowType: 'pkce',
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    persistSession: true,
-    storage: localStorage
-  }
-});
-
-// ======================
-// 2. ELEMEN DOM
-// ======================
-const loginForm = document.getElementById('login-form');
-const adminEmail = document.getElementById('admin-email');
-const adminPassword = document.getElementById('admin-password');
-const loginError = document.getElementById('login-error');
-const loginContainer = document.getElementById('login-container');
-const adminContent = document.getElementById('admin-content');
-const logoutBtn = document.getElementById('logout-btn');
-const verifyMessage = document.getElementById('verify-message');
-
-// ======================
-// 3. FUNGSI AUTH UTAMA
-// ======================
-
-// Cek status auth saat page load
-async function initAuth() {
-  // Handle email verification callback
-  await handleEmailVerification();
+    auth: {
+      flowType: 'pkce',
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      persistSession: true,
+      storage: localStorage
+    }
+  });
   
-  // Cek session yang aktif
-  const { data: { user } } = await supabase.auth.getUser();
+  // ======================
+  // 2. ELEMEN DOM
+  // ======================
+  const loginForm = document.getElementById('login-form');
+  const adminEmail = document.getElementById('admin-email');
+  const adminPassword = document.getElementById('admin-password');
+  const loginError = document.getElementById('login-error');
+  const loginContainer = document.getElementById('login-container');
+  const adminContent = document.getElementById('admin-content');
+  const logoutBtn = document.getElementById('logout-btn');
+  const verifyMessage = document.getElementById('verify-message');
   
-  if (user) {
-    showAdminPanel();
-  } else {
-    showLoginForm();
+  // ======================
+  // 3. FUNGSI AUTH UTAMA
+  // ======================
+  
+  // Fungsi initAuth yang diperbaiki
+  async function initAuth() {
+    // Pastikan supabase sudah terinisialisasi
+    if (!supabase) {
+      console.error('Supabase client belum terinisialisasi!');
+      return;
+    }
+  
+    try {
+      await handleEmailVerification();
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error) throw error;
+      
+      if (user) {
+        showAdminPanel();
+      } else {
+        showLoginForm();
+      }
+    } catch (error) {
+      console.error('Init auth error:', error);
+      showLoginForm();
+    }
   }
-}
-
 // Handle verifikasi email dari link
 async function handleEmailVerification() {
   const urlParams = new URLSearchParams(window.location.search);
