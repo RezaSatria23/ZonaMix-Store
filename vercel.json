@@ -1,0 +1,8 @@
+{
+    "rewrites": [
+      {
+        "source": "/api/auth/:path*",
+        "destination": "https://your-project-ref.supabase.co/auth/v1/:path*"
+      }
+    ]
+  }
