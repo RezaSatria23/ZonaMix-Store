@@ -7,21 +7,9 @@ let supabase; // Variabel global
 // 2. FUNGSI UTAMA
 // ======================
 document.addEventListener('DOMContentLoaded', async () => {
-    // Wait for Supabase to be available
-    if (typeof supabase === 'undefined') {
-        await new Promise(resolve => {
-            const checkSupabase = setInterval(() => {
-                if (typeof supabase !== 'undefined') {
-                    clearInterval(checkSupabase);
-                    resolve();
-                }
-            }, 100);
-        });
-    }
-
     try {
         // Inisialisasi Supabase
-        supabase = supabase.createClient(
+        supabase = window.supabase.createClient(
             'https://znehlqzprtwvhscoeoim.supabase.co',
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpuZWhscXpwcnR3dmhzY29lb2ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0MjQzNzUsImV4cCI6MjA2MTAwMDM3NX0.XsjXAE-mt7RMIncAJuO6XSdZxhQQv79uCUPPVU9mF2A',
             {
