@@ -725,8 +725,6 @@
                 <i class="fas fa-clipboard-list"></i> Pesanan
             </button>
         </nav>
-        
-        <!-- Replace the existing #add-product-tab section with this code -->
         <!-- Replace the existing #add-product-tab section with this code -->
         <div class="tab-content active" id="add-product-tab">
             <div class="full-width-form">
@@ -778,7 +776,42 @@
                 </form>
             </div>
         </div>
-
+        <!-- Replace the existing #manage-products-tab section with this code -->
+        <div class="tab-content" id="manage-products-tab">
+            <h2><i class="fas fa-box-open"></i> Kelola Produk</h2>
+            
+            <div class="product-management-header">
+                <div class="search-container">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="product-search" placeholder="Cari produk...">
+                    </div>
+                    <button id="reset-search" class="secondary-btn">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                </div>
+                <div class="product-count">
+                    Total Produk: <span id="total-products">0</span>
+                </div>
+            </div>
+            
+            <div id="admin-product-grid">
+                <!-- Products will be loaded here -->
+                <div class="loading-products">
+                    <i class="fas fa-spinner fa-spin"></i> Memuat produk...
+                </div>
+            </div>
+            
+            <div class="pagination-controls">
+                <button id="prev-page" class="pagination-btn" disabled>
+                    <i class="fas fa-chevron-left"></i> Sebelumnya
+                </button>
+                <span id="page-info">Halaman 1</span>
+                <button id="next-page" class="pagination-btn">
+                    Selanjutnya <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
         <!-- Replace the existing #view-orders-tab section with this code -->
         <div class="tab-content" id="view-orders-tab">
             <h2><i class="fas fa-clipboard-list"></i> Daftar Pesanan</h2>

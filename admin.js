@@ -1,3 +1,9 @@
+// Add these variables at the top of your file
+let currentPage = 1;
+const productsPerPage = 8;
+let allProducts = [];
+let filteredProducts = [];
+
 // ======================
 // 1. INISIALISASI GLOBAL
 // ======================
@@ -143,20 +149,47 @@ function initEventListeners() {
     });
 
     // Product Search
-    document.getElementById('search-btn').addEventListener('click', (e) => {
-        e.preventDefault();
-        const searchTerm = document.getElementById('product-search').value.trim();
-        loadProducts(searchTerm);
+   // Add event listeners for search and pagination
+document.getElementById('product-search').addEventListener('input', (e) => {
+    const searchTerm = e.target.value.trim().toLowerCase();
+    currentPage = 1;
+    
+    if (searchTerm) {
+        filteredProducts = allProducts.filter(product => 
+            product.name.toLowerCase().includes(searchTerm) ||
+            product.category.toLowerCase().includes(searchTerm) ||
+            product.description?.toLowerCase().includes(searchTerm)
+        );
+    } else {
+        filteredProducts = [...allProducts];
+    }
+    
+    renderProducts();
+    updateProductCount();
+});
+
+    document.getElementById('reset-search').addEventListener('click', () => {
+        document.getElementById('product-search').value = '';
+        currentPage = 1;
+        filteredProducts = [...allProducts];
+        renderProducts();
+        updateProductCount();
     });
 
-    // Order Filters
-    document.getElementById('order-status-filter').addEventListener('change', () => {
-        loadOrders();
+    document.getElementById('prev-page').addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderProducts();
+        }
     });
 
-    document.getElementById('order-date-filter').addEventListener('change', () => {
-        loadOrders();
+    document.getElementById('next-page').addEventListener('click', () => {
+        if (currentPage * productsPerPage < filteredProducts.length) {
+            currentPage++;
+            renderProducts();
+        }
     });
+
 }
 
 function showLoginForm() {
@@ -171,6 +204,9 @@ function showAdminPanel() {
 }
 
 async function loadProducts(searchTerm = '') {
+    const container = document.getElementById('admin-product-grid');
+    container.innerHTML = '<div class="loading-products"><i class="fas fa-spinner fa-spin"></i> Memuat produk...</div>';
+    
     try {
         let query = supabase
             .from('products')
@@ -185,11 +221,15 @@ async function loadProducts(searchTerm = '') {
 
         if (error) throw error;
 
-        renderProducts(products || []);
+        allProducts = products || [];
+        filteredProducts = [...allProducts];
+        
+        updateProductCount();
+        renderProducts();
+        
     } catch (error) {
         console.error('Error loading products:', error);
-        const container = document.getElementById('admin-product-grid');
-        container.innerHTML = '<p class="no-products">Error memuat produk</p>';
+        container.innerHTML = '<div class="error-message">Gagal memuat produk</div>';
     }
 }
 
@@ -255,49 +295,69 @@ async function showEditModal(productId) {
 
         // Create modal HTML
         const modalHTML = `
-            <div class="modal" id="edit-modal">
+            <div class="modal" id="edit-product-modal">
                 <div class="modal-content">
                     <span class="close-modal">&times;</span>
-                    <h2>Edit Produk</h2>
+                    <h2><i class="fas fa-edit"></i> Edit Produk</h2>
                     <form id="edit-product-form" data-id="${product.id}">
                         <div class="form-group">
                             <label>Nama Produk</label>
                             <input type="text" id="edit-product-name" value="${product.name}" required>
                         </div>
-                        <div class="form-group">
-                            <label>Harga</label>
-                            <input type="number" id="edit-product-price" value="${product.price}" required>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Harga (Rp)</label>
+                                <input type="number" id="edit-product-price" value="${product.price}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Kategori</label>
+                                <select id="edit-product-category" required>
+                                    <option value="fashion" ${product.category === 'fashion' ? 'selected' : ''}>Fashion</option>
+                                    <option value="electronics" ${product.category === 'electronics' ? 'selected' : ''}>Elektronik</option>
+                                    <option value="digital" ${product.category === 'digital' ? 'selected' : ''}>Digital</option>
+                                    <option value="home" ${product.category === 'home' ? 'selected' : ''}>Rumah</option>
+                                </select>
+                            </div>
                         </div>
+                        
                         <div class="form-group">
-                            <label>Deskripsi</label>
-                            <textarea id="edit-product-description" rows="3">${product.description || ''}</textarea>
+                            <label>Stok Tersedia</label>
+                            <input type="number" id="edit-product-stock" min="0" value="${product.stock}" required>
                         </div>
+                        
+                        <div class="form-group">
+                            <label>Deskripsi Produk</label>
+                            <textarea id="edit-product-description" rows="4">${product.description || ''}</textarea>
+                        </div>
+                        
                         <div class="form-group">
                             <label>Gambar Produk (URL)</label>
                             <input type="url" id="edit-product-image" value="${product.image_url}" required>
                         </div>
-                        <button type="submit">Simpan Perubahan</button>
+                        
+                        <button type="submit" class="btn-submit">
+                            <i class="fas fa-save"></i> Simpan Perubahan
+                        </button>
+                        
                         <div id="edit-product-message" class="message"></div>
                     </form>
                 </div>
             </div>
         `;
 
-        // Add modal to DOM
         document.body.insertAdjacentHTML('beforeend', modalHTML);
-        
-        // Show modal
-        document.getElementById('edit-modal').style.display = 'flex';
+        const modal = document.getElementById('edit-product-modal');
+        modal.style.display = 'flex';
 
-        // Close modal when clicking X
-        document.querySelector('.close-modal').addEventListener('click', () => {
-            document.getElementById('edit-modal').remove();
+        // Close modal when clicking X or outside
+        document.querySelector('#edit-product-modal .close-modal').addEventListener('click', () => {
+            modal.remove();
         });
 
-        // Close modal when clicking outside
-        document.getElementById('edit-modal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('edit-modal')) {
-                document.getElementById('edit-modal').remove();
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
             }
         });
 
@@ -305,9 +365,11 @@ async function showEditModal(productId) {
         document.getElementById('edit-product-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const id = e.target.getAttribute('data-id');
+            const id = e.target.dataset.id;
             const name = document.getElementById('edit-product-name').value.trim();
             const price = parseFloat(document.getElementById('edit-product-price').value);
+            const category = document.getElementById('edit-product-category').value;
+            const stock = parseInt(document.getElementById('edit-product-stock').value);
             const description = document.getElementById('edit-product-description').value.trim();
             const image_url = document.getElementById('edit-product-image').value.trim();
             const messageElement = document.getElementById('edit-product-message');
@@ -315,36 +377,54 @@ async function showEditModal(productId) {
             try {
                 const { data, error } = await supabase
                     .from('products')
-                    .update({ name, price, description, image_url })
+                    .update({ 
+                        name, 
+                        price, 
+                        category,
+                        stock,
+                        description, 
+                        image_url 
+                    })
                     .eq('id', id)
                     .select();
 
                 if (error) throw error;
 
+                // Update local product data
+                const updatedProduct = data[0];
+                const productIndex = allProducts.findIndex(p => p.id == id);
+                if (productIndex !== -1) {
+                    allProducts[productIndex] = updatedProduct;
+                }
+                
+                const filteredIndex = filteredProducts.findIndex(p => p.id == id);
+                if (filteredIndex !== -1) {
+                    filteredProducts[filteredIndex] = updatedProduct;
+                }
+
                 // Show success message
                 messageElement.textContent = 'Produk berhasil diperbarui!';
-                messageElement.style.backgroundColor = '#e8f5e9';
-                messageElement.style.color = '#2e7d32';
+                messageElement.className = 'message success';
                 messageElement.style.display = 'block';
                 
-                // Reload products
-                loadProducts();
+                // Re-render products
+                renderProducts();
                 
                 // Close modal after 1 second
                 setTimeout(() => {
-                    document.getElementById('edit-modal').remove();
+                    modal.remove();
                 }, 1000);
                 
             } catch (error) {
                 messageElement.textContent = `Error: ${error.message}`;
-                messageElement.style.backgroundColor = '#ffebee';
-                messageElement.style.color = '#c62828';
+                messageElement.className = 'message error';
                 messageElement.style.display = 'block';
             }
         });
 
     } catch (error) {
         console.error('Error showing edit modal:', error);
+        alert('Gagal memuat data produk');
     }
 }
 
@@ -489,3 +569,157 @@ document.getElementById('order-status').addEventListener('change', loadOrders);
 document.getElementById('order-date').addEventListener('change', loadOrders);
 document.getElementById('refresh-orders').addEventListener('click', loadOrders);
 loadOrders();
+function renderProducts() {
+    const container = document.getElementById('admin-product-grid');
+    const startIdx = (currentPage - 1) * productsPerPage;
+    const endIdx = startIdx + productsPerPage;
+    const productsToDisplay = filteredProducts.slice(startIdx, endIdx);
+    
+    if (!productsToDisplay.length) {
+        container.innerHTML = '<div class="no-products">Tidak ada produk yang ditemukan</div>';
+        return;
+    }
+
+    container.innerHTML = productsToDisplay.map(product => `
+        <div class="product-management-card" data-id="${product.id}">
+            <img src="${product.image_url}" alt="${product.name}" class="product-card-image">
+            <div class="product-card-body">
+                <h3 class="product-card-title">${product.name}</h3>
+                <div class="product-card-meta">
+                    <span class="product-card-price">Rp ${product.price.toLocaleString('id-ID')}</span>
+                    <span class="product-card-category">${product.category}</span>
+                </div>
+                <div class="product-card-stock">
+                    Stok: ${product.stock} | Terjual: 0
+                </div>
+                <div class="product-card-actions">
+                    <button class="edit-product-btn" data-id="${product.id}">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="delete-product-btn" data-id="${product.id}">
+                        <i class="fas fa-trash"></i> Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    // Add event listeners for edit buttons
+    document.querySelectorAll('.edit-product-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const productId = btn.dataset.id;
+            showEditModal(productId);
+        });
+    });
+
+    // Add event listeners for delete buttons
+    document.querySelectorAll('.delete-product-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const productId = btn.dataset.id;
+            deleteProduct(productId);
+        });
+    });
+
+    // Add click event to view product details
+    document.querySelectorAll('.product-management-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            // Only if not clicking on a button
+            if (!e.target.closest('button')) {
+                const productId = card.dataset.id;
+                showProductDetails(productId);
+            }
+        });
+    });
+
+    updatePaginationControls();
+}
+
+function updateProductCount() {
+    document.getElementById('total-products').textContent = filteredProducts.length;
+    document.getElementById('page-info').textContent = `Halaman ${currentPage} dari ${Math.ceil(filteredProducts.length / productsPerPage)}`;
+}
+
+function updatePaginationControls() {
+    const prevBtn = document.getElementById('prev-page');
+    const nextBtn = document.getElementById('next-page');
+    
+    prevBtn.disabled = currentPage === 1;
+    nextBtn.disabled = currentPage * productsPerPage >= filteredProducts.length;
+    
+    document.getElementById('page-info').textContent = `Halaman ${currentPage} dari ${Math.ceil(filteredProducts.length / productsPerPage)}`;
+}
+
+function showProductDetails(productId) {
+    const product = allProducts.find(p => p.id == productId);
+    if (!product) return;
+
+    const modalHTML = `
+        <div class="modal" id="product-details-modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2><i class="fas fa-info-circle"></i> Detail Produk</h2>
+                
+                <div class="product-details-container">
+                    <div class="product-details-image">
+                        <img src="${product.image_url}" alt="${product.name}">
+                    </div>
+                    <div class="product-details-info">
+                        <h3>${product.name}</h3>
+                        <div class="product-details-meta">
+                            <span class="price">Rp ${product.price.toLocaleString('id-ID')}</span>
+                            <span class="category">${product.category}</span>
+                            <span class="stock">Stok: ${product.stock}</span>
+                        </div>
+                        <div class="product-details-description">
+                            <h4>Deskripsi:</h4>
+                            <p>${product.description || 'Tidak ada deskripsi'}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = document.getElementById('product-details-modal');
+    modal.style.display = 'flex';
+
+    // Close modal when clicking X or outside
+    document.querySelector('#product-details-modal .close-modal').addEventListener('click', () => {
+        modal.remove();
+    });
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+// Function to delete a product
+async function deleteProduct(productId) {
+    if (!confirm('Apakah Anda yakin ingin menghapus produk ini?')) return;
+    
+    try {
+        const { error } = await supabase
+            .from('products')
+            .delete()
+            .eq('id', productId);
+        
+        if (error) throw error;
+        
+        // Remove from local arrays
+        allProducts = allProducts.filter(p => p.id != productId);
+        filteredProducts = filteredProducts.filter(p => p.id != productId);
+        
+        // Re-render products
+        renderProducts();
+        updateProductCount();
+        
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        alert('Gagal menghapus produk');
+    }
+}
