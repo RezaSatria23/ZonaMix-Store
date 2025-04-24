@@ -7,6 +7,18 @@ let supabase; // Variabel global
 // 2. FUNGSI UTAMA
 // ======================
 document.addEventListener('DOMContentLoaded', async () => {
+    // Wait for Supabase to be available
+    if (typeof supabase === 'undefined') {
+        await new Promise(resolve => {
+            const checkSupabase = setInterval(() => {
+                if (typeof supabase !== 'undefined') {
+                    clearInterval(checkSupabase);
+                    resolve();
+                }
+            }, 100);
+        });
+    }
+
     try {
         // Inisialisasi Supabase
         supabase = supabase.createClient(
