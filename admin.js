@@ -1,3 +1,12 @@
+// Tambahkan di awal admin.js
+console.log('Supabase client:', typeof supabase); 
+// Harus mengembalikan 'object' bukan 'undefined'
+
+// Tambahkan di awal admin.js
+if (typeof supabase === 'undefined') {
+  throw new Error('Supabase JS SDK belum dimuat! Pastikan script dimuat sebelum admin.js');
+}
+
 // ======================
 // 1. INISIALISASI SUPABASE
 // ======================
