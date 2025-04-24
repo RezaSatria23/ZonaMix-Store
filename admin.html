@@ -6,7 +6,7 @@
     <title>Admin Panel - Luxury Store</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css">"
     <style>
         :root {
             --primary: #2a2a2a;
@@ -727,20 +727,22 @@
         </nav>
         
         <!-- Replace the existing #add-product-tab section with this code -->
+        <!-- Replace the existing #add-product-tab section with this code -->
         <div class="tab-content active" id="add-product-tab">
-            <div class="form-container">
+            <div class="full-width-form">
                 <h2><i class="fas fa-plus"></i> Tambah Produk Baru</h2>
                 <form id="add-product-form">
-                    <div class="form-group">
-                        <label for="product-name">Nama Produk</label>
-                        <input type="text" id="product-name" required>
-                    </div>
-                    
-                    <div class="form-row">
+                    <div class="form-grid">
                         <div class="form-group">
-                            <label for="product-price">Harga</label>
+                            <label for="product-name">Nama Produk</label>
+                            <input type="text" id="product-name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-price">Harga (Rp)</label>
                             <input type="number" id="product-price" required>
                         </div>
+                        
                         <div class="form-group">
                             <label for="product-category">Kategori</label>
                             <select id="product-category" required>
@@ -751,21 +753,21 @@
                                 <option value="home">Rumah</option>
                             </select>
                         </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="product-description">Deskripsi Produk</label>
-                        <textarea id="product-description" rows="4"></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="product-image">Gambar Produk (URL)</label>
-                        <input type="url" id="product-image" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="product-stock">Stok Tersedia</label>
-                        <input type="number" id="product-stock" min="0" value="1" required>
+                        
+                        <div class="form-group">
+                            <label for="product-stock">Stok Tersedia</label>
+                            <input type="number" id="product-stock" min="0" value="1" required>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="product-description">Deskripsi Produk</label>
+                            <textarea id="product-description" rows="4"></textarea>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="product-image">Gambar Produk (URL)</label>
+                            <input type="url" id="product-image" required>
+                        </div>
                     </div>
                     
                     <button type="submit" class="btn-submit">
@@ -776,42 +778,57 @@
                 </form>
             </div>
         </div>
-        
-        <div class="tab-content" id="manage-products-tab">
-            <h2><i class="fas fa-box-open"></i> Kelola Produk</h2>
-            <div class="search-container">
-                <div class="search-bar">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="product-search" placeholder="Cari produk...">
-                </div>
-                <button class="filter-btn">
-                    <i class="fas fa-filter"></i> Filter
-                </button>
-            </div>
-            <div id="admin-product-grid">
-                <p class="no-products">
-                    <i class="fas fa-spinner fa-spin"></i> Memuat produk...
-                </p>
-            </div>
-        </div>
-        
+
+        <!-- Replace the existing #view-orders-tab section with this code -->
         <div class="tab-content" id="view-orders-tab">
             <h2><i class="fas fa-clipboard-list"></i> Daftar Pesanan</h2>
+            
             <div class="order-filters">
-                <select id="order-status-filter">
-                    <option value="all">Semua Status</option>
-                    <option value="pending">Menunggu Pembayaran</option>
-                    <option value="paid">Dibayar</option>
-                    <option value="shipped">Dikirim</option>
-                    <option value="completed">Selesai</option>
-                    <option value="cancelled">Dibatalkan</option>
-                </select>
-                <input type="date" id="order-date-filter">
+                <div class="filter-group">
+                    <label for="order-status">Status:</label>
+                    <select id="order-status">
+                        <option value="all">Semua Status</option>
+                        <option value="pending">Belum Bayar</option>
+                        <option value="paid">Proses</option>
+                        <option value="shipped">Dikirim</option>
+                        <option value="completed">Selesai</option>
+                        <option value="cancelled">Batal</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="order-date">Tanggal:</label>
+                    <input type="date" id="order-date">
+                </div>
+                
+                <button id="refresh-orders" class="refresh-btn">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
             </div>
-            <div id="orders-list">
-                <p class="no-orders">
-                    <i class="fas fa-spinner fa-spin"></i> Memuat pesanan...
-                </p>
+            
+            <div class="orders-table-container">
+                <table id="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Tanggal/Waktu</th>
+                            <th>Pelanggan</th>
+                            <th>WhatsApp</th>
+                            <th>Alamat</th>
+                            <th>Catatan</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Orders will be loaded here -->
+                        <tr>
+                            <td colspan="8" class="loading-orders">
+                                <i class="fas fa-spinner fa-spin"></i> Memuat pesanan...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

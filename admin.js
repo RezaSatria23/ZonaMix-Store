@@ -98,21 +98,23 @@ function initEventListeners() {
         
         const name = document.getElementById('product-name').value.trim();
         const price = parseFloat(document.getElementById('product-price').value);
+        const category = document.getElementById('product-category').value;
         const description = document.getElementById('product-description').value.trim();
         const image_url = document.getElementById('product-image').value.trim();
+        const stock = parseInt(document.getElementById('product-stock').value);
         const messageElement = document.getElementById('product-message');
 
         try {
             const { data, error } = await supabase
                 .from('products')
-                .insert([
-                    { 
-                        name, 
-                        price, 
-                        description, 
-                        image_url 
-                    }
-                ])
+                .insert([{ 
+                    name, 
+                    price, 
+                    category,
+                    description, 
+                    image_url,
+                    stock
+                }])
                 .select();
 
             if (error) throw error;
@@ -122,8 +124,7 @@ function initEventListeners() {
             
             // Show success message
             messageElement.textContent = 'Produk berhasil ditambahkan!';
-            messageElement.style.backgroundColor = '#e8f5e9';
-            messageElement.style.color = '#2e7d32';
+            messageElement.className = 'message success';
             messageElement.style.display = 'block';
             
             // Reload products
@@ -134,12 +135,11 @@ function initEventListeners() {
                 messageElement.style.display = 'none';
             }, 3000);
             
-        } catch (error) {
-            messageElement.textContent = `Error: ${error.message}`;
-            messageElement.style.backgroundColor = '#ffebee';
-            messageElement.style.color = '#c62828';
-            messageElement.style.display = 'block';
-        }
+            } catch (error) {
+                messageElement.textContent = `Error: ${error.message}`;
+                messageElement.className = 'message error';
+                messageElement.style.display = 'block';
+            }
     });
 
     // Product Search
@@ -349,24 +349,29 @@ async function showEditModal(productId) {
 }
 
 async function loadOrders() {
+    const statusFilter = document.getElementById('order-status').value;
+    const dateFilter = document.getElementById('order-date').value;
+    
+    const tbody = document.querySelector('#orders-table tbody');
+    tbody.innerHTML = `<tr><td colspan="8" class="loading-orders"><i class="fas fa-spinner fa-spin"></i> Memuat pesanan...</td></tr>`;
+    
     try {
-        const statusFilter = document.getElementById('order-status-filter').value;
-        const dateFilter = document.getElementById('order-date-filter').value;
-        
         let query = supabase
             .from('orders')
             .select(`
                 id,
                 customer_name,
                 customer_email,
+                customer_phone,
+                customer_address,
+                customer_notes,
                 total_amount,
                 status,
                 created_at,
                 order_items:order_items(
                     product:products(
                         name,
-                        price,
-                        image_url
+                        category
                     ),
                     quantity
                 )
@@ -393,61 +398,46 @@ async function loadOrders() {
         renderOrders(orders || []);
     } catch (error) {
         console.error('Error loading orders:', error);
-        const container = document.getElementById('orders-list');
-        container.innerHTML = '<p class="no-orders">Error memuat pesanan</p>';
+        tbody.innerHTML = `<tr><td colspan="8" class="error-message">Error memuat pesanan</td></tr>`;
     }
 }
 
 function renderOrders(orders) {
-    const container = document.getElementById('orders-list');
+    const tbody = document.querySelector('#orders-table tbody');
     
     if (!orders.length) {
-        container.innerHTML = '<p class="no-orders">Tidak ada pesanan</p>';
+        tbody.innerHTML = `<tr><td colspan="8" class="no-orders">Tidak ada pesanan</td></tr>`;
         return;
     }
 
-    container.innerHTML = orders.map(order => `
-        <div class="order-card">
-            <div class="order-header">
-                <div>
-                    <strong>Order #${order.id}</strong>
-                    <div>${new Date(order.created_at).toLocaleString()}</div>
-                </div>
-                <div>
-                    <div>${order.customer_name} (${order.customer_email})</div>
-                    <div class="order-status status-${order.status}">
-                        ${getStatusText(order.status)}
-                    </div>
-                </div>
-            </div>
-            <div class="order-products">
-                ${order.order_items.map(item => `
-                    <div class="order-product">
-                        <img src="${item.product.image_url}" alt="${item.product.name}">
-                        <div>
-                            <div>${item.product.name}</div>
-                            <div>${item.quantity} x Rp ${item.product.price.toLocaleString('id-ID')}</div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-            <div class="order-total">
-                <strong>Total: Rp ${order.total_amount.toLocaleString('id-ID')}</strong>
-            </div>
-            <div class="order-actions">
-                <select class="status-select" data-order-id="${order.id}">
-                    <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Menunggu Pembayaran</option>
-                    <option value="paid" ${order.status === 'paid' ? 'selected' : ''}>Dibayar</option>
-                    <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Dikirim</option>
-                    <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Selesai</option>
-                    <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Dibatalkan</option>
-                </select>
-                <button class="update-status-btn" data-order-id="${order.id}">Update Status</button>
-            </div>
-        </div>
-    `).join('');
+    tbody.innerHTML = orders.map(order => {
+        const hasDigitalProduct = order.order_items.some(item => item.product.category === 'digital');
+        const address = hasDigitalProduct ? 'DGT' : order.customer_address || '-';
+        
+        return `
+            <tr>
+                <td>${formatDateTime(order.created_at)}</td>
+                <td>${order.customer_name}</td>
+                <td>${order.customer_phone}</td>
+                <td>${address}</td>
+                <td>${order.customer_notes || '-'}</td>
+                <td>Rp ${order.total_amount.toLocaleString('id-ID')}</td>
+                <td><span class="status-badge status-${order.status}">${getStatusText(order.status)}</span></td>
+                <td class="order-actions">
+                    <select class="status-select" data-order-id="${order.id}">
+                        <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Belum Bayar</option>
+                        <option value="paid" ${order.status === 'paid' ? 'selected' : ''}>Proses</option>
+                        <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Dikirim</option>
+                        <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Selesai</option>
+                        <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Batal</option>
+                    </select>
+                    <button class="update-status-btn" data-order-id="${order.id}">Update</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
 
-    // Add status update event listeners
+    // Add event listeners for status updates
     document.querySelectorAll('.update-status-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const orderId = btn.dataset.orderId;
@@ -462,7 +452,7 @@ function renderOrders(orders) {
 
                 if (error) throw error;
 
-                // Reload orders
+                // Reload orders to show updated status
                 loadOrders();
                 
             } catch (error) {
@@ -472,14 +462,30 @@ function renderOrders(orders) {
         });
     });
 }
+function formatDateTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleString('id-ID', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
 
+// Helper function to get status text
 function getStatusText(status) {
     const statusMap = {
-        'pending': 'Menunggu Pembayaran',
-        'paid': 'Dibayar',
+        'pending': 'Belum Bayar',
+        'paid': 'Proses',
         'shipped': 'Dikirim',
         'completed': 'Selesai',
-        'cancelled': 'Dibatalkan'
+        'cancelled': 'Batal'
     };
     return statusMap[status] || status;
 }
+// Add event listeners for filters and refresh button
+document.getElementById('order-status').addEventListener('change', loadOrders);
+document.getElementById('order-date').addEventListener('change', loadOrders);
+document.getElementById('refresh-orders').addEventListener('click', loadOrders);
+loadOrders();
