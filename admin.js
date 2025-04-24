@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const supabaseUrl = 'https://znehlqzprtwvhscoeoim.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpuZWhscXpwcnR3dmhzY29lb2ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0MjQzNzUsImV4cCI6MjA2MTAwMDM3NX0.XsjXAE-mt7RMIncAJuO6XSdZxhQQv79uCUPPVU9mF2A';
     
-    const sb = window.supabase.createClient(supabaseUrl, supabaseKey, {
+    const sb = supabase.createClient(supabaseUrl, supabaseKey, {
         auth: {
             flowType: 'pkce',
             autoRefreshToken: true,
@@ -69,7 +69,7 @@ async function handleEmailVerification() {
   
   if (type === 'signup' && token) {
     try {
-      const { error } = await window.supabase.auth.verifyOtp({
+      const { error } = await supabase.auth.verifyOtp({
         type: 'signup',
         token_hash: token
       });
@@ -93,7 +93,7 @@ async function handleEmailVerification() {
 // Fungsi login
 async function handleLogin(email, password) {
   try {
-    const { error } = await window.supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
@@ -118,7 +118,7 @@ async function handleLogin(email, password) {
 // Fungsi logout
 async function handleLogout() {
   try {
-    const { error } = await window.supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
     if (error) throw error;
     showLoginForm();
   } catch (error) {
@@ -129,7 +129,7 @@ async function handleLogout() {
 // Kirim ulang email verifikasi
 async function resendVerificationEmail(email) {
   try {
-    const { error } = await window.supabase.auth.resend({
+    const { error } = await supabase.auth.resend({
       type: 'signup',
       email,
       options: {
@@ -197,7 +197,7 @@ logoutBtn.addEventListener('click', handleLogout);
 // ======================
 async function loadProducts() {
   try {
-    const { data: products, error } = await window.supabase
+    const { data: products, error } = await supabase
       .from('products')
       .select('*')
       .order('created_at', { ascending: false });
@@ -235,7 +235,7 @@ function renderProducts(products) {
     btn.addEventListener('click', async () => {
       if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
         try {
-          const { error } = await window.supabase
+          const { error } = await supabase
             .from('products')
             .delete()
             .eq('id', btn.dataset.id);
@@ -253,7 +253,7 @@ function renderProducts(products) {
 // ======================
 // 7. PANTAU PERUBAHAN SESSION
 // ======================
-window.supabase.auth.onAuthStateChange((event, session) => {
+supabase.auth.onAuthStateChange((event, session) => {
   console.log('Auth state changed:', event);
   switch (event) {
     case 'SIGNED_IN':
