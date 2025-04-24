@@ -1,42 +1,32 @@
 // ======================
 // 1. INISIALISASI SUPABASE
 // ======================
-// Tunggu sampai DOM dan semua resources siap
-document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Pastikan Supabase SDK sudah terload
-    if (typeof supabase === 'undefined') {
-        console.error('Supabase SDK belum terload!');
-        return;
+
+const SUPABASE_URL = 'https://znehlqzprtwvhscoeoim.supabase.co'; // GANTI
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpuZWhscXpwcnR3dmhzY29lb2ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0MjQzNzUsImV4cCI6MjA2MTAwMDM3NX0.XsjXAE-mt7RMIncAJuO6XSdZxhQQv79uCUPPVU9mF2A'; // GANTI
+
+// Inisialisasi client Supabase
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+      flowType: 'pkce',
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      persistSession: true,
+      storage: localStorage
     }
-
-    // 2. Inisialisasi Client
-    const supabaseUrl = 'https://znehlqzprtwvhscoeoim.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpuZWhscXpwcnR3dmhzY29lb2ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0MjQzNzUsImV4cCI6MjA2MTAwMDM3NX0.XsjXAE-mt7RMIncAJuO6XSdZxhQQv79uCUPPVU9mF2A';
-    
-    const sb = supabase.createClient(supabaseUrl, supabaseKey, {
-        auth: {
-            flowType: 'pkce',
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
-            persistSession: true,
-            storage: localStorage
-        }
-    });
-
-    // 3. Ekspos variabel supabase ke global scope
-    window.supabase = sb;
-
-    // 4. Test Koneksi
-    try {
-        const { data, error } = await sb.auth.getUser();
-        if (error) throw error;
-        
-        console.log('Supabase terhubung!', data.user);
-        initAuth(); // Lanjutkan inisialisasi
-    } catch (error) {
-        console.error('Koneksi gagal:', error);
-    }
-});
+  });
+  
+  // ======================
+  // 2. ELEMEN DOM
+  // ======================
+  const loginForm = document.getElementById('login-form');
+  const adminEmail = document.getElementById('admin-email');
+  const adminPassword = document.getElementById('admin-password');
+  const loginError = document.getElementById('login-error');
+  const loginContainer = document.getElementById('login-container');
+  const adminContent = document.getElementById('admin-content');
+  const logoutBtn = document.getElementById('logout-btn');
+  const verifyMessage = document.getElementById('verify-message');
   
   // ======================
   // 3. FUNGSI AUTH UTAMA
