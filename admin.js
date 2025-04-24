@@ -43,24 +43,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ======================
   
   // Fungsi initAuth yang diperbaiki
- async function initAuth() {
-    try {
-        // Gunakan window.supabase di sini
-        const { data: { user }, error } = await window.supabase.auth.getUser();
-        
-        if (error) throw error;
-        
-        if (user) {
-            showAdminPanel();
-            loadProducts();
-        } else {
-            showLoginForm();
-        }
-    } catch (error) {
-        console.error('Auth error:', error);
-        showLoginForm();
+  async function initAuth() {
+    // Pastikan supabase sudah terinisialisasi
+    if (!supabase) {
+      console.error('Supabase client belum terinisialisasi!');
+      return;
     }
-}
+  
+    try {
+      await handleEmailVerification();
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error) throw error;
+      
+      if (user) {
+        showAdminPanel();
+      } else {
+        showLoginForm();
+      }
+    } catch (error) {
+      console.error('Init auth error:', error);
+      showLoginForm();
+    }
+  }
 // Handle verifikasi email dari link
 async function handleEmailVerification() {
   const urlParams = new URLSearchParams(window.location.search);
