@@ -1,4 +1,19 @@
+const ADMIN_PASSWORD = "R3z@Sh0p"; // Ganti dengan password kuat
 
+function checkAuth() {
+  const savedPassword = localStorage.getItem('adminPassword');
+  if (savedPassword !== ADMIN_PASSWORD) {
+    const password = prompt("Masukkan password admin:");
+    if (password === ADMIN_PASSWORD) {
+      localStorage.setItem('adminPassword', password);
+    } else {
+      window.location.href = "/"; // Redirect ke homepage
+    }
+  }
+}
+
+// Panggil saat halaman admin load
+checkAuth();
 
 document.addEventListener('DOMContentLoaded', function() {
     // Inisialisasi tab
