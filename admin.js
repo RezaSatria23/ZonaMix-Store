@@ -116,6 +116,7 @@ function initEventListeners() {
         const description = document.getElementById('product-description').value.trim();
         const imageUrl = document.getElementById('product-image').value.trim();
         const isValidImage = await validateImageUrl(imageUrl);
+        const type = document.getElementById('product-type').value;
         const stock = parseInt(document.getElementById('product-stock').value);
         const messageElement = document.getElementById('product-message');
 
@@ -131,6 +132,7 @@ function initEventListeners() {
                     name, 
                     price, 
                     category,
+                    type,
                     description, 
                     image_url: imageUrl,
                     stock
@@ -818,4 +820,20 @@ async function deleteProduct(productId) {
         console.error('Error deleting product:', error);
         alert('Gagal menghapus produk');
     }
+}
+// Fungsi untuk menambahkan produk
+async function addProduct(productData) {
+  const { data, error } = await supabase
+    .from('products')
+    .insert([{ 
+      ...productData,
+      is_published: true  // Otomatis publish
+    }])
+    .select();
+
+  if (error) {
+    console.error('Error adding product:', error);
+    return null;
+  }
+  return data[0];
 }
