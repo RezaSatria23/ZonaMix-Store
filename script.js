@@ -1,51 +1,14 @@
+// Konfigurasi Supabase
+const supabaseUrl = 'https://znehlqzprtwvhscoeoim.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpuZWhscXpwcnR3dmhzY29lb2ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0MjQzNzUsImV4cCI6MjA2MTAwMDM3NX0.XsjXAE-mt7RMIncAJuO6XSdZxhQQv79uCUPPVU9mF2A';
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// Cek jika admin (sederhana)
-const isAdmin = window.location.href.includes('admin.html');
-
-// Jika di halaman utama, load produk dari localStorage
-if (!isAdmin && window.location.pathname.includes('index.html')) {
-    const storedProducts = JSON.parse(localStorage.getItem('luxuryStoreProducts'));
-    if (storedProducts && storedProducts.length > 0) {
-        products = storedProducts;
-    }
-}
-
-// Simpan pesanan ke localStorage
-function saveOrder(customerData) {
-    const newOrder = {
-        id: Date.now(),
-        date: new Date().toISOString(),
-        customerName: customerData.name,
-        customerEmail: customerData.email,
-        customerPhone: customerData.phone,
-        customerNotes: customerData.notes,
-        products: [...cart],
-        totalAmount: calculateTotal(),
-        status: 'pending'
-    };
-    
-    // Jika ada alamat, tambahkan ke order
-    if (customerData.address) {
-        newOrder.shippingAddress = customerData.address;
-        newOrder.city = customerData.city;
-        newOrder.province = customerData.province;
-        newOrder.postalCode = customerData.postal;
-    }
-    
-    // Simpan ke localStorage
-    let orders = JSON.parse(localStorage.getItem('luxuryStoreOrders')) || [];
-    orders.push(newOrder);
-    localStorage.setItem('luxuryStoreOrders', JSON.stringify(orders));
-    
-    // Kosongkan keranjang
-    cart = [];
-    updateCartCount();
-}
 // Variabel Global
+let products = []; // Array untuk menyimpan produk dari Supabase
 let cart = [];
 let currentCategory = 'all';
 let currentSort = 'default';
-const whatsappNumber = '6281234567890'; // Ganti dengan nomor WhatsApp Anda
+const whatsappNumber = '6281234567890';
 
 // DOM Elements
 const productGrid = document.getElementById('product-grid');
@@ -56,11 +19,12 @@ const notification = document.getElementById('notification');
 const notificationMessage = document.getElementById('notification-message');
 
 // Inisialisasi Aplikasi
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadProducts(); // Load produk dari Supabase
     renderProducts();
     setupEventListeners();
     updateCartCount();
-    loadProducts();
+    setupRealtimeUpdates();
     
     // Sembunyikan preloader setelah 1.5 detik
     setTimeout(() => {
@@ -69,11 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('.preloader').style.display = 'none';
         }, 500);
     }, 1500);
+    // Cek admin (tetap pertahankan fungsi ini)
     if (window.location.search.includes('admin=1')) {
         const adminLogin = confirm('Masuk sebagai admin?');
         if (adminLogin) {
             const password = prompt('Masukkan password admin:');
-            if (password === 'luxury123') { // Ganti dengan password yang lebih aman
+            if (password === 'luxury123') {
                 localStorage.setItem('luxuryStoreAdminLoggedIn', 'true');
                 window.location.href = 'admin.html';
             } else {
@@ -82,13 +47,87 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+// Fungsi untuk memuat produk dari Supabase
+async function loadProducts() {
+    try {
+        showLoadingState();
+        
+        const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('is_published', true) // Hanya ambil yang dipublish
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        products = data || [];
+        
+        // Simpan ke localStorage sebagai fallback
+        localStorage.setItem('luxuryStoreProducts', JSON.stringify(products));
+        
+        hideLoadingState();
+        return products;
+    } catch (error) {
+        console.error('Error loading products:', error);
+        
+        // Fallback ke localStorage jika Supabase error
+        const storedProducts = JSON.parse(localStorage.getItem('luxuryStoreProducts'));
+        if (storedProducts) {
+            products = storedProducts;
+            showNotification('Menggunakan data offline', 'warning');
+        } else {
+            showErrorState();
+        }
+        
+        return [];
+    }
+}
+function showLoadingState() {
+    document.getElementById('product-grid').innerHTML = `
+        <div class="loading-state">
+            <i class="fas fa-spinner fa-spin"></i> Memuat produk...
+        </div>
+    `;
+}
+
+function hideLoadingState() {
+    const loadingElement = document.querySelector('.loading-state');
+    if (loadingElement) loadingElement.remove();
+}
+
+function showErrorState() {
+    document.getElementById('product-grid').innerHTML = `
+        <div class="error-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            Gagal memuat produk. Silakan refresh halaman.
+        </div>
+    `;
+}
+
+// Setup realtime listener untuk update produk
+function setupRealtimeUpdates() {
+    const channel = supabase
+        .channel('products')
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'products'
+        }, async (payload) => {
+            // Reload produk ketika ada perubahan
+            await loadProducts();
+            renderProducts();
+        })
+        .subscribe();
+
+    return channel;
+}
 
 // Render Produk dengan Filter dan Sorting
-function renderProducts(products) {
+function renderProducts(productsToRender = products) {
     // Filter produk berdasarkan kategori
     let filteredProducts = currentCategory === 'all' 
-        ? [...products] 
-        : products.filter(product => product.category === currentCategory);
+        ? [...productsToRender] 
+        : productsToRender.filter(product => product.category === currentCategory);
     
     // Sort produk
     filteredProducts = sortProducts(filteredProducts, currentSort);
@@ -96,19 +135,32 @@ function renderProducts(products) {
     // Render produk
     productGrid.innerHTML = '';
     
+    if (filteredProducts.length === 0) {
+        productGrid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-box-open"></i>
+                Tidak ada produk yang tersedia
+            </div>
+        `;
+        return;
+    }
+    
     filteredProducts.forEach(product => {
         const productCard = document.createElement('div');
         productCard.className = 'product-card';
         productCard.innerHTML = `
-            ${product.type === 'physical' ? `<div class="product-badge">Fisik</div>` : `<div class="product-badge">Digital</div>`}
+            <div class="product-badge">${product.type === 'physical' ? 'Fisik' : 'Digital'}</div>
             <div class="product-image-container">
-                <img src="${product.image}" alt="${product.name}" class="product-image">
+                <img src="${product.image_url || 'https://via.placeholder.com/300'}" 
+                     alt="${product.name}" 
+                     class="product-image"
+                     onerror="this.src='https://via.placeholder.com/300?text=Gambar+Tidak+Tersedia'">
             </div>
             <div class="product-info">
-                <span class="product-category">${product.category.toUpperCase()}</span>
+                <span class="product-category">${product.category?.toUpperCase() || 'UMUM'}</span>
                 <h3 class="product-title">${product.name}</h3>
-                <p class="product-description">${product.description}</p>
-                <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
+                <p class="product-description">${product.description || 'Tidak ada deskripsi'}</p>
+                <div class="product-price">Rp ${product.price?.toLocaleString('id-ID') || '0'}</div>
                 <button class="add-to-cart" data-id="${product.id}">
                     <i class="fas fa-shopping-bag"></i> Tambah ke Keranjang
                 </button>
@@ -236,9 +288,14 @@ function setupEventListeners() {
     });
 }
 
-// Fungsi Keranjang
+// Fungsi untuk menambahkan ke keranjang
 function addToCart(productId) {
     const product = products.find(p => p.id === productId);
+    if (!product) {
+        showNotification('Produk tidak ditemukan', 'error');
+        return;
+    }
+
     const existingItem = cart.find(item => item.id === productId);
     
     if (existingItem) {
@@ -249,14 +306,16 @@ function addToCart(productId) {
             name: product.name,
             price: product.price,
             quantity: 1,
-            type: product.type,
-            category: product.category
+            type: product.type || 'physical', // Default ke physical jika tidak ada
+            category: product.category || 'general',
+            image_url: product.image_url
         });
     }
     
     updateCartCount();
     showNotification(`${product.name} telah ditambahkan ke keranjang`);
 }
+
 
 function removeFromCart(productId) {
     cart = cart.filter(item => item.id !== productId);
@@ -286,6 +345,7 @@ function updateQuantity(productId, isIncrease) {
     }
 }
 
+// Update renderCartItems untuk menangani image_url
 function renderCartItems() {
     const cartItemsEl = document.getElementById('cart-items');
     const cartTotalEl = document.getElementById('cart-total');
@@ -298,14 +358,19 @@ function renderCartItems() {
         const itemTotal = item.price * item.quantity;
         total += itemTotal;
         
+        const product = products.find(p => p.id === item.id) || item;
+        
         const cartItemEl = document.createElement('div');
         cartItemEl.className = 'cart-item';
         cartItemEl.setAttribute('data-id', item.id);
         cartItemEl.innerHTML = `
-            <img src="${products.find(p => p.id === item.id).image}" alt="${item.name}" class="cart-item-image">
+            <img src="${product.image_url || 'https://via.placeholder.com/100'}" 
+                 alt="${item.name}" 
+                 class="cart-item-image"
+                 onerror="this.src='https://via.placeholder.com/100?text=Gambar'">
             <div class="cart-item-details">
                 <div class="cart-item-title">${item.name}</div>
-                <div class="cart-item-category">${item.category.toUpperCase()}</div>
+                <div class="cart-item-category">${item.category?.toUpperCase() || 'UMUM'}</div>
                 <div class="cart-item-price">Rp ${item.price.toLocaleString('id-ID')}</div>
             </div>
             <div class="cart-item-controls">
@@ -457,4 +522,49 @@ function hasPhysicalProducts() {
 
 function calculateTotal() {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+}
+// Simpan pesanan ke Supabase (jika online) atau localStorage (jika offline)
+async function saveOrder(customerData) {
+    const newOrder = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        customer_name: customerData.name,
+        customer_email: customerData.email,
+        customer_phone: customerData.phone,
+        customer_notes: customerData.notes,
+        products: cart,
+        total_amount: calculateTotal(),
+        status: 'pending'
+    };
+    
+    // Tambahkan alamat jika ada produk fisik
+    if (hasPhysicalProducts()) {
+        newOrder.shipping_address = customerData.address;
+        newOrder.city = customerData.city;
+        newOrder.province = customerData.province;
+        newOrder.postal_code = customerData.postal;
+    }
+    
+    try {
+        // Coba simpan ke Supabase terlebih dahulu
+        const { data, error } = await supabase
+            .from('orders')
+            .insert([newOrder])
+            .select();
+            
+        if (error) throw error;
+        
+        console.log('Order saved to Supabase:', data);
+    } catch (error) {
+        console.error('Error saving to Supabase, fallback to localStorage:', error);
+        // Fallback ke localStorage
+        let orders = JSON.parse(localStorage.getItem('luxuryStoreOrders')) || [];
+        orders.push(newOrder);
+        localStorage.setItem('luxuryStoreOrders', JSON.stringify(orders));
+    }
+    
+    // Kosongkan keranjang
+    cart = [];
+    updateCartCount();
+    showNotification('Pesanan berhasil disimpan!');
 }

@@ -1809,3 +1809,34 @@ body {
         margin-top: 30px;
     }
 }
+/* State Management */
+.loading-state, .empty-state, .error-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.loading-state i, .empty-state i, .error-state i {
+    font-size: 2rem;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.error-state {
+    color: #f44336;
+}
+
+.empty-state {
+    color: #2196f3;
+}
+
+.fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
