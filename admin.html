@@ -727,74 +727,94 @@
         </nav>
         <!-- Replace the existing #add-product-tab section with this code -->
         <div class="tab-content active" id="add-product-tab">
-            <div class="full-width-form">
-                <h2><i class="fas fa-plus"></i> Tambah Produk Baru</h2>
-                <form id="add-product-form">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="product-name">Nama Produk</label>
-                            <input type="text" id="product-name" required>
+            <div class="form-container-wrapper">
+                <!-- Form Column -->
+                <div class="form-column">
+                    <h2><i class="fas fa-plus"></i> Tambah Produk Baru</h2>
+                    <form id="add-product-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="product-name">Nama Produk</label>
+                                <input type="text" id="product-name" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="product-price">Harga (Rp)</label>
+                                <input type="number" id="product-price" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="product-category">Kategori</label>
+                                <select id="product-category" required>
+                                    <option value="">Pilih Kategori</option>
+                                    <option value="fashion">Fashion</option>
+                                    <option value="electronics">Elektronik</option>
+                                    <option value="digital">Digital</option>
+                                    <option value="home">Rumah</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="product-stock">Stok Tersedia</label>
+                                <input type="number" id="product-stock" min="0" value="1" required>
+                            </div>
+                            
+                            <div class="form-group full-width">
+                                <label for="product-description">Deskripsi Produk</label>
+                                <textarea id="product-description" rows="4"></textarea>
+                            </div>
+                            
+                            <div class="form-group full-width">
+                                <label for="product-image">Gambar Produk (URL)</label>
+                                <input type="url" id="product-image" required>
+                            </div>
                         </div>
                         
-                        <div class="form-group">
-                            <label for="product-price">Harga (Rp)</label>
-                            <input type="number" id="product-price" required>
-                        </div>
+                        <button type="submit" class="btn-submit">
+                            <i class="fas fa-save"></i> Simpan Produk
+                        </button>
                         
-                        <div class="form-group">
-                            <label for="product-category">Kategori</label>
-                            <select id="product-category" required>
-                                <option value="">Pilih Kategori</option>
-                                <option value="fashion">Fashion</option>
-                                <option value="electronics">Elektronik</option>
-                                <option value="digital">Digital</option>
-                                <option value="home">Rumah</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="product-stock">Stok Tersedia</label>
-                            <input type="number" id="product-stock" min="0" value="1" required>
-                        </div>
-                        
-                        <div class="form-group full-width">
-                            <label for="product-description">Deskripsi Produk</label>
-                            <textarea id="product-description" rows="4"></textarea>
-                        </div>
-                        
-                        <div class="form-group full-width">
-                            <label for="product-image">Gambar Produk (URL)</label>
-                            <input type="url" id="product-image" required>
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="btn-submit">
-                        <i class="fas fa-save"></i> Simpan Produk
-                    </button>
-                    <div id="product-message" class="message"></div>
-
-                    <div class="product-summary" id="product-summary">
+                        <div id="product-message" class="message"></div>
+                    </form>
+                </div>
+                
+                <!-- Summary Column -->
+                <div class="summary-column">
+                    <div class="product-summary-card">
                         <h3><i class="fas fa-file-alt"></i> Ringkasan Produk</h3>
                         <div class="summary-placeholder">
-                            <p>Produk yang baru ditambahkan akan muncul di sini</p>
+                            <i class="fas fa-box-open"></i>
+                            <p>Data produk akan muncul di sini setelah disimpan</p>
                         </div>
-                        <div class="summary-content" id="summary-content" style="display: none;">
-                            <div class="summary-image-container">
-                                <img id="summary-image" src="" alt="Product Image">
+                        <div class="summary-content" id="summary-content">
+                            <div class="summary-image">
+                                <img id="summary-image" src="" alt="Preview Produk">
                             </div>
                             <div class="summary-details">
                                 <h4 id="summary-name"></h4>
-                                <p><strong>Harga:</strong> Rp <span id="summary-price"></span></p>
-                                <p><strong>Kategori:</strong> <span id="summary-category"></span></p>
-                                <p><strong>Stok:</strong> <span id="summary-stock"></span></p>
-                                <p><strong>Deskripsi:</strong> <span id="summary-description"></span></p>
+                                <div class="detail-row">
+                                    <span class="detail-label">Harga:</span>
+                                    <span class="detail-value" id="summary-price"></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Kategori:</span>
+                                    <span class="detail-value" id="summary-category"></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Stok:</span>
+                                    <span class="detail-value" id="summary-stock"></span>
+                                </div>
+                                <div class="detail-row full-width">
+                                    <span class="detail-label">Deskripsi:</span>
+                                    <span class="detail-value" id="summary-description"></span>
+                                </div>
                             </div>
                             <button id="confirm-product" class="btn-confirm">
                                 <i class="fas fa-check-circle"></i> Konfirmasi Produk
                             </button>
                         </div>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
         <!-- Replace the existing #manage-products-tab section with this code -->

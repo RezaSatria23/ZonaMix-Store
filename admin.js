@@ -106,6 +106,7 @@ function initEventListeners() {
     });
 
     // Add Product Form
+    // Update the form submission handler
     document.getElementById('add-product-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -116,7 +117,7 @@ function initEventListeners() {
         const image_url = document.getElementById('product-image').value.trim();
         const stock = parseInt(document.getElementById('product-stock').value);
         const messageElement = document.getElementById('product-message');
-    
+
         try {
             const { data, error } = await supabase
                 .from('products')
@@ -129,9 +130,9 @@ function initEventListeners() {
                     stock
                 }])
                 .select();
-    
+
             if (error) throw error;
-    
+
             // Show product summary
             showProductSummary(data[0]);
             
@@ -146,42 +147,45 @@ function initEventListeners() {
             messageElement.style.display = 'block';
         }
     });
+
     // Function to show product summary
-function showProductSummary(product) {
-    document.querySelector('.summary-placeholder').style.display = 'none';
-    const summaryContent = document.getElementById('summary-content');
-    
-    // Populate summary data
-    document.getElementById('summary-name').textContent = product.name;
-    document.getElementById('summary-price').textContent = product.price.toLocaleString('id-ID');
-    document.getElementById('summary-category').textContent = product.category;
-    document.getElementById('summary-stock').textContent = product.stock;
-    document.getElementById('summary-description').textContent = product.description || 'Tidak ada deskripsi';
-    document.getElementById('summary-image').src = product.image_url;
-    
-    // Show summary
-    summaryContent.style.display = 'block';
-    
-    // Store the product ID in the confirm button
-    document.getElementById('confirm-product').dataset.productId = product.id;
-}
+    function showProductSummary(product) {
+        document.querySelector('.summary-placeholder').style.display = 'none';
+        const summaryContent = document.getElementById('summary-content');
+        
+        // Populate summary data
+        document.getElementById('summary-name').textContent = product.name;
+        document.getElementById('summary-price').textContent = 'Rp ' + product.price.toLocaleString('id-ID');
+        document.getElementById('summary-category').textContent = product.category;
+        document.getElementById('summary-stock').textContent = product.stock;
+        document.getElementById('summary-description').textContent = product.description || 'Tidak ada deskripsi';
+        document.getElementById('summary-image').src = product.image_url;
+        
+        // Show summary
+        summaryContent.style.display = 'block';
+        
+        // Store the product ID in the confirm button
+        document.getElementById('confirm-product').dataset.productId = product.id;
+    }
 
-// Confirm product button handler
-document.getElementById('confirm-product').addEventListener('click', () => {
-    // You can add additional confirmation logic here if needed
-    alert('Produk telah dikonfirmasi dan disimpan!');
-    
-    // Reset the form and summary
-    document.getElementById('add-product-form').reset();
-    document.querySelector('.summary-placeholder').style.display = 'block';
-    document.getElementById('summary-content').style.display = 'none';
-    document.getElementById('product-message').style.display = 'none';
-    
-    // Reload products in manage tab
-    loadProducts();
-});
-
-    // Product Search
+    // Confirm product button handler
+    document.getElementById('confirm-product').addEventListener('click', () => {
+        const productId = document.getElementById('confirm-product').dataset.productId;
+        
+        // You can add additional confirmation logic here if needed
+        alert('Produk telah dikonfirmasi dan disimpan!');
+        
+        // Reset the form and summary
+        document.getElementById('add-product-form').reset();
+        document.querySelector('.summary-placeholder').style.display = 'block';
+        document.getElementById('summary-content').style.display = 'none';
+        document.getElementById('product-message').style.display = 'none';
+        
+        // Reload products in manage tab
+        if (document.querySelector('.tab-btn[data-tab="manage-products"]').classList.contains('active')) {
+            loadProducts();
+        }
+    });
    // Add event listeners for search and pagination
 document.getElementById('product-search').addEventListener('input', (e) => {
     const searchTerm = e.target.value.trim().toLowerCase();
