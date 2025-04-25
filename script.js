@@ -511,23 +511,3 @@ function hasPhysicalProducts() {
 function calculateTotal() {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 }
-// Fungsi untuk memuat produk dari Supabase
-async function loadProducts() {
-    try {
-      const { data: products, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-  
-      if (error) throw error;
-  
-      renderProducts(products || []);
-    } catch (error) {
-      console.error('Error loading products:', error);
-      document.getElementById('product-grid').innerHTML = `
-        <div class="error-message">
-          Gagal memuat produk. Silakan refresh halaman.
-        </div>
-      `;
-    }
-  }
