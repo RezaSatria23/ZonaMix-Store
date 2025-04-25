@@ -212,6 +212,7 @@ function initEventListeners() {
         document.getElementById('summary-name').textContent = product.name;
         document.getElementById('summary-price').textContent = 'Rp ' + product.price.toLocaleString('id-ID');
         document.getElementById('summary-category').textContent = product.category;
+        document.getElementById('summary-type').textContent = product.type;
         document.getElementById('summary-stock').textContent = product.stock;
         document.getElementById('summary-description').textContent = product.description || 'Tidak ada deskripsi';
         
@@ -827,6 +828,7 @@ async function addProduct(productData) {
     .from('products')
     .insert([{ 
       ...productData,
+      type: 'general',
       is_published: true  // Otomatis publish
     }])
     .select();
