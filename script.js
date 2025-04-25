@@ -41,20 +41,6 @@ function saveOrder(customerData) {
     cart = [];
     updateCartCount();
 }
-// Fungsi untuk mengambil produk yang dipublish
-async function loadPublishedProducts() {
-  const { data: products, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('is_published', true)  // Hanya ambil yang dipublish
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error loading products:', error);
-    return [];
-  }
-  return products;
-}
 // Data Produk dengan Kategori
 const products = [
     {
@@ -146,7 +132,7 @@ const notification = document.getElementById('notification');
 const notificationMessage = document.getElementById('notification-message');
 
 // Inisialisasi Aplikasi
-document.addEventListener('DOMContentLoaded', async() => {
+document.addEventListener('DOMContentLoaded', () => {
     renderProducts();
     setupEventListeners();
     updateCartCount();
@@ -173,17 +159,42 @@ document.addEventListener('DOMContentLoaded', async() => {
 });
 
 // Render Produk dengan Filter dan Sorting
-function renderProducts(products) {
-    const container = document.getElementById('product-container');
-    container.innerHTML = products.map(product => `
-      <div class="product-card">
-        <img src="${product.image_url}" alt="${product.name}">
-        <h3>${product.name}</h3>
-        <p>Rp ${product.price.toLocaleString('id-ID')}</p>
-        <button class="buy-btn" data-id="${product.id}">Beli</button>
-      </div>
-    `).join('');
-  }
+function renderProducts() {
+    // Filter produk berdasarkan kategori
+    let filteredProducts = currentCategory === 'all' 
+        ? [...products] 
+        : products.filter(product => product.category === currentCategory);
+    
+    // Sort produk
+    filteredProducts = sortProducts(filteredProducts, currentSort);
+    
+    // Render produk
+    productGrid.innerHTML = '';
+    
+    filteredProducts.forEach(product => {
+        const productCard = document.createElement('div');
+        productCard.className = 'product-card';
+        productCard.innerHTML = `
+            ${product.type === 'physical' ? `<div class="product-badge">Fisik</div>` : `<div class="product-badge">Digital</div>`}
+            <div class="product-image-container">
+                <img src="${product.image}" alt="${product.name}" class="product-image">
+            </div>
+            <div class="product-info">
+                <span class="product-category">${product.category.toUpperCase()}</span>
+                <h3 class="product-title">${product.name}</h3>
+                <p class="product-description">${product.description}</p>
+                <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
+                <button class="add-to-cart" data-id="${product.id}">
+                    <i class="fas fa-shopping-bag"></i> Tambah ke Keranjang
+                </button>
+            </div>
+        `;
+        productGrid.appendChild(productCard);
+    });
+    
+    // Update product count
+    document.getElementById('product-count').textContent = filteredProducts.length;
+}
 
 // Fungsi Sorting Produk
 function sortProducts(products, sortType) {
