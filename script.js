@@ -55,6 +55,82 @@ async function loadPublishedProducts() {
   }
   return products;
 }
+// Data Produk dengan Kategori
+const products = [
+    {
+        id: 1,
+        name: "Sepatu Sneakers Premium",
+        price: 1250000,
+        image: "images/product1.jpg",
+        description: "Sepatu sneakers dari kulit asli dengan sol karet yang nyaman",
+        category: "fashion",
+        type: "physical"
+    },
+    {
+        id: 2,
+        name: "Smartwatch Luxe Edition",
+        price: 3500000,
+        image: "images/product2.jpg",
+        description: "Smartwatch dengan layar AMOLED dan fitur kesehatan lengkap",
+        category: "electronics",
+        type: "physical"
+    },
+    {
+        id: 3,
+        name: "Kursi Ergonomis Premium",
+        price: 2800000,
+        image: "images/product3.jpg",
+        description: "Kursi kantor ergonomis dengan material kulit dan penyangga pinggang",
+        category: "home",
+        type: "physical"
+    },
+    {
+        id: 4,
+        name: "E-Book Exclusive Collection",
+        price: 250000,
+        image: "images/product4.jpg",
+        description: "Koleksi 50 e-book bestseller dalam berbagai kategori",
+        category: "digital",
+        type: "digital"
+    },
+    {
+        id: 5,
+        name: "Tas Kulit Eksklusif",
+        price: 4500000,
+        image: "images/product5.jpg",
+        description: "Tas kulit handmade dengan jahitan premium dan finishing sempurna",
+        category: "fashion",
+        type: "physical"
+    },
+    {
+        id: 6,
+        name: "Software Design Bundle",
+        price: 1500000,
+        image: "images/product6.jpg",
+        description: "Paket lengkap software desain grafis dan video editing",
+        category: "digital",
+        type: "digital"
+    },
+    {
+        id: 7,
+        name: "Headphone Noise Cancelling",
+        price: 3200000,
+        image: "images/product7.jpg",
+        description: "Headphone dengan teknologi noise cancelling terbaru",
+        category: "electronics",
+        type: "physical"
+    },
+    {
+        id: 8,
+        name: "Lampu Meja Designer",
+        price: 1800000,
+        image: "images/product8.jpg",
+        description: "Lampu meja desain eksklusif dengan material metal dan marble",
+        category: "home",
+        type: "physical"
+    }
+];
+
 // Variabel Global
 let cart = [];
 let currentCategory = 'all';
@@ -71,9 +147,10 @@ const notificationMessage = document.getElementById('notification-message');
 
 // Inisialisasi Aplikasi
 document.addEventListener('DOMContentLoaded', async() => {
+    renderProducts();
     setupEventListeners();
     updateCartCount();
-    const products = await loadPublishedProducts();
+    
     // Sembunyikan preloader setelah 1.5 detik
     setTimeout(() => {
         document.querySelector('.preloader').classList.add('fade-out');
@@ -81,8 +158,18 @@ document.addEventListener('DOMContentLoaded', async() => {
             document.querySelector('.preloader').style.display = 'none';
         }, 500);
     }, 1500);
-    
-    renderProducts(products);
+    if (window.location.search.includes('admin=1')) {
+        const adminLogin = confirm('Masuk sebagai admin?');
+        if (adminLogin) {
+            const password = prompt('Masukkan password admin:');
+            if (password === 'luxury123') { // Ganti dengan password yang lebih aman
+                localStorage.setItem('luxuryStoreAdminLoggedIn', 'true');
+                window.location.href = 'admin.html';
+            } else {
+                alert('Password salah!');
+            }
+        }
+    }
 });
 
 // Render Produk dengan Filter dan Sorting
@@ -419,25 +506,3 @@ function hasPhysicalProducts() {
 function calculateTotal() {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 }
-// Di script.js
-const channel = supabase
-  .channel('product-changes')
-  .on('postgres_changes', {
-    event: 'INSERT',
-    schema: 'public',
-    table: 'products',
-    filter: 'is_published=eq.true'
-  }, (payload) => {
-    // Tambahkan produk baru ke UI
-    const productContainer = document.getElementById('product-container');
-    const newProductHtml = `
-      <div class="product-card">
-        <img src="${payload.new.image_url}" alt="${payload.new.name}">
-        <h3>${payload.new.name}</h3>
-        <p>Rp ${payload.new.price.toLocaleString('id-ID')}</p>
-        <button class="buy-btn" data-id="${payload.new.id}">Beli</button>
-      </div>
-    `;
-    productContainer.insertAdjacentHTML('afterbegin', newProductHtml);
-  })
-  .subscribe();
