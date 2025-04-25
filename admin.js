@@ -47,7 +47,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         showLoginForm();
     }
 });
-
+// Fungsi simpan produk yang sudah diperbaiki
+async function saveProduct(productData) {
+    try {
+      // Pastikan is_published tidak NULL
+      const completeData = {
+        ...productData,
+        is_published: true // Langsung set TRUE
+      };
+  
+      const { data, error } = await supabase
+        .from('products')
+        .insert([completeData])
+        .select();
+  
+      if (error) throw error;
+  
+      console.log('Produk tersimpan:', data[0]);
+      return data[0];
+    } catch (error) {
+      console.error('Error menyimpan produk:', error.message);
+      return null;
+    }
+  }
 // ======================
 // 3. FUNGSI BANTUAN
 // ======================
@@ -119,6 +141,13 @@ function initEventListeners() {
         const type = document.getElementById('product-type').value;
         const stock = parseInt(document.getElementById('product-stock').value);
         const messageElement = document.getElementById('product-message');
+
+        const savedProduct = await saveProduct(productData);
+
+        if (savedProduct) {
+            showSuccessMessage('Produk berhasil dipublish!');
+            resetForm();
+        }
 
         if (!isValidImage) {
             document.getElementById('image-error').style.display = 'block';
@@ -422,9 +451,9 @@ async function showEditModal(productId) {
                                 <label>Kategori</label>
                                 <select id="edit-product-category" required>
                                     <option value="fashion" ${product.category === 'fashion' ? 'selected' : ''}>Fashion</option>
-                                    <option value="electronics" ${product.category === 'electronics' ? 'selected' : ''}>Elektronik</option>
-                                    <option value="digital" ${product.category === 'digital' ? 'selected' : ''}>Digital</option>
-                                    <option value="home" ${product.category === 'home' ? 'selected' : ''}>Rumah</option>
+                                    <option value="aksesoris" ${product.category === 'aksesoris' ? 'selected' : ''}>Aksesoris</option>
+                                    <option value="template" ${product.category === 'template' ? 'selected' : ''}>Template</option>
+                                    <option value="snack" ${product.category === 'snack' ? 'selected' : ''}>Aneka Sncak</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -837,20 +866,4 @@ async function deleteProduct(productId) {
         console.error('Error deleting product:', error);
         alert('Gagal menghapus produk');
     }
-}
-// Fungsi untuk menambahkan produk
-async function addProduct(productData) {
-  const { data, error } = await supabase
-    .from('products')
-    .insert([{ 
-      ...productData,
-      is_published: true  // Otomatis publish
-    }])
-    .select();
-
-  if (error) {
-    console.error('Error adding product:', error);
-    return null;
-  }
-  return data[0];
 }

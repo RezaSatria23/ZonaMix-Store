@@ -41,82 +41,6 @@ function saveOrder(customerData) {
     cart = [];
     updateCartCount();
 }
-// Data Produk dengan Kategori
-const products = [
-    {
-        id: 1,
-        name: "Sepatu Sneakers Premium",
-        price: 1250000,
-        image: "images/product1.jpg",
-        description: "Sepatu sneakers dari kulit asli dengan sol karet yang nyaman",
-        category: "fashion",
-        type: "physical"
-    },
-    {
-        id: 2,
-        name: "Smartwatch Luxe Edition",
-        price: 3500000,
-        image: "images/product2.jpg",
-        description: "Smartwatch dengan layar AMOLED dan fitur kesehatan lengkap",
-        category: "electronics",
-        type: "physical"
-    },
-    {
-        id: 3,
-        name: "Kursi Ergonomis Premium",
-        price: 2800000,
-        image: "images/product3.jpg",
-        description: "Kursi kantor ergonomis dengan material kulit dan penyangga pinggang",
-        category: "home",
-        type: "physical"
-    },
-    {
-        id: 4,
-        name: "E-Book Exclusive Collection",
-        price: 250000,
-        image: "images/product4.jpg",
-        description: "Koleksi 50 e-book bestseller dalam berbagai kategori",
-        category: "digital",
-        type: "digital"
-    },
-    {
-        id: 5,
-        name: "Tas Kulit Eksklusif",
-        price: 4500000,
-        image: "images/product5.jpg",
-        description: "Tas kulit handmade dengan jahitan premium dan finishing sempurna",
-        category: "fashion",
-        type: "physical"
-    },
-    {
-        id: 6,
-        name: "Software Design Bundle",
-        price: 1500000,
-        image: "images/product6.jpg",
-        description: "Paket lengkap software desain grafis dan video editing",
-        category: "digital",
-        type: "digital"
-    },
-    {
-        id: 7,
-        name: "Headphone Noise Cancelling",
-        price: 3200000,
-        image: "images/product7.jpg",
-        description: "Headphone dengan teknologi noise cancelling terbaru",
-        category: "electronics",
-        type: "physical"
-    },
-    {
-        id: 8,
-        name: "Lampu Meja Designer",
-        price: 1800000,
-        image: "images/product8.jpg",
-        description: "Lampu meja desain eksklusif dengan material metal dan marble",
-        category: "home",
-        type: "physical"
-    }
-];
-
 // Variabel Global
 let cart = [];
 let currentCategory = 'all';
@@ -136,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderProducts();
     setupEventListeners();
     updateCartCount();
+    loadProducts();
     
     // Sembunyikan preloader setelah 1.5 detik
     setTimeout(() => {
@@ -159,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Render Produk dengan Filter dan Sorting
-function renderProducts() {
+function renderProducts(products) {
     // Filter produk berdasarkan kategori
     let filteredProducts = currentCategory === 'all' 
         ? [...products] 
@@ -195,6 +120,22 @@ function renderProducts() {
     // Update product count
     document.getElementById('product-count').textContent = filteredProducts.length;
 }
+/ Realtime update
+function setupRealtimeListener() {
+  supabase
+    .channel('product-changes')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'products'
+    }, (payload) => {
+      if (payload.new.is_published !== false) { // Include NULL and TRUE
+        addNewProductToUI(payload.new);
+      }
+    })
+    .subscribe();
+}
+
 
 // Fungsi Sorting Produk
 function sortProducts(products, sortType) {
