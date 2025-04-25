@@ -1,132 +1,136 @@
-// Konfigurasi Supabase
-const supabaseUrl = 'https://znehlqzprtwvhscoeoim.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpuZWhscXpwcnR3dmhzY29lb2ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0MjQzNzUsImV4cCI6MjA2MTAwMDM3NX0.XsjXAE-mt7RMIncAJuO6XSdZxhQQv79uCUPPVU9mF2A';
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+// 1. KONFIGURASI SUPABASE
+const SUPABASE_CONFIG = {
+    url: 'https://znehlqzprtwvhscoeoim.supabase.co',
+    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpuZWhscXpwcnR3dmhzY29lb2ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0MjQzNzUsImV4cCI6MjA2MTAwMDM3NX0.XsjXAE-mt7RMIncAJuO6XSdZxhQQv79uCUPPVU9mF2A',
+    table: 'products'
+};
 
-// Debugging flag
-const DEBUG_MODE = true;
+// 2. INISIALISASI SUPABASE
+const supabase = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
 
-// Variabel Global
-let products = [];
-let cart = [];
+// 3. STATE APLIKASI
+let appState = {
+    products: [],
+    isLoading: true,
+    error: null
+};
 
-// DOM Elements
-const elements = {
+// 4. ELEMEN UTAMA
+const UI = {
     productGrid: document.getElementById('product-grid'),
-    cartModal: document.getElementById('cart-modal'),
     preloader: document.querySelector('.preloader'),
+    cartIcon: document.querySelector('.cart-icon'),
     notification: document.getElementById('notification')
 };
 
-// 1. FUNGSI INISIALISASI
-async function initializeApp() {
-    if (DEBUG_MODE) console.log("Memulai inisialisasi aplikasi...");
+// 5. FUNGSI UTAMA
+async function initApp() {
+    console.log('[App] Initializing application...');
     
     try {
-        // Langsung tampilkan loading state
-        showLoadingState();
+        // Step 1: Load produk
+        console.log('[App] Loading products...');
+        await loadProducts();
         
-        // Step 1: Load produk dari Supabase
-        const productsLoaded = await loadProducts();
-        if (DEBUG_MODE) console.log("Produk yang dimuat:", productsLoaded);
-        
-        if (!productsLoaded || productsLoaded.length === 0) {
-            showEmptyState();
-            return;
-        }
-        
-        // Step 2: Render produk ke UI
-        renderProducts();
-        
-        // Step 3: Setup event listeners
-        setupEventListeners();
+        // Step 2: Render UI
+        console.log('[App] Rendering products...');
+        renderProductList();
         
     } catch (error) {
-        console.error("Error inisialisasi:", error);
-        showErrorState();
+        console.error('[App] Initialization failed:', error);
+        appState.error = error;
+        showErrorUI();
+        
     } finally {
-        // Sembunyikan preloader setelah semua proses selesai
+        // Step 3: Sembunyikan preloader
+        console.log('[App] Hiding preloader...');
         hidePreloader();
     }
 }
 
-// 2. FUNGSI LOAD PRODUK (DENGAN DEBUGGING)
+// 6. FUNGSI LOAD PRODUK
 async function loadProducts() {
-    if (DEBUG_MODE) console.log("Memulai load produk dari Supabase...");
+    console.log('[Products] Attempting to load from Supabase...');
     
     try {
-        // Coba ambil data dari Supabase
+        // Coba ambil dari Supabase
         const { data, error } = await supabase
-            .from('products')
+            .from(SUPABASE_CONFIG.table)
             .select('*')
             .eq('is_published', true)
             .order('created_at', { ascending: false });
 
         if (error) {
-            throw error;
+            throw new Error(`Supabase error: ${error.message}`);
         }
 
-        if (DEBUG_MODE) console.log("Response dari Supabase:", data);
+        console.log('[Products] Data received:', data);
         
-        products = data || [];
+        if (!data || data.length === 0) {
+            console.warn('[Products] No published products found');
+            throw new Error('No published products available');
+        }
         
-        // Simpan ke localStorage sebagai fallback
-        localStorage.setItem('luxuryStoreProducts', JSON.stringify(products));
-        
-        return products;
+        appState.products = data;
+        saveToLocalStorage('products', data);
         
     } catch (error) {
-        console.error("Gagal memuat produk:", error);
+        console.warn('[Products] Fallback to localStorage...');
         
         // Fallback 1: Coba dari localStorage
-        const storedProducts = JSON.parse(localStorage.getItem('luxuryStoreProducts'));
-        if (storedProducts && storedProducts.length > 0) {
-            if (DEBUG_MODE) console.log("Menggunakan produk dari localStorage");
-            products = storedProducts;
-            showNotification('Menggunakan data offline', 'warning');
-            return products;
+        const localProducts = getFromLocalStorage('products');
+        if (localProducts && localProducts.length > 0) {
+            console.log('[Products] Using localStorage data');
+            appState.products = localProducts;
+            showNotification('Using cached data', 'warning');
+            return;
         }
         
-        // Fallback 2: Data dummy jika semua gagal
-        if (DEBUG_MODE) console.log("Menggunakan data dummy");
-        products = getDummyProducts();
-        showNotification('Menggunakan data dummy', 'error');
-        return products;
+        // Fallback 2: Data dummy
+        console.warn('[Products] Using dummy data');
+        appState.products = getDummyProducts();
+        showNotification('Using demo products', 'error');
+        throw error; // Tetap lempar error untuk penanganan UI
     }
 }
 
-// 3. FUNGSI RENDER PRODUK (DENGAN VALIDASI)
-function renderProducts() {
-    if (!elements.productGrid) {
-        console.error("Element product-grid tidak ditemukan!");
+// 7. FUNGSI RENDER PRODUK
+function renderProductList() {
+    console.log('[Render] Rendering product list...');
+    
+    if (!UI.productGrid) {
+        console.error('[Render] Product grid element not found!');
         return;
     }
 
-    if (!products || products.length === 0) {
-        showEmptyState();
+    // Clear existing content
+    UI.productGrid.innerHTML = '';
+
+    if (!appState.products || appState.products.length === 0) {
+        console.warn('[Render] No products to display');
+        UI.productGrid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-box-open"></i>
+                No products available
+            </div>
+        `;
         return;
     }
 
-    try {
-        elements.productGrid.innerHTML = '';
+    // Render each product
+    appState.products.forEach(product => {
+        if (!product.id) {
+            console.warn('[Render] Invalid product:', product);
+            return;
+        }
         
-        products.forEach(product => {
-            if (!product.id || !product.name) {
-                console.warn("Produk tidak valid:", product);
-                return;
-            }
-            
-            const productCard = createProductCard(product);
-            elements.productGrid.appendChild(productCard);
-        });
-        
-    } catch (error) {
-        console.error("Error rendering products:", error);
-        showErrorState();
-    }
+        const productCard = createProductCard(product);
+        UI.productGrid.appendChild(productCard);
+    });
+
+    console.log(`[Render] Displayed ${appState.products.length} products`);
 }
 
-// 4. FUNGSI BANTUAN
 function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'product-card';
@@ -135,114 +139,120 @@ function createProductCard(product) {
             <img src="${product.image_url || 'https://via.placeholder.com/300'}" 
                  alt="${product.name}" 
                  class="product-image"
-                 onerror="this.src='https://via.placeholder.com/300?text=Gambar+Tidak+Tersedia'">
+                 onerror="this.onerror=null;this.src='https://via.placeholder.com/300?text=Image+Not+Available'">
         </div>
         <div class="product-info">
-            <h3 class="product-title">${product.name}</h3>
-            <p class="product-description">${product.description || 'Tidak ada deskripsi'}</p>
-            <div class="product-price">Rp ${formatPrice(product.price)}</div>
+            <h3 class="product-title">${product.name || 'No Name'}</h3>
+            <p class="product-description">${product.description || 'No description available'}</p>
+            <div class="product-price">Rp ${product.price ? product.price.toLocaleString('id-ID') : '0'}</div>
             <button class="add-to-cart" data-id="${product.id}">
-                <i class="fas fa-shopping-bag"></i> Tambah ke Keranjang
+                <i class="fas fa-shopping-bag"></i> Add to Cart
             </button>
         </div>
     `;
     return card;
 }
 
-function formatPrice(price) {
-    return price ? price.toLocaleString('id-ID') : '0';
-}
-
-// 5. FUNGSI STATE UI
-function showLoadingState() {
-    if (!elements.productGrid) return;
-    elements.productGrid.innerHTML = `
-        <div class="loading-state">
-            <i class="fas fa-spinner fa-spin"></i> Memuat produk...
-        </div>
-    `;
-}
-
-function showEmptyState() {
-    if (!elements.productGrid) return;
-    elements.productGrid.innerHTML = `
-        <div class="empty-state">
-            <i class="fas fa-box-open"></i>
-            Tidak ada produk yang tersedia
-        </div>
-    `;
-}
-
-function showErrorState() {
-    if (!elements.productGrid) return;
-    elements.productGrid.innerHTML = `
-        <div class="error-state">
-            <i class="fas fa-exclamation-triangle"></i>
-            Gagal memuat produk. Silakan refresh halaman.
-        </div>
-    `;
-}
-
+// 8. FUNGSI UI HELPER
 function hidePreloader() {
-    if (!elements.preloader) return;
-    
-    elements.preloader.classList.add('fade-out');
+    console.log('[UI] Hiding preloader...');
+    if (!UI.preloader) return;
+
+    UI.preloader.style.opacity = '0';
     setTimeout(() => {
-        elements.preloader.style.display = 'none';
+        UI.preloader.style.display = 'none';
     }, 500);
 }
 
-function showNotification(message, type = 'success') {
-    if (!elements.notification) return;
-    
-    const notification = elements.notification;
-    notification.textContent = message;
-    notification.className = `notification show ${type}`;
+function showNotification(message, type = 'info') {
+    console.log(`[UI] Notification: ${message}`);
+    if (!UI.notification) return;
+
+    UI.notification.textContent = message;
+    UI.notification.className = `notification ${type} show`;
     
     setTimeout(() => {
-        notification.classList.remove('show');
+        UI.notification.classList.remove('show');
     }, 3000);
 }
 
-// 6. DATA DUMMY UNTUK FALLBACK
+function showErrorUI() {
+    console.error('[UI] Showing error state');
+    if (!UI.productGrid) return;
+
+    UI.productGrid.innerHTML = `
+        <div class="error-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            Failed to load products. Please refresh the page.
+            ${appState.error ? `<div class="error-detail">${appState.error.message}</div>` : ''}
+        </div>
+    `;
+}
+
+// 9. LOCALSTORAGE HELPER
+function saveToLocalStorage(key, data) {
+    try {
+        localStorage.setItem(`luxury_${key}`, JSON.stringify(data));
+    } catch (e) {
+        console.warn('LocalStorage save failed:', e);
+    }
+}
+
+function getFromLocalStorage(key) {
+    try {
+        const data = localStorage.getItem(`luxury_${key}`);
+        return data ? JSON.parse(data) : null;
+    } catch (e) {
+        console.warn('LocalStorage read failed:', e);
+        return null;
+    }
+}
+
+// 10. DATA DUMMY
 function getDummyProducts() {
     return [
         {
             id: 1,
-            name: "Produk Contoh 1",
-            description: "Ini adalah produk contoh",
-            price: 100000,
-            image_url: "https://via.placeholder.com/300",
+            name: "Premium Watch",
+            description: "Luxury wristwatch with leather strap",
+            price: 2500000,
+            image_url: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300",
             is_published: true
         },
         {
             id: 2,
-            name: "Produk Contoh 2",
-            description: "Ini adalah produk contoh kedua",
-            price: 150000,
-            image_url: "https://via.placeholder.com/300",
+            name: "Designer Handbag",
+            description: "Elegant leather handbag",
+            price: 3500000,
+            image_url: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=300",
             is_published: true
         }
     ];
 }
 
-// 7. EVENT LISTENERS DASAR
+// 11. EVENT LISTENERS
 function setupEventListeners() {
-    // Contoh event listener sederhana
+    // Contoh event listener untuk tombol add to cart
     document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('add-to-cart')) {
-            const productId = parseInt(e.target.getAttribute('data-id'));
+        if (e.target.closest('.add-to-cart')) {
+            const button = e.target.closest('.add-to-cart');
+            const productId = parseInt(button.dataset.id);
             addToCart(productId);
         }
     });
 }
 
 function addToCart(productId) {
-    const product = products.find(p => p.id === productId);
+    const product = appState.products.find(p => p.id === productId);
     if (!product) return;
     
-    showNotification(`${product.name} ditambahkan ke keranjang`);
+    showNotification(`Added ${product.name} to cart`);
+    // Implement cart logic here
 }
 
-// 8. JALANKAN APLIKASI
-document.addEventListener('DOMContentLoaded', initializeApp);
+// 12. JALANKAN APLIKASI
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('[App] DOM fully loaded');
+    setupEventListeners();
+    initApp();
+});
