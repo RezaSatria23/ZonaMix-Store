@@ -120,7 +120,7 @@ function renderProducts(products) {
     // Update product count
     document.getElementById('product-count').textContent = filteredProducts.length;
 }
-/ Realtime update
+// Realtime update
 function setupRealtimeListener() {
   supabase
     .channel('product-changes')
