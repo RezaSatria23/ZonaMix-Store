@@ -114,10 +114,16 @@ function initEventListeners() {
         const price = parseFloat(document.getElementById('product-price').value);
         const category = document.getElementById('product-category').value;
         const description = document.getElementById('product-description').value.trim();
-        const image_url = document.getElementById('product-image').value.trim();
+        const imageUrl = document.getElementById('product-image').value.trim();
+        const isValidImage = await validateImageUrl(imageUrl);
         const stock = parseInt(document.getElementById('product-stock').value);
         const messageElement = document.getElementById('product-message');
 
+        if (!isValidImage) {
+            document.getElementById('image-error').style.display = 'block';
+            document.getElementById('image-error').textContent = 'URL gambar tidak valid atau tidak dapat diakses';
+            return;
+        }
         try {
             const { data, error } = await supabase
                 .from('products')
@@ -126,13 +132,13 @@ function initEventListeners() {
                     price, 
                     category,
                     description, 
-                    image_url,
+                    image_url: imageUrl,
                     stock
                 }])
                 .select();
-
+    
             if (error) throw error;
-
+    
             // Show product summary
             showProductSummary(data[0]);
             
@@ -147,6 +153,53 @@ function initEventListeners() {
             messageElement.style.display = 'block';
         }
     });
+    // Fungsi untuk memeriksa dan menampilkan preview gambar
+    document.getElementById('product-image').addEventListener('input', function() {
+        const imageUrl = this.value.trim();
+        const previewImg = document.getElementById('image-preview');
+        const imageError = document.getElementById('image-error');
+        
+        // Reset state
+        previewImg.style.display = 'none';
+        imageError.style.display = 'none';
+        
+        if (imageUrl) {
+            // Buat gambar baru untuk pengecekan
+            const testImage = new Image();
+            testImage.onload = function() {
+                // Jika gambar berhasil dimuat
+                previewImg.src = imageUrl;
+                previewImg.style.display = 'block';
+                imageError.style.display = 'none';
+            };
+            testImage.onerror = function() {
+                // Jika gambar gagal dimuat
+                previewImg.style.display = 'none';
+                imageError.style.display = 'block';
+                imageError.textContent = 'Gambar tidak dapat dimuat. Pastikan URL valid dan dapat diakses.';
+            };
+            testImage.src = imageUrl;
+        }
+    });
+
+    // Fungsi untuk memastikan URL gambar valid sebelum disimpan
+    function validateImageUrl(url) {
+        return new Promise((resolve) => {
+            if (!url) {
+                resolve(false);
+                return;
+            }
+            
+            const testImage = new Image();
+            testImage.onload = function() {
+                resolve(true);
+            };
+            testImage.onerror = function() {
+                resolve(false);
+            };
+            testImage.src = url;
+        });
+    }
 
     // Function to show product summary
     function showProductSummary(product) {
@@ -159,7 +212,13 @@ function initEventListeners() {
         document.getElementById('summary-category').textContent = product.category;
         document.getElementById('summary-stock').textContent = product.stock;
         document.getElementById('summary-description').textContent = product.description || 'Tidak ada deskripsi';
-        document.getElementById('summary-image').src = product.image_url;
+        
+        // Handle image
+        const summaryImage = document.getElementById('summary-image');
+        summaryImage.src = product.image_url;
+        summaryImage.onerror = function() {
+            this.src = 'https://via.placeholder.com/300x200?text=Gambar+Tidak+Tersedia';
+        };
         
         // Show summary
         summaryContent.style.display = 'block';
