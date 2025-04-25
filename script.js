@@ -136,6 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderProducts();
     setupEventListeners();
     updateCartCount();
+    loadProducts();
     
     // Sembunyikan preloader setelah 1.5 detik
     setTimeout(() => {
@@ -159,43 +160,36 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Render Produk dengan Filter dan Sorting
-function renderProducts() {
-    // Filter produk berdasarkan kategori
-    let filteredProducts = currentCategory === 'all' 
-        ? [...products] 
-        : products.filter(product => product.category === currentCategory);
-    
-    // Sort produk
-    filteredProducts = sortProducts(filteredProducts, currentSort);
-    
-    // Render produk
-    productGrid.innerHTML = '';
-    
-    filteredProducts.forEach(product => {
-        const productCard = document.createElement('div');
-        productCard.className = 'product-card';
-        productCard.innerHTML = `
-            ${product.type === 'physical' ? `<div class="product-badge">Fisik</div>` : `<div class="product-badge">Digital</div>`}
-            <div class="product-image-container">
-                <img src="${product.image}" alt="${product.name}" class="product-image">
-            </div>
-            <div class="product-info">
-                <span class="product-category">${product.category.toUpperCase()}</span>
-                <h3 class="product-title">${product.name}</h3>
-                <p class="product-description">${product.description}</p>
-                <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
-                <button class="add-to-cart" data-id="${product.id}">
-                    <i class="fas fa-shopping-bag"></i> Tambah ke Keranjang
-                </button>
-            </div>
-        `;
-        productGrid.appendChild(productCard);
-    });
-    
-    // Update product count
-    document.getElementById('product-count').textContent = filteredProducts.length;
-}
+// Fungsi untuk menampilkan produk
+function renderProducts(products) {
+  const container = document.getElementById('product-grid');
+  
+  if (!products.length) {
+    container.innerHTML = `
+      <div class="no-products">
+        <i class="fas fa-box-open"></i>
+        <p>Belum ada produk tersedia</p>
+      </div>
+    `;
+    return;
+  }
 
+  container.innerHTML = products.map(product => `
+    <div class="product-card" data-id="${product.id}">
+      <img src="${product.image_url}" alt="${product.name}">
+      <div class="product-info">
+        <h3>${product.name}</h3>
+        <div class="product-meta">
+          <span class="price">Rp ${product.price.toLocaleString('id-ID')}</span>
+          <span class="category">${product.category}</span>
+        </div>
+        <button class="add-to-cart" data-id="${product.id}">
+          <i class="fas fa-shopping-cart"></i> Tambah ke Keranjang
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
 // Fungsi Sorting Produk
 function sortProducts(products, sortType) {
     switch(sortType) {
@@ -517,3 +511,23 @@ function hasPhysicalProducts() {
 function calculateTotal() {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 }
+// Fungsi untuk memuat produk dari Supabase
+async function loadProducts() {
+    try {
+      const { data: products, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+  
+      if (error) throw error;
+  
+      renderProducts(products || []);
+    } catch (error) {
+      console.error('Error loading products:', error);
+      document.getElementById('product-grid').innerHTML = `
+        <div class="error-message">
+          Gagal memuat produk. Silakan refresh halaman.
+        </div>
+      `;
+    }
+  }
