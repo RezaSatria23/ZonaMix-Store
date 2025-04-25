@@ -247,6 +247,15 @@ function initEventListeners() {
         if (document.querySelector('.tab-btn[data-tab="manage-products"]').classList.contains('active')) {
             loadProducts();
         }
+        // Reset form dan pratinjau
+        document.getElementById('add-product-form').reset();
+
+        const imagePreview = document.getElementById('image-preview');
+        imagePreview.src = '';
+        imagePreview.style.display = 'none';
+        
+        // Reset input URL gambar
+        document.getElementById('product-image').value = '';
     });
    // Add event listeners for search and pagination
 document.getElementById('product-search').addEventListener('input', (e) => {
