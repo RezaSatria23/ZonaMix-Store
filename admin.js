@@ -427,6 +427,13 @@ async function showEditModal(productId) {
                                     <option value="home" ${product.category === 'home' ? 'selected' : ''}>Rumah</option>
                                 </select>
                             </div>
+                            <div class="form-group">
+                                <label>Type</label>
+                                <select id="edit-product-type" required>
+                                    <option value="Fisik" ${product.category === 'Fisik' ? 'selected' : ''}>Fisik</option>
+                                    <option value="Digital" ${product.category === 'Digital' ? 'selected' : ''}>Digital</option>
+                                </select>
+                            </div>
                         </div>
                         
                         <div class="form-group">
