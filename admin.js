@@ -95,6 +95,13 @@ function initEventListeners() {
             btn.classList.add('active');
             const tabId = btn.getAttribute('data-tab');
             document.getElementById(`${tabId}-tab`).classList.add('active');
+            
+            // Load data when switching to specific tabs
+            if (tabId === 'manage-products') {
+                loadProducts();
+            } else if (tabId === 'view-orders') {
+                loadOrders();
+            }
         });
     });
 
@@ -109,7 +116,7 @@ function initEventListeners() {
         const image_url = document.getElementById('product-image').value.trim();
         const stock = parseInt(document.getElementById('product-stock').value);
         const messageElement = document.getElementById('product-message');
-
+    
         try {
             const { data, error } = await supabase
                 .from('products')
@@ -122,31 +129,57 @@ function initEventListeners() {
                     stock
                 }])
                 .select();
-
+    
             if (error) throw error;
-
-            // Clear form
-            e.target.reset();
+    
+            // Show product summary
+            showProductSummary(data[0]);
             
             // Show success message
-            messageElement.textContent = 'Produk berhasil ditambahkan!';
+            messageElement.textContent = 'Produk berhasil ditambahkan! Silahkan konfirmasi.';
             messageElement.className = 'message success';
             messageElement.style.display = 'block';
             
-            // Reload products
-            loadProducts();
-            
-            // Hide message after 3 seconds
-            setTimeout(() => {
-                messageElement.style.display = 'none';
-            }, 3000);
-            
-            } catch (error) {
-                messageElement.textContent = `Error: ${error.message}`;
-                messageElement.className = 'message error';
-                messageElement.style.display = 'block';
-            }
+        } catch (error) {
+            messageElement.textContent = `Error: ${error.message}`;
+            messageElement.className = 'message error';
+            messageElement.style.display = 'block';
+        }
     });
+    // Function to show product summary
+function showProductSummary(product) {
+    document.querySelector('.summary-placeholder').style.display = 'none';
+    const summaryContent = document.getElementById('summary-content');
+    
+    // Populate summary data
+    document.getElementById('summary-name').textContent = product.name;
+    document.getElementById('summary-price').textContent = product.price.toLocaleString('id-ID');
+    document.getElementById('summary-category').textContent = product.category;
+    document.getElementById('summary-stock').textContent = product.stock;
+    document.getElementById('summary-description').textContent = product.description || 'Tidak ada deskripsi';
+    document.getElementById('summary-image').src = product.image_url;
+    
+    // Show summary
+    summaryContent.style.display = 'block';
+    
+    // Store the product ID in the confirm button
+    document.getElementById('confirm-product').dataset.productId = product.id;
+}
+
+// Confirm product button handler
+document.getElementById('confirm-product').addEventListener('click', () => {
+    // You can add additional confirmation logic here if needed
+    alert('Produk telah dikonfirmasi dan disimpan!');
+    
+    // Reset the form and summary
+    document.getElementById('add-product-form').reset();
+    document.querySelector('.summary-placeholder').style.display = 'block';
+    document.getElementById('summary-content').style.display = 'none';
+    document.getElementById('product-message').style.display = 'none';
+    
+    // Reload products in manage tab
+    loadProducts();
+});
 
     // Product Search
    // Add event listeners for search and pagination

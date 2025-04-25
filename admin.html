@@ -771,8 +771,29 @@
                     <button type="submit" class="btn-submit">
                         <i class="fas fa-save"></i> Simpan Produk
                     </button>
-                    
                     <div id="product-message" class="message"></div>
+
+                    <div class="product-summary" id="product-summary">
+                        <h3><i class="fas fa-file-alt"></i> Ringkasan Produk</h3>
+                        <div class="summary-placeholder">
+                            <p>Produk yang baru ditambahkan akan muncul di sini</p>
+                        </div>
+                        <div class="summary-content" id="summary-content" style="display: none;">
+                            <div class="summary-image-container">
+                                <img id="summary-image" src="" alt="Product Image">
+                            </div>
+                            <div class="summary-details">
+                                <h4 id="summary-name"></h4>
+                                <p><strong>Harga:</strong> Rp <span id="summary-price"></span></p>
+                                <p><strong>Kategori:</strong> <span id="summary-category"></span></p>
+                                <p><strong>Stok:</strong> <span id="summary-stock"></span></p>
+                                <p><strong>Deskripsi:</strong> <span id="summary-description"></span></p>
+                            </div>
+                            <button id="confirm-product" class="btn-confirm">
+                                <i class="fas fa-check-circle"></i> Konfirmasi Produk
+                            </button>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>

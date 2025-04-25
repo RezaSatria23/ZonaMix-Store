@@ -1649,3 +1649,95 @@ body {
         flex-direction: column;
     }
 }
+/* Form and Summary Layout */
+.form-summary-container {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+}
+
+.full-width-form {
+    flex: 2;
+}
+
+.product-summary {
+    flex: 1;
+    background: var(--white);
+    padding: 20px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 20px;
+}
+
+.summary-placeholder {
+    text-align: center;
+    padding: 30px;
+    color: var(--gray);
+    font-style: italic;
+}
+
+.summary-content {
+    display: none;
+}
+
+.summary-image-container {
+    width: 100%;
+    height: 200px;
+    margin-bottom: 15px;
+    overflow: hidden;
+    border-radius: var(--radius);
+}
+
+.summary-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.summary-details {
+    margin-bottom: 20px;
+}
+
+.summary-details h4 {
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.summary-details p {
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.btn-confirm {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--success);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+.btn-confirm:hover {
+    background-color: #3aa8c1;
+    transform: translateY(-2px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .form-summary-container {
+        flex-direction: column;
+    }
+    
+    .product-summary {
+        width: 100%;
+        position: static;
+    }
+}
