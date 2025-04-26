@@ -296,8 +296,13 @@ function addToCart(productId) {
 }
 
 function removeFromCart(productId) {
-    cart = cart.filter(item => item.id != productId);
+    cart = cart.filter(item => {
+        console.log('Item ID:', item.id, 'Type:', typeof item.id); // Debug
+        console.log('Product ID:', productId, 'Type:', typeof productId); // Debug
+        return item.id != productId; // Gunakan != untuk kompatibilitas tipe
+    });
     updateCart();
+    showNotification('Produk dihapus dari keranjang');
 }
 
 function updateQuantity(productId, isIncrease) {
