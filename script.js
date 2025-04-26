@@ -60,6 +60,7 @@ async function loadProductsFromSupabase() {
         
         products = data;
         renderProducts();
+        setupCartEventListeners(); // Setup event listeners untuk cart
         
     } catch (error) {
         console.error('Error loading products:', error);
@@ -76,30 +77,18 @@ async function loadProductsFromSupabase() {
 }
 // 4. FUNGSI EVENT LISTENER (FIXED)
 function setupCartEventListeners() {
-    document.addEventListener('click', function(e) {
-        const cartItem = e.target.closest('.cart-item');
-        if (!cartItem) return;
-        
-        // Tombol tambah
-    if (e.target.classList.contains('increase') || e.target.closest('.increase')) {
-        const btn = e.target.classList.contains('increase') ? e.target : e.target.closest('.increase');
-        const productId = parseInt(btn.dataset.id);
-        updateCartItem(productId, 'increase');
-      }
-      
-      // Tombol kurang
-      if (e.target.classList.contains('decrease') || e.target.closest('.decrease')) {
-        const btn = e.target.classList.contains('decrease') ? e.target : e.target.closest('.decrease');
-        const productId = parseInt(btn.dataset.id);
-        updateCartItem(productId, 'decrease');
-      }
-      
-      // Tombol hapus
-      if (e.target.classList.contains('remove-btn') || e.target.closest('.remove-btn')) {
-        const btn = e.target.classList.contains('remove-btn') ? e.target : e.target.closest('.remove-btn');
-        const productId = parseInt(btn.dataset.id);
+    document.getElementById('cart-items').addEventListener('click', (e) => {
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+
+        const productId = target.dataset.id;
+        const action = target.dataset.action;
+
+        if (action === 'increase' || action === 'decrease') {
+        updateQuantity(productId, action);
+        } else if (action === 'remove') {
         removeFromCart(productId);
-      }
+        }
     });
 }
 // Render Produk dengan Filter dan Sorting
@@ -326,27 +315,39 @@ function saveCart() {
 }
 
 // Fungsi untuk update quantity (versi sederhana)
-function updateQuantity(productId, action) {
-    const itemIndex = cart.findIndex(item => item.id === productId);
-    
-    if (itemIndex === -1) return;
+async function updateQuantity(productId, action) {
+  // Konversi productId ke number untuk konsistensi
+  productId = Number(productId);
   
-    if (action === 'increase') {
-      cart[itemIndex].quantity += 1;
-    } else if (action === 'decrease') {
-      if (cart[itemIndex].quantity > 1) {
-        cart[itemIndex].quantity -= 1;
+  const itemIndex = cart.findIndex(item => Number(item.id) === productId);
+  
+  if (itemIndex === -1) {
+    console.error('Produk tidak ditemukan di keranjang');
+    return;
+  }
+
+  // Clone cart untuk menghindari mutasi langsung
+  const newCart = [...cart];
+  
+  if (action === 'increase') {
+    newCart[itemIndex].quantity += 1;
+  } else {
+    if (newCart[itemIndex].quantity > 1) {
+      newCart[itemIndex].quantity -= 1;
+    } else {
+      if (confirm('Hapus produk dari keranjang?')) {
+        newCart.splice(itemIndex, 1);
       } else {
-        if (confirm('Hapus produk dari keranjang?')) {
-          cart.splice(itemIndex, 1);
-        } else {
-          return;
-        }
+        return;
       }
     }
-  
-    updateCart();
   }
+
+  // Update cart state
+  cart = newCart;
+  saveCart();
+  renderCartItems();
+}
 // Fungsi untuk update quantity produk
 function updateCartItem(productId, action) {
     const itemIndex = cart.findIndex(item => item.id === productId);
@@ -374,7 +375,6 @@ function updateCartItem(productId, action) {
 
 function renderCartItems() {
     const cartItemsEl = document.getElementById('cart-items');
-    const cartTotalEl = document.getElementById('cart-total');
     
     cartItemsEl.innerHTML = '';
     
@@ -396,7 +396,6 @@ function renderCartItems() {
         
         const cartItemEl = document.createElement('div');
         cartItemEl.className = 'cart-item animate__animated animate__fadeIn';
-        cartItemEl.dataset.id = item.id;
         cartItemEl.innerHTML = `
             <img src="${item.image_url}" alt="${item.name}" class="cart-item-image" loading="lazy">
             <div class="cart-item-details">
