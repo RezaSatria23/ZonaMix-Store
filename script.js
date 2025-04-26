@@ -75,12 +75,28 @@ async function loadProductsFromSupabase() {
 }
 // 4. FUNGSI EVENT LISTENER (FIXED)
 function setupCartEventListeners() {
-    // Gunakan event delegation untuk tombol yang mungkin dibuat dinamis
-    productGrid.addEventListener('click', (e) => {
-        if (e.target.closest('.add-to-cart')) {
-            const button = e.target.closest('.add-to-cart');
-            const productId = button.getAttribute('data-id');
-            addToCart(productId);
+    document.addEventListener('click', function(e) {
+        const cartItem = e.target.closest('.cart-item');
+        if (!cartItem) return;
+        
+        const productId = cartItem.dataset.id;
+        
+        // Handle Tombol Hapus
+        if (e.target.closest('.remove-btn')) {
+            removeFromCart(productId);
+            return;
+        }
+        
+        // Handle Tombol Kurang Quantity
+        if (e.target.classList.contains('decrease')) {
+            updateQuantity(productId, false);
+            return;
+        }
+        
+        // Handle Tombol Tambah Quantity
+        if (e.target.classList.contains('increase')) {
+            updateQuantity(productId, true);
+            return;
         }
     });
 }
@@ -296,11 +312,8 @@ function addToCart(productId) {
 }
 
 function removeFromCart(productId) {
-    cart = cart.filter(item => {
-        console.log('Item ID:', item.id, 'Type:', typeof item.id); // Debug
-        console.log('Product ID:', productId, 'Type:', typeof productId); // Debug
-        return item.id != productId; // Gunakan != untuk kompatibilitas tipe
-    });
+    productId = String(productId);
+    cart = cart.filter(item => String(item.id) !== productId);
     updateCart();
     showNotification('Produk dihapus dari keranjang');
 }
@@ -361,6 +374,7 @@ function renderCartItems() {
 function updateCart() {
     localStorage.setItem('luxuryStoreCart', JSON.stringify(cart));
     updateCartCount();
+    renderCartItems();
 }
 
 function updateCartCount() {
