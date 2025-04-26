@@ -286,7 +286,7 @@ function setupEventListeners() {
 
 // Fungsi untuk menambahkan ke keranjang
 function addToCart(productId) {
-    productId = parseInt(productId);
+
     const product = products.find(p => p.id === productId);
     
     if (!product) {
@@ -302,6 +302,7 @@ function addToCart(productId) {
     } else {
         cart.push({
             ...product,
+            id: productId,
             quantity: 1
         });
     }
@@ -312,13 +313,9 @@ function addToCart(productId) {
 
 function removeFromCart(productId) {
     cart = cart.filter(item => item.id == productId); // Gunakan == untuk kompatibilitas tipe
-    saveCart();
     renderCartItems();
     updateCartCount();
     showNotification('Produk dihapus dari keranjang');
-}
-function saveCart() {
-  localStorage.setItem('luxuryStoreCart', JSON.stringify(cart));
 }
 
 // Fungsi untuk update quantity (versi sederhana)
@@ -354,7 +351,6 @@ function updateQuantity(productId, isIncrease) {
 
     // Update state
     cart = updatedCart;
-    saveCart();
     renderCartItems();
     updateCartCount();
 }
@@ -378,7 +374,6 @@ function updateCartItem(productId, action) {
         }
     }
     // Simpan dan update tampilan
-    saveCart();
     renderCartItems();
     updateCartCount();
 }
