@@ -36,7 +36,8 @@ async function initializeApp() {
 document.addEventListener('DOMContentLoaded', () => {
     loadProductsFromSupabase();
     setupEventListeners();
-    
+    updateCartCount();
+    renderCartItems();
     // Animasi preloader
     setTimeout(() => {
         const preloader = document.querySelector('.preloader');
