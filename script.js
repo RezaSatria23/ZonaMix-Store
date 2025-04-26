@@ -76,34 +76,26 @@ async function loadProductsFromSupabase() {
 }
 // 4. FUNGSI EVENT LISTENER (FIXED)
 function setupCartEventListeners() {
-    document.addEventListener('click', function(e) {
+    // Delegasi event untuk tombol di keranjang
+    document.addEventListener('click', (e) => {
         const cartItem = e.target.closest('.cart-item');
         if (!cartItem) return;
         
-        const productId = cartItem.dataset.id;
+        const productId = parseInt(cartItem.dataset.id);
         
-        // Handle tombol hapus item
-        if (e.target.closest('.remove-item')) {
-            const cartItem = e.target.closest('.cart-item');
-            const productId = parseInt(cartItem.dataset.id);
-            removeFromCart(productId);
-            return;
+        // Tombol tambah
+        if (e.target.classList.contains('plus') || e.target.closest('.plus')) {
+        updateQuantity(productId, 'increase');
         }
         
-        // Handle tombol kurang quantity
-        if (e.target.classList.contains('decrease')) {
-            const cartItem = e.target.closest('.cart-item');
-            const productId = parseInt(cartItem.dataset.id);
-            updateQuantity(productId, false);
-            return;
+        // Tombol kurang
+        if (e.target.classList.contains('minus') || e.target.closest('.minus')) {
+        updateQuantity(productId, 'decrease');
         }
-
         
-        if (e.target.classList.contains('increase')) {
-            const cartItem = e.target.closest('.cart-item');
-            const productId = parseInt(cartItem.dataset.id);
-            updateQuantity(productId, true);
-            return;
+        // Tombol hapus
+        if (e.target.classList.contains('remove-btn') || e.target.closest('.remove-btn')) {
+        removeFromCart(productId);
         }
     });
 }
@@ -325,36 +317,28 @@ function removeFromCart(productId) {
     showNotification('Produk dihapus dari keranjang');
 }
 
-function updateQuantity(productId, isIncrease) {
-    // Cari index item di keranjang
-    const itemIndex = cart.findIndex(item => String(item.id) === String(productId));
+// Fungsi untuk update quantity (versi sederhana)
+function updateQuantity(productId, action) {
+    const itemIndex = cart.findIndex(item => item.id === productId);
     
-    if (itemIndex === -1) {
-        console.error('Produk tidak ditemukan di keranjang');
-        return;
-    }
-
-    if (isIncrease) {
-        // Tambah quantity
-        cart[itemIndex].quantity += 1;
-    } else {
-        // Kurangi quantity (minimal 1)
-        if (cart[itemIndex].quantity > 1) {
-            cart[itemIndex].quantity -= 1;
+    if (itemIndex === -1) return;
+  
+    if (action === 'increase') {
+      cart[itemIndex].quantity += 1;
+    } else if (action === 'decrease') {
+      if (cart[itemIndex].quantity > 1) {
+        cart[itemIndex].quantity -= 1;
+      } else {
+        if (confirm('Hapus produk dari keranjang?')) {
+          cart.splice(itemIndex, 1);
         } else {
-            // Jika quantity = 1, tampilkan konfirmasi
-            if (confirm('Apakah Anda ingin menghapus produk ini dari keranjang?')) {
-                removeFromCart(productId);
-                return;
-            } else {
-                return; // Batalkan jika user tidak setuju
-            }
+          return;
         }
+      }
     }
-    
+  
     updateCart();
-    renderCartItems(); 
-}
+  }
 
 function renderCartItems() {
     const cartItemsEl = document.getElementById('cart-items');
@@ -363,11 +347,10 @@ function renderCartItems() {
     cartItemsEl.innerHTML = '';
     
     let total = 0;
-    
+
     if (cart.length === 0) {
         cartItemsEl.innerHTML = `
             <div class="empty-cart animate__animated animate__fadeIn">
-                <i class="fas fa-shopping-bag"></i>
                 <p>Keranjang belanja kosong</p>
             </div>
         `;
