@@ -358,8 +358,8 @@ function renderCartItems() {
         `;
         cartItemsEl.appendChild(cartItemEl);
     });
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    document.getElementById('cart-total').textContent = total.toLocaleString('id-ID');
+    
+    cartTotalEl.textContent = total.toLocaleString('id-ID');
 }
 function updateCart() {
     localStorage.setItem('luxuryStoreCart', JSON.stringify(cart));
