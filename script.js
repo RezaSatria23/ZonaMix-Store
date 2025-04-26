@@ -79,6 +79,15 @@ function setupCartEventListeners() {
     document.getElementById('cart-items').addEventListener('click', (e) => {
         const target = e.target.closest('[data-action]');
         if (!target) return;
+
+        const productId = target.dataset.id;
+        const action = target.dataset.action;
+
+        if (action === 'increase' || action === 'decrease') {
+        updateQuantity(productId, action);
+        } else if (action === 'remove') {
+        removeFromCart(productId);
+        }
     });
 }
 // Render Produk dengan Filter dan Sorting
@@ -242,7 +251,30 @@ function setupEventListeners() {
             const button = e.target.classList.contains('add-to-cart') ? e.target : e.target.closest('.add-to-cart');
             const productId = parseInt(button.getAttribute('data-id'));
             addToCart(productId);
-        } 
+        }
+        
+        // Handle tombol tambah
+        if (e.target.classList.contains('increase') || e.target.closest('.increase')) {
+            const button = e.target.classList.contains('increase') ? e.target : e.target.closest('.increase');
+            const cartItem = button.closest('.cart-item');
+            const productId = parseInt(cartItem.dataset.id);
+            updateQuantity(productId, true);
+        }
+        
+        // Handle tombol kurang
+        if (e.target.classList.contains('decrease') || e.target.closest('.decrease')) {
+            const button = e.target.classList.contains('decrease') ? e.target : e.target.closest('.decrease');
+            const cartItem = button.closest('.cart-item');
+            const productId = parseInt(cartItem.dataset.id);
+            updateQuantity(productId, false);
+        }
+        
+        // Hapus item
+        if (e.target.classList.contains('remove-item') || e.target.closest('.remove-item')) {
+            const itemId = parseInt(e.target.closest('.cart-item').getAttribute('data-id'));
+            removeFromCart(itemId);
+        }
+        
         // Quick view
         if (e.target.classList.contains('quick-view') || e.target.closest('.quick-view')) {
             const button = e.target.classList.contains('quick-view') ? e.target : e.target.closest('.quick-view');
@@ -381,7 +413,9 @@ function renderCartItems() {
                 <div class="cart-item-price">Rp ${item.price.toLocaleString('id-ID')}</div>
             </div>
             <div class="cart-item-controls">
+                <button class="quantity-btn decrease">-</button>
                 <span class="quantity-value">${item.quantity}</span>
+                <button class="quantity-btn increase">+</button>
                 <div class="remove-item"><i class="fas fa-trash"></i> Hapus</div>
             </div>
             <div class="cart-item-total">Rp ${itemTotal.toLocaleString('id-ID')}</div>
