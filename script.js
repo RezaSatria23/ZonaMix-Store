@@ -13,7 +13,7 @@ const supabase = window.supabase.createClient(
 );
 // Variabel Global
 let products = []; // Produk akan diambil dari Supabase
-let cart = [];
+let cart = JSON.parse(localStorage.getItem('luxuryStoreCart')) || [];
 let currentCategory = 'all';
 let currentSort = 'default';
 const whatsappNumber = '6281234567890'; // Ganti dengan nomor WhatsApp Anda
@@ -27,8 +27,8 @@ const notification = document.getElementById('notification');
 const notificationMessage = document.getElementById('notification-message');
 
 // Inisialisasi Aplikasi
-document.addEventListener('DOMContentLoaded', async () => {
-    await loadProductsFromSupabase();
+document.addEventListener('DOMContentLoaded', () => {
+    loadProductsFromSupabase();
     setupEventListeners();
     updateCartCount();
     
@@ -246,9 +246,15 @@ function setupEventListeners() {
     });
 }
 
-// Fungsi Keranjang
+// Fungsi untuk menambahkan ke keranjang
 function addToCart(productId) {
     const product = products.find(p => p.id === productId);
+    
+    if (!product) {
+        console.error('Product not found');
+        return;
+    }
+
     const existingItem = cart.find(item => item.id === productId);
     
     if (existingItem) {
@@ -265,13 +271,8 @@ function addToCart(productId) {
         });
     }
     
-    // Animasi cart
-    animateCartIcon();
-    updateCartCount();
-    showNotification(`${product.name} telah ditambahkan ke keranjang`);
-    
-    // Animasi bubble
-    createCartBubble(productId);
+    updateCart();
+    showNotification(`${product.name} added to cart`);
 }
 
 function removeFromCart(productId) {
