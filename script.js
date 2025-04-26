@@ -74,7 +74,13 @@ async function loadProductsFromSupabase() {
         document.getElementById('retry-load').addEventListener('click', loadProductsFromSupabase);
     }
 }
-
+// 4. FUNGSI EVENT LISTENER (FIXED)
+function setupCartEventListeners() {
+    document.getElementById('cart-items').addEventListener('click', (e) => {
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+    });
+}
 // Render Produk dengan Filter dan Sorting
 function renderProducts() {
 
@@ -229,6 +235,21 @@ function setupEventListeners() {
         e.preventDefault();
         await processCustomerForm();
     });
+    
+    // Tambah ke keranjang
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('add-to-cart') || e.target.closest('.add-to-cart')) {
+            const button = e.target.classList.contains('add-to-cart') ? e.target : e.target.closest('.add-to-cart');
+            const productId = parseInt(button.getAttribute('data-id'));
+            addToCart(productId);
+        } 
+        // Quick view
+        if (e.target.classList.contains('quick-view') || e.target.closest('.quick-view')) {
+            const button = e.target.classList.contains('quick-view') ? e.target : e.target.closest('.quick-view');
+            const productId = parseInt(button.getAttribute('data-id'));
+            showQuickView(productId);
+        }
+    });
 }
 
 // Fungsi untuk menambahkan ke keranjang
@@ -266,6 +287,65 @@ function removeFromCart(productId) {
 }
 function saveCart() {
   localStorage.setItem('luxuryStoreCart', JSON.stringify(cart));
+}
+
+// Fungsi untuk update quantity (versi sederhana)
+async function updateQuantity(productId, action) {
+  // Konversi productId ke number untuk konsistensi
+  productId = Number(productId);
+  
+  const itemIndex = cart.findIndex(item => Number(item.id) === productId);
+  
+  if (itemIndex === -1) {
+    console.error('Produk tidak ditemukan di keranjang');
+    return;
+  }
+
+  // Clone cart untuk menghindari mutasi langsung
+  const newCart = [...cart];
+  
+  if (action === 'increase') {
+    newCart[itemIndex].quantity += 1;
+  } else {
+    if (newCart[itemIndex].quantity > 1) {
+      newCart[itemIndex].quantity -= 1;
+    } else {
+      if (confirm('Hapus produk dari keranjang?')) {
+        newCart.splice(itemIndex, 1);
+      } else {
+        return;
+      }
+    }
+  }
+
+  // Update cart state
+  cart = newCart;
+  saveCart();
+  renderCartItems();
+}
+// Fungsi untuk update quantity produk
+function updateCartItem(productId, action) {
+    const itemIndex = cart.findIndex(item => item.id === productId);
+    
+    if (itemIndex === -1) return;
+
+    if (action === 'increase') {
+        cart[itemIndex].quantity += 1;
+    } else if (action === 'decrease') {
+        if (cart[itemIndex].quantity > 1) {
+        cart[itemIndex].quantity -= 1;
+        } else {
+        if (confirm('Hapus produk dari keranjang?')) {
+            cart.splice(itemIndex, 1);
+        } else {
+            return;
+        }
+        }
+    }
+    // Simpan dan update tampilan
+    saveCart();
+    renderCartItems();
+    updateCartCount();
 }
 
 function renderCartItems() {
