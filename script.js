@@ -29,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     updateCartCount();
     renderCartItems();
-    
     // Animasi preloader
     setTimeout(() => {
         const preloader = document.querySelector('.preloader');
@@ -338,35 +337,44 @@ function updateQuantity(productId, isIncrease) {
 }
 
 function renderCartItems() {
-    const cartItemsContainer = document.getElementById('cart-items');
-    if (!cartItemsContainer) return;
+    const cartItemsEl = document.getElementById('cart-items');
+    const cartTotalEl = document.getElementById('cart-total');
     
-    cartItemsContainer.innerHTML = cart.map(item => `
-        <div class="cart-item" data-id="${item.id}">
-            <img src="${item.image_url}" alt="${item.name}">
+    cartItemsEl.innerHTML = '';
+    
+    let total = 0;
+    
+    cart.forEach(item => {
+        const cartItemsContainer = document.getElementById('cart-items');
+        if (!cartItemsContainer) return;
+    
+        cartItemsContainer.innerHTML =  cart.map(item => `
+            <img src="${item.image_url}" alt="${item.name}" class="cart-item-image" loading="lazy">
             <div class="cart-item-details">
-                <h4>${item.name}</h4>
-                <p>Rp ${item.price.toLocaleString('id-ID')} x ${item.quantity}</p>
+                <div class="cart-item-title">${item.name}</div>
+                <div class="cart-item-category">${item.category.toUpperCase()}</div>
+                <div class="cart-item-price">Rp ${item.price.toLocaleString('id-ID')}</div>
             </div>
-            <div class="cart-item-actions">
+            <div class="cart-item-controls">
                 <button class="quantity-btn decrease">-</button>
-                <span>${item.quantity}</span>
+                <span class="quantity-value">${item.quantity}</span>
                 <button class="quantity-btn increase">+</button>
-                <button class="remove-btn">
-                    <i class="fas fa-trash"></i> Hapus
-                </button>
+                <div class="remove-item"><i class="fas fa-trash"></i> Hapus</div>
             </div>
-        </div>
-    `).join('');
+            <div class="cart-item-total">Rp ${itemTotal.toLocaleString('id-ID')}</div>
+        `).join('');
+        // Update total
+        updateCartTotal();
+    });
     
-    // Update total
-    updateCartTotal();
+    cartTotalEl.textContent = total.toLocaleString('id-ID');
 }
 // Fungsi Update Total
 function updateCartTotal() {
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     document.getElementById('cart-total').textContent = total.toLocaleString('id-ID');
 }
+
 function updateCart() {
     localStorage.setItem('luxuryStoreCart', JSON.stringify(cart));
     updateCartCount();
