@@ -1,15 +1,6 @@
 const supabase = window.supabase.createClient(
     'https://znehlqzprtwvhscoeoim.supabase.co',
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpuZWhscXpwcnR3dmhzY29lb2ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0MjQzNzUsImV4cCI6MjA2MTAwMDM3NX0.XsjXAE-mt7RMIncAJuO6XSdZxhQQv79uCUPPVU9mF2A',
-    {
-        auth: {
-            flowType: 'pkce',
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
-            persistSession: true,
-            storage: localStorage
-        }
-    }
 );
 // Variabel Global
 let products = []; // Produk akan diambil dari Supabase
