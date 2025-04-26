@@ -46,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // Load produk dari Supabase
 async function loadProductsFromSupabase() {
     try {
-        showLoadingState();
         productGrid.innerHTML = `
             <div class="loading-state animate__animated animate__fadeIn">
                 <i class="fas fa-spinner fa-spin"></i> Memuat produk...
