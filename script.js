@@ -22,11 +22,16 @@ const whatsappNumber = '6281234567890'; // Ganti dengan nomor WhatsApp Anda
 const productGrid = document.getElementById('product-grid');
 const cartCountElement = document.querySelector('.cart-count');
 const cartModal = document.getElementById('cart-modal');
+const cartItemsContainer = document.getElementById('cart-items');
 const customerModal = document.getElementById('customer-modal');
 const paymentModal = document.getElementById('payment-modal');
 const notification = document.getElementById('notification');
 const notificationMessage = document.getElementById('notification-message');
 
+async function initializeApp() {
+    await loadProducts();
+    renderCartItems(); // Render cart saat pertama kali load
+}
 // Inisialisasi Aplikasi
 document.addEventListener('DOMContentLoaded', () => {
     loadProductsFromSupabase();
@@ -298,13 +303,8 @@ function addToCart(productId) {
 }
 
 function removeFromCart(productId) {
-    cart = cart.filter(item => item.id !== productId);
-    renderCartItems();
-    updateCartCount();
-    
-    if (cart.length === 0) {
-        closeModal(cartModal);
-    }
+    cart = cart.filter(item => item.id != productId);
+    updateCart();
 }
 
 function updateQuantity(productId, isIncrease) {
@@ -363,6 +363,12 @@ function renderCartItems() {
 function updateCart() {
     localStorage.setItem('luxuryStoreCart', JSON.stringify(cart));
     updateCartCount();
+    renderCartItems();
+    
+    // Jika cart kosong, tutup modal
+    if (cart.length === 0 && cartModal.style.display === 'block') {
+        cartModal.style.display = 'none';
+    }
 }
 
 function updateCartCount() {
