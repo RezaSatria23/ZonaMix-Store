@@ -61,6 +61,7 @@ async function loadProductsFromSupabase() {
         
         products = data;
         renderProducts();
+        setupCartEventListeners();
         
     } catch (error) {
         console.error('Error loading products:', error);
@@ -75,9 +76,25 @@ async function loadProductsFromSupabase() {
         document.getElementById('retry-load').addEventListener('click', loadProductsFromSupabase);
     }
 }
-
+// 4. FUNGSI EVENT LISTENER (FIXED)
+function setupCartEventListeners() {
+    // Gunakan event delegation untuk tombol yang mungkin dibuat dinamis
+    productGrid.addEventListener('click', (e) => {
+        if (e.target.closest('.add-to-cart')) {
+            const button = e.target.closest('.add-to-cart');
+            const productId = button.getAttribute('data-id');
+            addToCart(productId);
+        }
+    });
+}
 // Render Produk dengan Filter dan Sorting
 function renderProducts() {
+
+    if (!products.length) {
+        productGrid.innerHTML = '<div class="empty-state">Tidak ada produk</div>';
+        return;
+    }
+
     // Filter produk berdasarkan kategori
     let filteredProducts = currentCategory === 'all' 
         ? [...products] 
@@ -248,10 +265,13 @@ function setupEventListeners() {
 
 // Fungsi untuk menambahkan ke keranjang
 function addToCart(productId) {
+    // Pastikan productId bertipe number
+    productId = parseInt(productId);
+
     const product = products.find(p => p.id === productId);
     
     if (!product) {
-        console.error('Product not found');
+        console.error('Produk tidak ditemukan');
         return;
     }
 
@@ -272,7 +292,7 @@ function addToCart(productId) {
     }
     
     updateCart();
-    showNotification(`${product.name} added to cart`);
+    showNotification(`${product.name} ditambahkan ke keranjang`);
 }
 
 function removeFromCart(productId) {
@@ -338,10 +358,14 @@ function renderCartItems() {
     
     cartTotalEl.textContent = total.toLocaleString('id-ID');
 }
+function updateCart() {
+    localStorage.setItem('luxuryStoreCart', JSON.stringify(cart));
+    updateCartCount();
+}
 
 function updateCartCount() {
     const count = cart.reduce((total, item) => total + item.quantity, 0);
-    document.querySelector('.cart-count').textContent = count;
+    cartCount.textContent = count;
     
     // Animasi jika ada item di keranjang
     if (count > 0) {
@@ -466,6 +490,8 @@ function generateOrderSummary() {
 }
 
 function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
     notificationMessage.textContent = message;
     notification.classList.add('show', 'animate__animated', 'animate__fadeInUp');
     
