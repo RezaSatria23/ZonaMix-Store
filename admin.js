@@ -459,8 +459,8 @@ async function showEditModal(productId) {
                             <div class="form-group">
                                 <label>Type</label>
                                 <select id="edit-product-type" required>
-                                    <option value="Fisik" ${product.category === 'Fisik' ? 'selected' : ''}>Fisik</option>
-                                    <option value="Digital" ${product.category === 'Digital' ? 'selected' : ''}>Digital</option>
+                                    <option value="fisik" ${product.type === 'Fisik' ? 'selected' : ''}>Fisik</option>
+                                    <option value="digital" ${product.type === 'Digital' ? 'selected' : ''}>Digital</option>
                                 </select>
                             </div>
                         </div>
@@ -525,6 +525,7 @@ async function showEditModal(productId) {
                         name, 
                         price, 
                         category,
+                        type,
                         stock,
                         description, 
                         image_url 
@@ -728,6 +729,9 @@ function renderProducts() {
         <div class="product-management-card" data-id="${product.id}">
             <img src="${product.image_url}" alt="${product.name}" class="product-card-image">
             <div class="product-card-body">
+                ${product.type === 'fisik' ? 
+                `<div class="product-badge animate__animated animate__pulse animate__infinite">Fisik</div>` : 
+                `<div class="product-badge animate__animated animate__pulse animate__infinite">Digital</div>`}
                 <h3 class="product-card-title">${product.name}</h3>
                 <div class="product-card-meta">
                     <span class="product-card-price">Rp ${product.price.toLocaleString('id-ID')}</span>
