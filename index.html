@@ -1,221 +1,212 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luxury Store | Toko Online Premium</title>
-    <meta name="description" content="Toko online premium dengan koleksi terbaik untuk gaya hidup modern">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>ShopSphere - Modern E-Commerce</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="preloader">
-        <div class="loader"></div>
+    <!-- Loading Animation -->
+    <div class="loading-animation">
+        <div class="loading-spinner"></div>
     </div>
 
+    <!-- Header -->
     <header class="header">
         <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <span class="luxury">LUXURY</span>
-                    <span class="store">STORE</span>
-                </div>
-                <div class="header-actions">
-                    <div class="search-box">
-                        <input type="text" placeholder="Cari produk..." id="search-input">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <div class="cart-icon" id="cart-icon">
-                        <i class="fas fa-shopping-bag"></i>
-                        <span class="cart-count">0</span>
-                    </div>
-                </div>
+            <div class="logo">
+                <h1>ShopSphere</h1>
+            </div>
+            <div class="search-bar">
+                <input type="text" placeholder="Search products...">
+                <button><i class="fas fa-search"></i></button>
+            </div>
+            <div class="user-actions">
+                <a href="#"><i class="fas fa-user"></i></a>
+                <a href="#" class="cart-icon" id="cartIcon">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count">0</span>
+                </a>
             </div>
         </div>
     </header>
 
-    <nav class="main-nav">
-        <div class="container">
-            <ul class="nav-list">
-                <li><a href="#" class="active" data-category="all">Semua Produk</a></li>
-                <li><a href="#" data-category="fashion">Fashion</a></li>
-                <li><a href="#" data-category="aksesoris">Aksesoris</a></li>
-                <li><a href="#" data-category="template">Template</a></li>
-                <li><a href="#" data-category="snack">Aneka Snack</a></li>
-            </ul>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h2>Discover Amazing Products</h2>
+            <p>Shop the latest trends with exclusive deals</p>
+            <button class="btn-primary">Shop Now</button>
         </div>
-    </nav>
+        <div class="hero-slider">
+            <div class="slide active" style="background-image: url('https://images.unsplash.com/photo-1483985988355-763728e1935b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');"></div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');"></div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');"></div>
+        </div>
+    </section>
 
-    <main class="main">
+    <!-- Categories -->
+    <section class="categories">
         <div class="container">
-            <div class="page-header">
-                <h1>Koleksi Eksklusif</h1>
-                <p>Temukan produk premium pilihan untuk gaya hidup Anda</p>
-            </div>
-
-            <div class="filter-controls">
-                <div class="filter-group">
-                    <label for="sort-by">Urutkan:</label>
-                    <select id="sort-by">
-                        <option value="default">Default</option>
-                        <option value="price-asc">Harga: Rendah ke Tinggi</option>
-                        <option value="price-desc">Harga: Tinggi ke Rendah</option>
-                        <option value="name-asc">Nama: A-Z</option>
-                    </select>
+            <h2 class="section-title">Shop by Category</h2>
+            <div class="category-grid">
+                <div class="category-card" data-category="electronics">
+                    <i class="fas fa-laptop"></i>
+                    <span>Electronics</span>
                 </div>
-                <div class="filter-result">
-                    Menampilkan <span id="product-count">0</span> produk
+                <div class="category-card" data-category="fashion">
+                    <i class="fas fa-tshirt"></i>
+                    <span>Fashion</span>
                 </div>
-            </div>
-
-            <div class="product-grid" id="product-grid">
-                <!-- Produk akan dimuat via JavaScript -->
-                <div class="loading-state">
-                    <i class="fas fa-spinner fa-spin"></i> Memuat produk...
+                <div class="category-card" data-category="home">
+                    <i class="fas fa-home"></i>
+                    <span>Home & Living</span>
+                </div>
+                <div class="category-card" data-category="digital">
+                    <i class="fas fa-download"></i>
+                    <span>Digital</span>
+                </div>
+                <div class="category-card" data-category="beauty">
+                    <i class="fas fa-spa"></i>
+                    <span>Beauty</span>
                 </div>
             </div>
         </div>
-    </main>
+    </section>
 
-    <!-- Modal Keranjang -->
-    <div class="modal" id="cart-modal">
-        <div class="modal-content cart-content">
-            <span class="close-modal">&times;</span>
-            <h2><i class="fas fa-shopping-bag"></i> Keranjang Belanja</h2>
-            
-            <div class="cart-items" id="cart-items">
-                <!-- Item keranjang akan dimuat di sini -->
+    <!-- Products Section -->
+    <section class="products">
+        <div class="container">
+            <h2 class="section-title">Featured Products</h2>
+            <div class="product-grid" id="productGrid">
+                <!-- Products will be loaded here from Supabase -->
             </div>
-            
-            <div class="cart-summary">
-                <div class="cart-total">
-                    <span>Total:</span>
-                    <span>Rp <span id="cart-total">0</span></span>
-                </div>
-                <button class="btn-checkout" id="checkout-btn">Lanjut ke Pembayaran</button>
+        </div>
+    </section>
+
+    <!-- Cart Sidebar -->
+    <div class="cart-sidebar" id="cartSidebar">
+        <div class="cart-header">
+            <h3>Your Cart</h3>
+            <button class="close-cart" id="closeCart">&times;</button>
+        </div>
+        <div class="cart-items" id="cartItems">
+            <!-- Cart items will be displayed here -->
+            <div class="empty-cart">
+                <i class="fas fa-shopping-cart"></i>
+                <p>Your cart is empty</p>
             </div>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total:</span>
+                <span id="cartTotal">Rp 0</span>
+            </div>
+            <button class="btn-checkout" id="checkoutBtn">Checkout</button>
         </div>
     </div>
+    <div class="cart-overlay" id="cartOverlay"></div>
 
-    <!-- Modal Data Pelanggan -->
-    <div class="modal" id="customer-modal">
-        <div class="modal-content customer-content">
-            <span class="close-modal">&times;</span>
-            <h2><i class="fas fa-user"></i> Data Pelanggan</h2>
-            
-            <form id="customer-form">
+    <!-- Checkout Modal -->
+    <div class="checkout-modal" id="checkoutModal">
+        <div class="checkout-container">
+            <div class="checkout-header">
+                <h3>Checkout</h3>
+                <button class="close-checkout" id="closeCheckout">&times;</button>
+            </div>
+            <form id="checkoutForm">
                 <div class="form-group">
-                    <label for="customer-name">Nama Lengkap*</label>
-                    <input type="text" id="customer-name" required>
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" name="fullName" required>
                 </div>
-                
                 <div class="form-group">
-                    <label for="customer-email">Email*</label>
-                    <input type="email" id="customer-email" required>
+                    <label for="whatsapp">WhatsApp Number</label>
+                    <input type="tel" id="whatsapp" name="whatsapp" required>
                 </div>
-                
                 <div class="form-group">
-                    <label for="customer-phone">Nomor WhatsApp*</label>
-                    <input type="tel" id="customer-phone" required>
+                    <label for="notes">Notes (Optional)</label>
+                    <textarea id="notes" name="notes" rows="3"></textarea>
                 </div>
                 
-                <div id="address-fields">
-                    <!-- Alamat akan ditampilkan jika ada produk fisik -->
+                <!-- Dynamic fields based on product type -->
+                <div id="dynamicFields">
+                    <!-- Will be populated based on cart items -->
                 </div>
                 
-                <div class="form-group">
-                    <label for="customer-notes">Catatan (Opsional)</label>
-                    <textarea id="customer-notes" rows="3"></textarea>
+                <div class="shipping-method" id="shippingMethodContainer" style="display: none;">
+                    <h4>Shipping Method</h4>
+                    <div class="shipping-options">
+                        <label class="shipping-option">
+                            <input type="radio" name="shipping" value="regular" checked>
+                            <div class="option-content">
+                                <span>Regular Shipping</span>
+                                <span class="shipping-price">Rp 15,000</span>
+                            </div>
+                        </label>
+                        <label class="shipping-option">
+                            <input type="radio" name="shipping" value="express">
+                            <div class="option-content">
+                                <span>Express Shipping</span>
+                                <span class="shipping-price">Rp 25,000</span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
                 
-                <button type="submit" class="btn-submit">Lanjut ke Pembayaran</button>
+                <div class="payment-method">
+                    <h4>Payment Method</h4>
+                    <div class="payment-options">
+                        <label class="payment-option">
+                            <input type="radio" name="payment" value="bank" checked>
+                            <div class="option-content">
+                                <i class="fas fa-university"></i>
+                                <span>Bank Transfer</span>
+                            </div>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="payment" value="qris">
+                            <div class="option-content">
+                                <i class="fas fa-qrcode"></i>
+                                <span>QRIS</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="order-summary">
+                    <h4>Order Summary</h4>
+                    <div class="summary-items" id="summaryItems">
+                        <!-- Order items will be displayed here -->
+                    </div>
+                    <div class="summary-total">
+                        <span>Total:</span>
+                        <span id="summaryTotal">Rp 0</span>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-submit-order">Place Order</button>
             </form>
         </div>
     </div>
+    <div class="checkout-overlay" id="checkoutOverlay"></div>
 
-    <!-- Modal Pembayaran -->
-    <div class="modal" id="payment-modal">
-        <div class="modal-content payment-content">
-            <span class="close-modal">&times;</span>
-            <h2><i class="fas fa-credit-card"></i> Pembayaran</h2>
-            
-            <div class="order-summary">
-                <h3>Ringkasan Pesanan</h3>
-                <div id="order-items">
-                    <!-- Item pesanan akan dimuat di sini -->
-                </div>
-                <div class="order-total">
-                    <span>Total Pembayaran:</span>
-                    <span>Rp <span id="payment-total">0</span></span>
-                </div>
+    <!-- Success Modal -->
+    <div class="success-modal" id="successModal">
+        <div class="success-content">
+            <div class="success-animation">
+                <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                    <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                    <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                </svg>
             </div>
-            
-            <div class="payment-method">
-                <h3>Metode Pembayaran</h3>
-                <div class="payment-option active" data-method="qris">
-                    <div class="option-header">
-                        <i class="fas fa-qrcode"></i>
-                        <span>QRIS</span>
-                    </div>
-                    <div class="option-content">
-                        <p>Scan QR code berikut menggunakan aplikasi mobile banking atau e-wallet Anda</p>
-                        <img src="images/qris.png" alt="QRIS Payment" class="qris-image">
-                    </div>
-                </div>
-                
-                <div class="payment-instruction">
-                    <h4>Instruksi Pembayaran:</h4>
-                    <ol>
-                        <li>Scan QR Code di atas menggunakan aplikasi mobile banking atau e-wallet</li>
-                        <li>Masukkan jumlah yang tertera</li>
-                        <li>Lakukan pembayaran</li>
-                        <li>Setelah pembayaran, kirim bukti transfer melalui WhatsApp</li>
-                    </ol>
-                </div>
-                
-                <a href="#" id="whatsapp-btn" class="whatsapp-btn" target="_blank">
-                    <i class="fab fa-whatsapp"></i> Kirim Bukti Pembayaran
-                </a>
-            </div>
+            <h3>Order Placed Successfully!</h3>
+            <p>Thank you for your purchase. We've sent the details to your WhatsApp.</p>
+            <button class="btn-close-success" id="closeSuccess">Continue Shopping</button>
         </div>
     </div>
-
-    <!-- Modal Notifikasi -->
-    <div class="notification" id="notification">
-        <div class="notification-content">
-            <span id="notification-message"></span>
-        </div>
-    </div>
-
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h3>LUXURY STORE</h3>
-                    <p>Toko online premium dengan koleksi terbaik untuk gaya hidup modern.</p>
-                </div>
-                <div class="footer-section">
-                    <h3>Kontak</h3>
-                    <p><i class="fas fa-phone"></i> (021) 1234567</p>
-                    <p><i class="fas fa-envelope"></i> info@luxurystore.com</p>
-                </div>
-                <div class="footer-section">
-                    <h3>Ikuti Kami</h3>
-                    <div class="social-links">
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-facebook"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                    </div>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; <span id="current-year"></span> Luxury Store. All Rights Reserved.</p>
-            </div>
-        </div>
-    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
