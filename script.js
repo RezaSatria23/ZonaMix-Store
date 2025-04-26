@@ -362,7 +362,7 @@ function renderCartItems() {
                 <div class="remove-item"><i class="fas fa-trash"></i> Hapus</div>
             </div>
             <div class="cart-item-total">Rp ${itemTotal.toLocaleString('id-ID')}</div>
-        `).join('');
+        `;
         // Update total
         updateCartTotal();
     });
