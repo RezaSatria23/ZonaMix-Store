@@ -549,7 +549,7 @@ async function showEditModal(productId) {
                 }
 
                 // Show success message
-                showNotification('Produk berhasil diperbarui!');
+                messageElement.textContent = 'Produk berhasil diperbarui!';
                 messageElement.className = 'message success';
                 messageElement.style.display = 'block';
                 
