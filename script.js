@@ -253,20 +253,20 @@ function setupEventListeners() {
             addToCart(productId);
         }
         
-        // Handle tombol tambah
-        if (e.target.classList.contains('increase') || e.target.closest('.increase')) {
-            const button = e.target.classList.contains('increase') ? e.target : e.target.closest('.increase');
+       // Tombol tambah/kurangi quantity
+        if (e.target.closest('.quantity-btn')) {
+            const button = e.target.closest('.quantity-btn');
             const cartItem = button.closest('.cart-item');
+            
+            if (!cartItem || !cartItem.dataset.id) {
+                console.error('Struktur DOM tidak valid');
+                return;
+            }
+            
             const productId = parseInt(cartItem.dataset.id);
-            updateQuantity(productId, true);
-        }
-        
-        // Handle tombol kurang
-        if (e.target.classList.contains('decrease') || e.target.closest('.decrease')) {
-            const button = e.target.classList.contains('decrease') ? e.target : e.target.closest('.decrease');
-            const cartItem = button.closest('.cart-item');
-            const productId = parseInt(cartItem.dataset.id);
-            updateQuantity(productId, false);
+            const isIncrease = button.classList.contains('increase');
+            
+            updateQuantity(productId, isIncrease);
         }
         
         // Hapus item
@@ -322,38 +322,41 @@ function saveCart() {
 }
 
 // Fungsi untuk update quantity (versi sederhana)
-async function updateQuantity(productId, action) {
-  // Konversi productId ke number untuk konsistensi
-  productId = Number(productId);
-  
-  const itemIndex = cart.findIndex(item => Number(item.id) === productId);
-  
-  if (itemIndex === -1) {
-    console.error('Produk tidak ditemukan di keranjang');
-    return;
-  }
-
-  // Clone cart untuk menghindari mutasi langsung
-  const newCart = [...cart];
-  
-  if (action === 'increase') {
-    newCart[itemIndex].quantity += 1;
-  } else {
-    if (newCart[itemIndex].quantity > 1) {
-      newCart[itemIndex].quantity -= 1;
-    } else {
-      if (confirm('Hapus produk dari keranjang?')) {
-        newCart.splice(itemIndex, 1);
-      } else {
+function updateQuantity(productId, isIncrease) {
+    // Pastikan productId berupa number
+    productId = parseInt(productId);
+    
+    // Cari item di keranjang dengan konversi tipe yang sama
+    const itemIndex = cart.findIndex(item => parseInt(item.id) === productId);
+    
+    if (itemIndex === -1) {
+        console.error('Produk tidak ditemukan di keranjang. ID:', productId, 'Tipe:', typeof productId);
+        console.log('Isi keranjang:', cart);
         return;
-      }
     }
-  }
 
-  // Update cart state
-  cart = newCart;
-  saveCart();
-  renderCartItems();
+    // Clone cart untuk menghindari mutasi langsung
+    const updatedCart = [...cart];
+    
+    if (isIncrease) {
+        updatedCart[itemIndex].quantity += 1;
+    } else {
+        if (updatedCart[itemIndex].quantity > 1) {
+            updatedCart[itemIndex].quantity -= 1;
+        } else {
+            if (confirm('Hapus produk dari keranjang?')) {
+                updatedCart.splice(itemIndex, 1);
+            } else {
+                return;
+            }
+        }
+    }
+
+    // Update state
+    cart = updatedCart;
+    saveCart();
+    renderCartItems();
+    updateCartCount();
 }
 // Fungsi untuk update quantity produk
 function updateCartItem(productId, action) {
