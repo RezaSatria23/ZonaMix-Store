@@ -5,10 +5,12 @@ const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 // Variabel Global
 let products = [];
+let filteredProducts = [];
 let cart = JSON.parse(localStorage.getItem('luxuryStoreCart')) || [];
 let currentCategory = 'all';
 let currentSort = 'default';
 const whatsappNumber = '6281234567890';
+
 
 // DOM Elements
 const productGrid = document.getElementById('product-grid');
@@ -19,11 +21,15 @@ const notification = document.getElementById('notification');
 const notificationMessage = document.getElementById('notification-message');
 const sortSelect = document.getElementById('sort-by');
 const categoryLinks = document.querySelectorAll('.nav-list li a');
+const searchInput = document.getElementById('search-input');
+const cartIcon = document.getElementById('cart-icon');
 
 // Inisialisasi Aplikasi
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        showLoadingState();
+        // Set tahun di footer
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+        
         await loadProducts();
         renderProducts(products);
         setupEventListeners();
@@ -38,8 +44,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }, 500);
         }, 1500);
         
-        // Cek admin
-        checkAdminAccess();
     } catch (error) {
         console.error('Initialization error:', error);
         showErrorState();
@@ -49,7 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Fungsi untuk memuat produk dari Supabase
 async function loadProducts() {
     try {
-        const { data, error } = await supabase
+        let { data, error } = await supabase
             .from('products')
             .select('*')
             .eq('is_published', true)
@@ -58,12 +62,14 @@ async function loadProducts() {
         if (error) throw error;
 
         products = data || [];
+        filteredProducts = [...products];
         localStorage.setItem('luxuryStoreProducts', JSON.stringify(products));
         return products;
     } catch (error) {
         console.error('Error loading products:', error);
         const storedProducts = JSON.parse(localStorage.getItem('luxuryStoreProducts')) || [];
         products = storedProducts;
+        filteredProducts = [...products];
         showNotification('Menggunakan data offline', 'warning');
         return products;
     }
@@ -115,28 +121,7 @@ function setupRealtimeUpdates() {
 function renderProducts(productsToRender) {
     if (!productGrid) return;
     
-    if (!productsToRender || !Array.isArray(productsToRender)) {
-        productGrid.innerHTML = `
-            <div class="error-state">
-                <i class="fas fa-exclamation-triangle"></i>
-                Data produk tidak valid
-            </div>
-        `;
-        return;
-    }
-    
-    // Filter produk
-    let filteredProducts = currentCategory === 'all' 
-        ? [...productsToRender] 
-        : productsToRender.filter(product => product.category === currentCategory);
-    
-    // Sort produk
-    filteredProducts = sortProducts(filteredProducts, currentSort);
-    
-    // Render produk
-    productGrid.innerHTML = '';
-    
-    if (filteredProducts.length === 0) {
+    if (!productsToRender || productsToRender.length === 0) {
         productGrid.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-box-open"></i>
@@ -146,24 +131,29 @@ function renderProducts(productsToRender) {
         return;
     }
     
-    filteredProducts.forEach(product => {
+    productGrid.innerHTML = '';
+    
+    productsToRender.forEach(product => {
         const productCard = document.createElement('div');
         productCard.className = 'product-card';
         productCard.innerHTML = `
-            <div class="product-badge">${product.type === 'physical' ? 'Fisik' : 'Digital'}</div>
+            ${product.is_featured ? `<div class="product-badge featured">Featured</div>` : ''}
+            ${product.stock <= 0 ? `<div class="product-badge out-of-stock">Habis</div>` : ''}
             <div class="product-image-container">
                 <img src="${product.image_url || 'https://via.placeholder.com/300'}" 
                      alt="${product.name}" 
                      class="product-image"
+                     loading="lazy"
                      onerror="this.src='https://via.placeholder.com/300?text=Gambar+Tidak+Tersedia'">
+                ${product.stock <= 0 ? `<div class="sold-out-overlay">Habis</div>` : ''}
             </div>
             <div class="product-info">
                 <span class="product-category">${product.category?.toUpperCase() || 'UMUM'}</span>
                 <h3 class="product-title">${product.name}</h3>
                 <p class="product-description">${product.description || 'Tidak ada deskripsi'}</p>
                 <div class="product-price">Rp ${product.price?.toLocaleString('id-ID') || '0'}</div>
-                <button class="add-to-cart" data-id="${product.id}">
-                    <i class="fas fa-shopping-bag"></i> Tambah ke Keranjang
+                <button class="add-to-cart" data-id="${product.id}" ${product.stock <= 0 ? 'disabled' : ''}>
+                    <i class="fas fa-shopping-bag"></i> ${product.stock <= 0 ? 'Stok Habis' : 'Tambah ke Keranjang'}
                 </button>
             </div>
         `;
@@ -171,11 +161,38 @@ function renderProducts(productsToRender) {
     });
     
     // Update product count
+    updateProductCount(productsToRender.length);
+}
+
+function updateProductCount(count) {
     const productCountElement = document.getElementById('product-count');
     if (productCountElement) {
-        productCountElement.textContent = filteredProducts.length;
+        productCountElement.textContent = count;
     }
 }
+
+function filterProducts() {
+    // Filter berdasarkan kategori
+    filteredProducts = currentCategory === 'all' 
+        ? [...products] 
+        : products.filter(product => product.category === currentCategory);
+    
+    // Filter berdasarkan pencarian
+    if (searchInput.value.trim()) {
+        const searchTerm = searchInput.value.trim().toLowerCase();
+        filteredProducts = filteredProducts.filter(product => 
+            product.name.toLowerCase().includes(searchTerm) || 
+            product.description.toLowerCase().includes(searchTerm) ||
+            product.category.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    // Sort produk
+    filteredProducts = sortProducts(filteredProducts, currentSort);
+    
+    renderProducts(filteredProducts);
+}
+
 
 function sortProducts(products, sortType) {
     if (!Array.isArray(products)) return [];
@@ -205,7 +222,7 @@ function setupEventListeners() {
             categoryLinks.forEach(item => item.classList.remove('active'));
             link.classList.add('active');
             
-            renderProducts(products);
+            filterProducts();
         });
     });
     
@@ -213,10 +230,17 @@ function setupEventListeners() {
     if (sortSelect) {
         sortSelect.addEventListener('change', (e) => {
             currentSort = e.target.value;
-            renderProducts(products);
+            filterProducts();
         });
     }
     
+    // Search functionality
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(() => {
+            filterProducts();
+        }, 300));
+    }
+
     // Buka/tutup modal keranjang
     const cartIcon = document.querySelector('.cart-icon');
     if (cartIcon) {
@@ -287,6 +311,18 @@ function setupEventListeners() {
             }
         }
     });
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            func.apply(context, args);
+        }, wait);
+    };
 }
 
 function closeAllModals() {
