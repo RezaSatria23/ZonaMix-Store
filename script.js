@@ -125,7 +125,7 @@ function renderProducts() {
         productCard.className = 'product-card animate__animated animate__fadeInUp';
         productCard.style.animationDelay = `${index * 0.1}s`;
         productCard.innerHTML = `
-            ${product.type === 'physical' ? 
+            ${product.type === 'fisik' ? 
                 `<div class="product-badge animate__animated animate__pulse animate__infinite">Fisik</div>` : 
                 `<div class="product-badge animate__animated animate__pulse animate__infinite">Digital</div>`}
             <div class="product-image-container">
@@ -363,12 +363,6 @@ function renderCartItems() {
 function updateCart() {
     localStorage.setItem('luxuryStoreCart', JSON.stringify(cart));
     updateCartCount();
-    renderCartItems();
-    
-    // Jika cart kosong, tutup modal
-    if (cart.length === 0 && cartModal.style.display === 'block') {
-        cartModal.style.display = 'none';
-    }
 }
 
 function updateCartCount() {
