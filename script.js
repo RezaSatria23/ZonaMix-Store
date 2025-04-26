@@ -144,16 +144,7 @@ function renderProducts() {
         `;
         productGrid.appendChild(productCard);
     });
-    productGrid.innerHTML = products.map(product => `
-        <div class="product-card">
-            <img src="${product.image_url}" alt="${product.name}" loading="lazy">
-            <h3>${product.name}</h3>
-            <p>Rp ${product.price.toLocaleString('id-ID')}</p>
-            <button class="add-to-cart" data-id="${product.id}">
-                Tambah ke Keranjang
-            </button>
-        </div>
-    `).join('');
+    
     // Update product count
     document.getElementById('product-count').textContent = filteredProducts.length;
 }
