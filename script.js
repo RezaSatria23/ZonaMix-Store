@@ -318,40 +318,60 @@ function removeFromCart(productId) {
 }
 
 function updateQuantity(productId, isIncrease) {
-    const itemIndex = cart.findIndex(item => item.id == productId);
+    // Cari index item di keranjang
+    const itemIndex = cart.findIndex(item => String(item.id) === String(productId));
     
-    if (itemIndex === -1) return;
-    
+    if (itemIndex === -1) {
+        console.error('Produk tidak ditemukan di keranjang');
+        return;
+    }
+
     if (isIncrease) {
+        // Tambah quantity
         cart[itemIndex].quantity += 1;
     } else {
+        // Kurangi quantity (minimal 1)
         if (cart[itemIndex].quantity > 1) {
             cart[itemIndex].quantity -= 1;
         } else {
-            removeFromCart(productId);
-            return;
+            // Jika quantity = 1, tampilkan konfirmasi
+            if (confirm('Apakah Anda ingin menghapus produk ini dari keranjang?')) {
+                removeFromCart(productId);
+                return;
+            } else {
+                return; // Batalkan jika user tidak setuju
+            }
         }
     }
     
     updateCart();
 }
-
+// Fungsi untuk menampilkan notifikasi keranjang kosong
+function checkEmptyCart() {
+    if (cart.length === 0) {
+        showNotification('Keranjang kosong! Silakan tambahkan produk terlebih dahulu', 'warning');
+        return true;
+    }
+    return false;
+}
 function renderCartItems() {
-    const cartItemsEl = document.getElementById('cart-items');
-    const cartTotalEl = document.getElementById('cart-total');
+    const cartItemsContainer = document.getElementById('cart-items');
     
-    cartItemsEl.innerHTML = '';
-    
-    let total = 0;
-    
-    cart.forEach(item => {
-        const itemTotal = item.price * item.quantity;
-        total += itemTotal;
+    if (cart.length === 0) {
+        cartItemsContainer.innerHTML = `
+            <div class="empty-cart-message">
+                <i class="fas fa-shopping-cart"></i>
+                <p>Keranjang Anda kosong</p>
+                <button class="btn-browse">Lihat Produk</button>
+            </div>
+        `;
         
-        const cartItemEl = document.createElement('div');
-        cartItemEl.className = 'cart-item animate__animated animate__fadeIn';
-        cartItemEl.setAttribute('data-id', item.id);
-        cartItemEl.innerHTML = `
+        // Event listener untuk tombol lihat produk
+        document.querySelector('.btn-browse')?.addEventListener('click', () => {
+            document.querySelector('.nav-list li a[data-category="all"]').click();
+        });
+    } else {
+        cartItemsContainer.innerHTML = cart.map(item =>`
             <img src="${item.image_url}" alt="${item.name}" class="cart-item-image" loading="lazy">
             <div class="cart-item-details">
                 <div class="cart-item-title">${item.name}</div>
@@ -365,9 +385,9 @@ function renderCartItems() {
                 <div class="remove-item"><i class="fas fa-trash"></i> Hapus</div>
             </div>
             <div class="cart-item-total">Rp ${itemTotal.toLocaleString('id-ID')}</div>
-        `;
+        `);
         cartItemsEl.appendChild(cartItemEl);
-    });
+    };
     
     cartTotalEl.textContent = total.toLocaleString('id-ID');
 }
