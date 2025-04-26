@@ -381,6 +381,7 @@ function renderCartItems() {
             <div class="cart-item-total">Rp ${itemTotal.toLocaleString('id-ID')}</div>
         `;
         cartItemsEl.appendChild(cartItemEl);
+        updateQuantity();
     });
     
     cartTotalEl.textContent = total.toLocaleString('id-ID');
