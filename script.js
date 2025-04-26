@@ -332,7 +332,6 @@ function renderCartItems() {
     cartItemsEl.innerHTML = '';
     
     let total = 0;
-    if (!cartItemsContainer) return;
     
     cart.forEach(item => {
         const itemTotal = item.price * item.quantity;
