@@ -286,7 +286,7 @@ function setupEventListeners() {
 
 // Fungsi untuk menambahkan ke keranjang
 function addToCart(productId) {
-
+    productId = parseInt(productId);
     const product = products.find(p => p.id === productId);
     
     if (!product) {
