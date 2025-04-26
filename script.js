@@ -363,18 +363,11 @@ function renderCartItems() {
             </div>
             <div class="cart-item-total">Rp ${itemTotal.toLocaleString('id-ID')}</div>
         `;
-        // Update total
-        updateCartTotal();
+        cartItemsEl.appendChild(cartItemEl);
     });
     
     cartTotalEl.textContent = total.toLocaleString('id-ID');
 }
-// Fungsi Update Total
-function updateCartTotal() {
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    document.getElementById('cart-total').textContent = total.toLocaleString('id-ID');
-}
-
 function updateCart() {
     localStorage.setItem('luxuryStoreCart', JSON.stringify(cart));
     updateCartCount();
