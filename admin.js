@@ -729,9 +729,6 @@ function renderProducts() {
         <div class="product-management-card" data-id="${product.id}">
             <img src="${product.image_url}" alt="${product.name}" class="product-card-image">
             <div class="product-card-body">
-                ${product.type === 'fisik' ? 
-                `<div class="product-badge animate__animated animate__pulse animate__infinite">Fisik</div>` : 
-                `<div class="product-badge animate__animated animate__pulse animate__infinite">Digital</div>`}
                 <h3 class="product-card-title">${product.name}</h3>
                 <div class="product-card-meta">
                     <span class="product-card-price">Rp ${product.price.toLocaleString('id-ID')}</span>
