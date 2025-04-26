@@ -374,6 +374,7 @@ function updateCartItem(productId, action) {
 
 function renderCartItems() {
     const cartItemsEl = document.getElementById('cart-items');
+    const cartTotalEl = document.getElementById('cart-total');
     
     cartItemsEl.innerHTML = '';
     
@@ -395,6 +396,7 @@ function renderCartItems() {
         
         const cartItemEl = document.createElement('div');
         cartItemEl.className = 'cart-item animate__animated animate__fadeIn';
+        cartItemEl.dataset.id = item.id;
         cartItemEl.innerHTML = `
             <img src="${item.image_url}" alt="${item.name}" class="cart-item-image" loading="lazy">
             <div class="cart-item-details">
