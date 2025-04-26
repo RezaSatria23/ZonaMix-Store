@@ -263,7 +263,7 @@ function setupEventListeners() {
                 return;
             }
             
-            const productId = parseInt(cartItem.dataset.id);
+            const productId = cartItem.dataset.id; // JANGAN parse ke number
             const isIncrease = button.classList.contains('increase');
             
             updateQuantity(productId, isIncrease);
@@ -286,7 +286,10 @@ function setupEventListeners() {
 
 // Fungsi untuk menambahkan ke keranjang
 function addToCart(productId) {
-
+    if (typeof productId !== 'string') {
+        console.error('ID produk harus string/UUID');
+        return;
+    }
     const product = products.find(p => p.id === productId);
     
     if (!product) {
@@ -302,7 +305,6 @@ function addToCart(productId) {
     } else {
         cart.push({
             ...product,
-            id: productId,
             quantity: 1
         });
     }
@@ -320,19 +322,22 @@ function removeFromCart(productId) {
 
 // Fungsi untuk update quantity (versi sederhana)
 function updateQuantity(productId, isIncrease) {
-    // Pastikan productId berupa number
-    productId = parseInt(productId);
-    
-    // Cari item di keranjang dengan konversi tipe yang sama
-    const itemIndex = cart.findIndex(item => parseInt(item.id) === productId);
-    
-    if (itemIndex === -1) {
-        console.error('Produk tidak ditemukan di keranjang. ID:', productId, 'Tipe:', typeof productId);
-        console.log('Isi keranjang:', cart);
+    // JANGAN konversi UUID ke number
+    // productId harus tetap sebagai string
+    if (typeof productId !== 'string') {
+        console.error('ID produk harus string/UUID');
         return;
     }
 
-    // Clone cart untuk menghindari mutasi langsung
+    const itemIndex = cart.findIndex(item => item.id === productId);
+    
+    if (itemIndex === -1) {
+        console.error('Produk tidak ditemukan di keranjang. ID:', productId);
+        console.log('Isi keranjang:', cart);
+        showNotification('Produk tidak ditemukan di keranjang', 'error');
+        return;
+    }
+
     const updatedCart = [...cart];
     
     if (isIncrease) {
@@ -349,7 +354,6 @@ function updateQuantity(productId, isIncrease) {
         }
     }
 
-    // Update state
     cart = updatedCart;
     renderCartItems();
     updateCartCount();
