@@ -346,32 +346,23 @@ function updateQuantity(productId, isIncrease) {
     
     updateCart();
 }
-// Fungsi untuk menampilkan notifikasi keranjang kosong
-function checkEmptyCart() {
-    if (cart.length === 0) {
-        showNotification('Keranjang kosong! Silakan tambahkan produk terlebih dahulu', 'warning');
-        return true;
-    }
-    return false;
-}
+
 function renderCartItems() {
-    const cartItemsContainer = document.getElementById('cart-items');
+    const cartItemsEl = document.getElementById('cart-items');
+    const cartTotalEl = document.getElementById('cart-total');
     
-    if (cart.length === 0) {
-        cartItemsContainer.innerHTML = `
-            <div class="empty-cart-message">
-                <i class="fas fa-shopping-cart"></i>
-                <p>Keranjang Anda kosong</p>
-                <button class="btn-browse">Lihat Produk</button>
-            </div>
-        `;
+    cartItemsEl.innerHTML = '';
+    
+    let total = 0;
+    
+    cart.forEach(item => {
+        const itemTotal = item.price * item.quantity;
+        total += itemTotal;
         
-        // Event listener untuk tombol lihat produk
-        document.querySelector('.btn-browse')?.addEventListener('click', () => {
-            document.querySelector('.nav-list li a[data-category="all"]').click();
-        });
-    } else {
-        cartItemsContainer.innerHTML = cart.map(item =>`
+        const cartItemEl = document.createElement('div');
+        cartItemEl.className = 'cart-item animate__animated animate__fadeIn';
+        cartItemEl.setAttribute('data-id', item.id);
+        cartItemEl.innerHTML = `
             <img src="${item.image_url}" alt="${item.name}" class="cart-item-image" loading="lazy">
             <div class="cart-item-details">
                 <div class="cart-item-title">${item.name}</div>
@@ -385,9 +376,9 @@ function renderCartItems() {
                 <div class="remove-item"><i class="fas fa-trash"></i> Hapus</div>
             </div>
             <div class="cart-item-total">Rp ${itemTotal.toLocaleString('id-ID')}</div>
-        `);
+        `;
         cartItemsEl.appendChild(cartItemEl);
-    };
+    });
     
     cartTotalEl.textContent = total.toLocaleString('id-ID');
 }
