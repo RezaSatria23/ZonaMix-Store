@@ -60,7 +60,6 @@ async function loadProductsFromSupabase() {
         
         products = data;
         renderProducts();
-        setupCartEventListeners(); // Setup event listeners untuk cart
         
     } catch (error) {
         console.error('Error loading products:', error);
