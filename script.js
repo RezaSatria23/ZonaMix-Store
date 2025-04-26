@@ -345,10 +345,13 @@ function renderCartItems() {
     let total = 0;
     
     cart.forEach(item => {
-        const cartItemsContainer = document.getElementById('cart-items');
-        if (!cartItemsContainer) return;
-    
-        cartItemsContainer.innerHTML =  cart.map(item => `
+        const itemTotal = item.price * item.quantity;
+        total += itemTotal;
+        
+        const cartItemEl = document.createElement('div');
+        cartItemEl.className = 'cart-item animate__animated animate__fadeIn';
+        cartItemEl.setAttribute('data-id', item.id);
+        cartItemEl.innerHTML = `
             <img src="${item.image_url}" alt="${item.name}" class="cart-item-image" loading="lazy">
             <div class="cart-item-details">
                 <div class="cart-item-title">${item.name}</div>
