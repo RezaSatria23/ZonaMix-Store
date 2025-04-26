@@ -263,11 +263,12 @@ function setupEventListeners() {
             addToCart(productId);
         }
         
-        // Tombol tambah/kurangi jumlah
+       // Tombol tambah/kurangi quantity
         if (e.target.classList.contains('quantity-btn')) {
-            const itemId = parseInt(e.target.closest('.cart-item').getAttribute('data-id'));
+            const cartItem = e.target.closest('.cart-item');
+            const productId = parseInt(cartItem.dataset.id);
             const isIncrease = e.target.classList.contains('increase');
-            updateQuantity(itemId, isIncrease);
+            updateQuantity(productId, isIncrease);
         }
         
         // Hapus item
