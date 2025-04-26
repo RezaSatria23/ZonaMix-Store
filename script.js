@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     updateCartCount();
     renderCartItems();
+    
     // Animasi preloader
     setTimeout(() => {
         const preloader = document.querySelector('.preloader');
@@ -312,64 +313,59 @@ function addToCart(productId) {
 }
 
 function removeFromCart(productId) {
-    productId = String(productId);
-    cart = cart.filter(item => String(item.id) !== productId);
+    cart = cart.filter(item => item.id == productId); // Gunakan == untuk kompatibilitas tipe
     updateCart();
     showNotification('Produk dihapus dari keranjang');
 }
 
 function updateQuantity(productId, isIncrease) {
-    const item = cart.find(item => item.id === productId);
-    if (item) {
-        if (isIncrease) {
-            item.quantity += 1;
+    const itemIndex = cart.findIndex(item => item.id == productId);
+    
+    if (itemIndex === -1) return;
+    
+    if (isIncrease) {
+        cart[itemIndex].quantity += 1;
+    } else {
+        if (cart[itemIndex].quantity > 1) {
+            cart[itemIndex].quantity -= 1;
         } else {
-            if (item.quantity > 1) {
-                item.quantity -= 1;
-            } else {
-                removeFromCart(productId);
-                return;
-            }
+            removeFromCart(productId);
+            return;
         }
-        renderCartItems();
-        updateCartCount();
     }
+    
+    updateCart();
 }
 
 function renderCartItems() {
-    const cartItemsEl = document.getElementById('cart-items');
-    const cartTotalEl = document.getElementById('cart-total');
+    const cartItemsContainer = document.getElementById('cart-items');
+    if (!cartItemsContainer) return;
     
-    cartItemsEl.innerHTML = '';
-    
-    let total = 0;
-    
-    cart.forEach(item => {
-        const itemTotal = item.price * item.quantity;
-        total += itemTotal;
-        
-        const cartItemEl = document.createElement('div');
-        cartItemEl.className = 'cart-item animate__animated animate__fadeIn';
-        cartItemEl.setAttribute('data-id', item.id);
-        cartItemEl.innerHTML = `
-            <img src="${item.image_url}" alt="${item.name}" class="cart-item-image" loading="lazy">
+    cartItemsContainer.innerHTML = cart.map(item => `
+        <div class="cart-item" data-id="${item.id}">
+            <img src="${item.image_url}" alt="${item.name}">
             <div class="cart-item-details">
-                <div class="cart-item-title">${item.name}</div>
-                <div class="cart-item-category">${item.category.toUpperCase()}</div>
-                <div class="cart-item-price">Rp ${item.price.toLocaleString('id-ID')}</div>
+                <h4>${item.name}</h4>
+                <p>Rp ${item.price.toLocaleString('id-ID')} x ${item.quantity}</p>
             </div>
-            <div class="cart-item-controls">
+            <div class="cart-item-actions">
                 <button class="quantity-btn decrease">-</button>
-                <span class="quantity-value">${item.quantity}</span>
+                <span>${item.quantity}</span>
                 <button class="quantity-btn increase">+</button>
-                <div class="remove-item"><i class="fas fa-trash"></i> Hapus</div>
+                <button class="remove-btn">
+                    <i class="fas fa-trash"></i> Hapus
+                </button>
             </div>
-            <div class="cart-item-total">Rp ${itemTotal.toLocaleString('id-ID')}</div>
-        `;
-        cartItemsEl.appendChild(cartItemEl);
-    });
+        </div>
+    `).join('');
     
-    cartTotalEl.textContent = total.toLocaleString('id-ID');
+    // Update total
+    updateCartTotal();
+}
+// Fungsi Update Total
+function updateCartTotal() {
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    document.getElementById('cart-total').textContent = total.toLocaleString('id-ID');
 }
 function updateCart() {
     localStorage.setItem('luxuryStoreCart', JSON.stringify(cart));
