@@ -513,6 +513,7 @@ async function showEditModal(productId) {
             const name = document.getElementById('edit-product-name').value.trim();
             const price = parseFloat(document.getElementById('edit-product-price').value);
             const category = document.getElementById('edit-product-category').value;
+            const type = document.getElementById('edit-product-type').value;
             const stock = parseInt(document.getElementById('edit-product-stock').value);
             const description = document.getElementById('edit-product-description').value.trim();
             const image_url = document.getElementById('edit-product-image').value.trim();
