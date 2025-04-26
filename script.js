@@ -11,7 +11,6 @@ let currentCategory = 'all';
 let currentSort = 'default';
 const whatsappNumber = '6281234567890';
 
-
 // DOM Elements
 const productGrid = document.getElementById('product-grid');
 const cartModal = document.getElementById('cart-modal');
@@ -23,7 +22,30 @@ const sortSelect = document.getElementById('sort-by');
 const categoryLinks = document.querySelectorAll('.nav-list li a');
 const searchInput = document.getElementById('search-input');
 const cartIcon = document.getElementById('cart-icon');
+const preloader = document.querySelector('.preloader');
 
+// Fungsi untuk menyembunyikan preloader
+function hidePreloader() {
+    if (preloader) {
+        preloader.classList.add('fade-out');
+        setTimeout(() => {
+            preloader.style.display = 'none';
+        }, 500);
+    }
+}
+
+// Fungsi untuk menampilkan error state
+function showErrorState() {
+    if (productGrid) {
+        productGrid.innerHTML = `
+            <div class="error-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                Gagal memuat produk. Silakan refresh halaman.
+            </div>
+        `;
+    }
+    hidePreloader();
+}
 // Inisialisasi Aplikasi
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -50,6 +72,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// Inisialisasi Aplikasi
+async function initializeApp() {
+    try {
+        await loadProducts();
+        renderProducts(products);
+        setupEventListeners();
+        updateCartCount();
+        setupRealtimeUpdates();
+        hidePreloader();
+    } catch (error) {
+        console.error('Initialization error:', error);
+        showErrorState();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', initializeApp);
+
 // Fungsi untuk memuat produk dari Supabase
 async function loadProducts() {
     try {
@@ -67,6 +106,7 @@ async function loadProducts() {
         return products;
     } catch (error) {
         console.error('Error loading products:', error);
+        // Fallback ke data lokal jika ada error
         const storedProducts = JSON.parse(localStorage.getItem('luxuryStoreProducts')) || [];
         products = storedProducts;
         filteredProducts = [...products];
@@ -118,6 +158,7 @@ function setupRealtimeUpdates() {
     return channel;
 }
 
+// Fungsi untuk merender produk
 function renderProducts(productsToRender) {
     if (!productGrid) return;
     
@@ -160,7 +201,6 @@ function renderProducts(productsToRender) {
         productGrid.appendChild(productCard);
     });
     
-    // Update product count
     updateProductCount(productsToRender.length);
 }
 
