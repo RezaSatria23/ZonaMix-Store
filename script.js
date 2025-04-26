@@ -76,27 +76,30 @@ async function loadProductsFromSupabase() {
 }
 // 4. FUNGSI EVENT LISTENER (FIXED)
 function setupCartEventListeners() {
-    // Delegasi event untuk tombol di keranjang
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', function(e) {
         const cartItem = e.target.closest('.cart-item');
         if (!cartItem) return;
         
-        const productId = parseInt(cartItem.dataset.id);
-        
         // Tombol tambah
-        if (e.target.classList.contains('plus') || e.target.closest('.plus')) {
-        updateQuantity(productId, 'increase');
-        }
-        
-        // Tombol kurang
-        if (e.target.classList.contains('minus') || e.target.closest('.minus')) {
-        updateQuantity(productId, 'decrease');
-        }
-        
-        // Tombol hapus
-        if (e.target.classList.contains('remove-btn') || e.target.closest('.remove-btn')) {
+    if (e.target.classList.contains('increase') || e.target.closest('.increase')) {
+        const btn = e.target.classList.contains('increase') ? e.target : e.target.closest('.increase');
+        const productId = parseInt(btn.dataset.id);
+        updateCartItem(productId, 'increase');
+      }
+      
+      // Tombol kurang
+      if (e.target.classList.contains('decrease') || e.target.closest('.decrease')) {
+        const btn = e.target.classList.contains('decrease') ? e.target : e.target.closest('.decrease');
+        const productId = parseInt(btn.dataset.id);
+        updateCartItem(productId, 'decrease');
+      }
+      
+      // Tombol hapus
+      if (e.target.classList.contains('remove-btn') || e.target.closest('.remove-btn')) {
+        const btn = e.target.classList.contains('remove-btn') ? e.target : e.target.closest('.remove-btn');
+        const productId = parseInt(btn.dataset.id);
         removeFromCart(productId);
-        }
+      }
     });
 }
 // Render Produk dengan Filter dan Sorting
@@ -313,8 +316,13 @@ function addToCart(productId) {
 
 function removeFromCart(productId) {
     cart = cart.filter(item => item.id == productId); // Gunakan == untuk kompatibilitas tipe
-    updateCart();
+    saveCart();
+    renderCartItems();
+    updateCartCount();
     showNotification('Produk dihapus dari keranjang');
+}
+function saveCart() {
+  localStorage.setItem('luxuryStoreCart', JSON.stringify(cart));
 }
 
 // Fungsi untuk update quantity (versi sederhana)
@@ -339,6 +347,30 @@ function updateQuantity(productId, action) {
   
     updateCart();
   }
+// Fungsi untuk update quantity produk
+function updateCartItem(productId, action) {
+    const itemIndex = cart.findIndex(item => item.id === productId);
+    
+    if (itemIndex === -1) return;
+
+    if (action === 'increase') {
+        cart[itemIndex].quantity += 1;
+    } else if (action === 'decrease') {
+        if (cart[itemIndex].quantity > 1) {
+        cart[itemIndex].quantity -= 1;
+        } else {
+        if (confirm('Hapus produk dari keranjang?')) {
+            cart.splice(itemIndex, 1);
+        } else {
+            return;
+        }
+        }
+    }
+    // Simpan dan update tampilan
+    saveCart();
+    renderCartItems();
+    updateCartCount();
+}
 
 function renderCartItems() {
     const cartItemsEl = document.getElementById('cart-items');
@@ -364,7 +396,7 @@ function renderCartItems() {
         
         const cartItemEl = document.createElement('div');
         cartItemEl.className = 'cart-item animate__animated animate__fadeIn';
-        cartItemEl.setAttribute('data-id', item.id);
+        cartItemEl.dataset.id = item.id;
         cartItemEl.innerHTML = `
             <img src="${item.image_url}" alt="${item.name}" class="cart-item-image" loading="lazy">
             <div class="cart-item-details">
@@ -381,7 +413,6 @@ function renderCartItems() {
             <div class="cart-item-total">Rp ${itemTotal.toLocaleString('id-ID')}</div>
         `;
         cartItemsEl.appendChild(cartItemEl);
-        updateQuantity();
     });
     
     cartTotalEl.textContent = total.toLocaleString('id-ID');
