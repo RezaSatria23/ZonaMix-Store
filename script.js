@@ -55,7 +55,7 @@ async function loadProductsFromSupabase() {
         const { data, error } = await supabase
             .from('products')
             .select('*')
-            .eq('is_active', true);
+            .eq('is_publised', true);
         
         if (error) throw error;
         
