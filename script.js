@@ -27,6 +27,7 @@ async function initializeApp() {
 document.addEventListener('DOMContentLoaded', () => {
     loadProductsFromSupabase();
     setupEventListeners();
+    setupCartEventListeners(); 
     updateCartCount();
     renderCartItems();
     // Animasi preloader
@@ -81,20 +82,26 @@ function setupCartEventListeners() {
         
         const productId = cartItem.dataset.id;
         
-        // Handle Tombol Hapus
-        if (e.target.closest('.remove-btn')) {
+        // Handle tombol hapus item
+        if (e.target.closest('.remove-item')) {
+            const cartItem = e.target.closest('.cart-item');
+            const productId = parseInt(cartItem.dataset.id);
             removeFromCart(productId);
             return;
         }
         
-        // Handle Tombol Kurang Quantity
+        // Handle tombol kurang quantity
         if (e.target.classList.contains('decrease')) {
+            const cartItem = e.target.closest('.cart-item');
+            const productId = parseInt(cartItem.dataset.id);
             updateQuantity(productId, false);
             return;
         }
+
         
-        // Handle Tombol Tambah Quantity
         if (e.target.classList.contains('increase')) {
+            const cartItem = e.target.closest('.cart-item');
+            const productId = parseInt(cartItem.dataset.id);
             updateQuantity(productId, true);
             return;
         }
@@ -356,6 +363,17 @@ function renderCartItems() {
     cartItemsEl.innerHTML = '';
     
     let total = 0;
+    
+    if (cart.length === 0) {
+        cartItemsEl.innerHTML = `
+            <div class="empty-cart animate__animated animate__fadeIn">
+                <i class="fas fa-shopping-bag"></i>
+                <p>Keranjang belanja kosong</p>
+            </div>
+        `;
+        cartTotalEl.textContent = '0';
+        return;
+    }
     
     cart.forEach(item => {
         const itemTotal = item.price * item.quantity;
