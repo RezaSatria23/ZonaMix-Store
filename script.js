@@ -20,12 +20,12 @@ const whatsappNumber = '6281234567890'; // Ganti dengan nomor WhatsApp Anda
 
 // DOM Elements
 const productGrid = document.getElementById('product-grid');
+const cartCountElement = document.querySelector('.cart-count');
 const cartModal = document.getElementById('cart-modal');
 const customerModal = document.getElementById('customer-modal');
 const paymentModal = document.getElementById('payment-modal');
 const notification = document.getElementById('notification');
 const notificationMessage = document.getElementById('notification-message');
-const cartCount = document.querySelector('.cart-count');
 
 // Inisialisasi Aplikasi
 document.addEventListener('DOMContentLoaded', () => {
@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Load produk dari Supabase
 async function loadProductsFromSupabase() {
     try {
+        showLoadingState();
         productGrid.innerHTML = `
             <div class="loading-state animate__animated animate__fadeIn">
                 <i class="fas fa-spinner fa-spin"></i> Memuat produk...
@@ -89,8 +90,8 @@ function setupCartEventListeners() {
 // Render Produk dengan Filter dan Sorting
 function renderProducts() {
 
-    if (!products.length) {
-        productGrid.innerHTML = '<div class="empty-state">Tidak ada produk</div>';
+    if (!productGrid) {
+        console.error('Product grid element not found!');
         return;
     }
 
@@ -143,7 +144,16 @@ function renderProducts() {
         `;
         productGrid.appendChild(productCard);
     });
-    
+    productGrid.innerHTML = products.map(product => `
+        <div class="product-card">
+            <img src="${product.image_url}" alt="${product.name}" loading="lazy">
+            <h3>${product.name}</h3>
+            <p>Rp ${product.price.toLocaleString('id-ID')}</p>
+            <button class="add-to-cart" data-id="${product.id}">
+                Tambah ke Keranjang
+            </button>
+        </div>
+    `).join('');
     // Update product count
     document.getElementById('product-count').textContent = filteredProducts.length;
 }
@@ -282,17 +292,17 @@ function addToCart(productId) {
     }
 
     // Cek apakah produk sudah ada di keranjang
-    const existingItemIndex = cart.findIndex(item => item.id === productId);
+    const existingItem = cart.find(item => item.id == productId);
     
-    if (existingItemIndex !== -1) {
-        cart[existingItemIndex].quantity += 1;
+    if (existingItem) {
+        existingItem.quantity += 1;
     } else {
         cart.push({
             ...product,
             quantity: 1
         });
     }
-    
+
     updateCart();
     showNotification(`${product.name} ditambahkan ke keranjang`,'success');
 }
@@ -366,13 +376,14 @@ function updateCart() {
 }
 
 function updateCartCount() {
-    if (!domElements.cartCount) {
+    if (!cartCountElement) {
         console.error('Cart count element not found!');
         return;
     }
-    const count = cart.reduce((total, item) => total + item.quantity, 0);
-    domElements.cartCount.textContent = count;
     
+    const count = cart.reduce((total, item) => total + item.quantity, 0);
+    cartCountElement.textContent = count;
+
     // Animasi jika ada item di keranjang
     if (count > 0) {
         document.querySelector('.cart-count').classList.add('animate__animated', 'animate__bounce');
