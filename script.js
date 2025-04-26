@@ -346,6 +346,7 @@ function updateQuantity(productId, isIncrease) {
     }
     
     updateCart();
+    renderCartItems(); 
 }
 
 function renderCartItems() {
