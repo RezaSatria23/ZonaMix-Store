@@ -499,7 +499,7 @@ function renderAddressFields() {
             <!-- Kode Pos -->
             <div class="form-group">
                 <label for="postal_code">Kode Pos*</label>
-                <input type="text" id="postal_code" class="form-control" readonly required>
+                <input type="text" id="postal_code" class="form-control" required>
             </div>
         `;
         loadProvinces();
@@ -789,7 +789,7 @@ function showQuickView(productId) {
     });
 }
 // Konfigurasi API
-const WILAYAH_API_BASE = 'https://wilayah.id/api';
+const WILAYAH_API = "https://api-wilayah-indonesia.vercel.app/api";
 
 // Load Data Wilayah
 async function loadProvinces() {
