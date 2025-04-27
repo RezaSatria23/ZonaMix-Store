@@ -498,39 +498,68 @@ function renderAddressFields() {
 
 // Proses Form Pelanggan dan Simpan ke Supabase
 async function processCustomerForm() {
-    const customerData = {
-        name: document.getElementById('customer-name').value,
-        email: document.getElementById('customer-email').value,
-        phone: document.getElementById('customer-phone').value,
-        notes: document.getElementById('customer-notes').value,
+    // Validasi dasar
+    const name = document.getElementById('customer-name').value;
+    const phone = document.getElementById('customer-phone').value;
+    
+    if (!name || !phone) {
+        showNotification('Nama dan nomor WhatsApp harus diisi', 'error');
+        return;
+    }
+
+    const orderData = {
+        name,
+        phone,
         products: JSON.stringify(cart),
         total_amount: calculateTotal(),
-        status: 'pending'
+        status: 'pending',
+        notes: document.getElementById('customer-notes').value || '',
+        created_at: new Date().toISOString()
     };
-    
-    // Jika ada produk fisik, tambahkan alamat
-    if (hasPhysicalProducts()) {
-        customerData.address = document.getElementById('customer-address').value;
-        customerData.city = document.getElementById('customer-city').value;
-        customerData.province = document.getElementById('customer-province').value;
-        customerData.postal_code = document.getElementById('customer-postal').value;
+
+    // Tambahkan data alamat jika ada produk fisik
+    if (cart.some(item => item.type === 'fisik')) {
+        orderData.address = document.getElementById('customer-address').value;
+        orderData.city = document.getElementById('customer-city').value;
+        orderData.province = document.getElementById('customer-province').value;
+        orderData.postal_code = document.getElementById('customer-postal').value;
+        
+        // Validasi alamat
+        if (!orderData.address || !orderData.city || !orderData.province || !orderData.postal_code) {
+            showNotification('Alamat lengkap harus diisi untuk produk fisik', 'error');
+            return;
+        }
     }
-    
+
+    // Tambahkan email khusus jika ada produk digital
+    if (cart.some(item => item.type === 'digital')) {
+        const digitalEmail = document.getElementById('customer-email-digital')?.value;
+        
+        // Hanya wajib jika tidak ada produk fisik
+        if (!cart.some(item => item.type === 'physical') && !digitalEmail) {
+            showNotification('Email harus diisi untuk produk digital', 'error');
+            return;
+        }
+        
+        if (digitalEmail) {
+            orderData.digital_email = digitalEmail;
+        }
+    }
+
     try {
-        // Simpan ke Supabase
         const { data, error } = await supabase
             .from('orders')
-            .insert([customerData]);
+            .insert([orderData]);
         
         if (error) throw error;
         
-        // Berhasil, lanjut ke pembayaran
+        // Lanjut ke pembayaran
         closeModal(customerModal);
         openPaymentModal();
         
     } catch (error) {
         console.error('Error saving order:', error);
-        showNotification('Gagal menyimpan data pesanan. Silakan coba lagi.');
+        showNotification('Gagal menyimpan pesanan. Silakan coba lagi.', 'error');
     }
 }
 
