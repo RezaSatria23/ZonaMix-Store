@@ -457,10 +457,13 @@ function renderAddressFields() {
     addressFields.innerHTML = '';
     
     // Cek apakah ada produk fisik di keranjang
-    const hasPhysicalProducts = cart.some(item => item.type === 'physical');
+    const hasPhysicalProducts = cart.some(item => item.type === 'fisik ');
+
+    // Cek apakah ada produk digital di keranjang
+    const hasDigitalProducts = cart.some(item => item.type === 'digital');
     
     if (hasPhysicalProducts) {
-        addressFields.innerHTML = `
+        addressFields.innerHTML += `
             <div class="form-group">
                 <label for="customer-address">Alamat Lengkap*</label>
                 <textarea id="customer-address" required></textarea>
@@ -478,6 +481,16 @@ function renderAddressFields() {
             <div class="form-group">
                 <label for="customer-postal">Kode Pos*</label>
                 <input type="text" id="customer-postal" required>
+            </div>
+        `;
+    }
+    
+    if (hasDigitalProducts) {
+        addressFields.innerHTML += `
+            <div class="form-group">
+                <label for="customer-email">Email* (untuk produk digital)</label>
+                <input type="email" id="customer-email-digital" ${hasPhysicalProducts ? '' : 'required'}>
+                <small>Link produk digital akan dikirim ke email ini</small>
             </div>
         `;
     }
