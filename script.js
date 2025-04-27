@@ -789,45 +789,62 @@ function showQuickView(productId) {
     });
 }
 // Konfigurasi API
-const WILAYAH_API = "https://api-wilayah-indonesia.vercel.app/api";
+const WILAYAH_API = "https://wilayah.id";
 
-// Load Data Wilayah
+// Fungsi load provinsi yang sudah diperbaiki
 async function loadProvinces() {
+  const provinceSelect = document.getElementById('province');
+  
   try {
-    const response = await fetch(`${WILAYAH_API_BASE}/provinces.json`);
+    // Tampilkan loading
+    provinceSelect.innerHTML = '<option value="">Memuat provinsi...</option>';
+    
+    // Gunakan API terbaru
+    const response = await fetch(`${WILAYAH_API}/api/provinces.json`);
+    
+    if (!response.ok) throw new Error("Gagal memuat provinsi");
+    
     const provinces = await response.json();
     
-    const provinceSelect = document.getElementById('province');
+    // Kosongkan dan isi dropdown
+    provinceSelect.innerHTML = '<option value="">Pilih Provinsi</option>';
+    
     provinces.forEach(province => {
       const option = new Option(province.name, province.id);
       provinceSelect.add(option);
     });
+    
   } catch (error) {
-    console.error('Gagal memuat provinsi:', error);
-    showNotification('Gagal memuat data provinsi', 'error');
+    console.error("Error:", error);
+    provinceSelect.innerHTML = '<option value="">Gagal memuat provinsi</option>';
+    showNotification('Gagal memuat daftar provinsi', 'error');
   }
 }
 
+// Fungsi load kabupaten/kota
 async function loadRegencies(provinceId) {
   const regencySelect = document.getElementById('regency');
-  regencySelect.disabled = true;
-  regencySelect.innerHTML = '<option value="">Pilih Kabupaten/Kota</option>';
-
+  
   try {
-    const response = await fetch(`${WILAYAH_API_BASE}/regencies/${provinceId}.json`);
+    regencySelect.disabled = true;
+    regencySelect.innerHTML = '<option value="">Memuat kabupaten...</option>';
+    
+    const response = await fetch(`${WILAYAH_API}/api/${provinceId}.json`);
     const regencies = await response.json();
+    
+    regencySelect.innerHTML = '<option value="">Pilih Kabupaten/Kota</option>';
     
     regencies.forEach(regency => {
       const option = new Option(regency.name, regency.id);
-      option.dataset.province = provinceId;
+      option.dataset.type = regency.type; // Kabupaten/Kota
       regencySelect.add(option);
     });
     
     regencySelect.disabled = false;
-    resetDependentFields('regency');
+    
   } catch (error) {
-    console.error('Gagal memuat kabupaten:', error);
-    showNotification('Gagal memuat data kabupaten/kota', 'error');
+    console.error("Error:", error);
+    regencySelect.innerHTML = '<option value="">Gagal memuat kabupaten</option>';
   }
 }
 
@@ -837,7 +854,7 @@ async function loadDistricts(regencyId) {
   districtSelect.innerHTML = '<option value="">Pilih Kecamatan</option>';
 
   try {
-    const response = await fetch(`${WILAYAH_API_BASE}/districts/${regencyId}.json`);
+    const response = await fetch(`${WILAYAH_API_BASE}/api/${regencyId}.json`);
     const districts = await response.json();
     
     districts.forEach(district => {
@@ -860,7 +877,7 @@ async function loadVillages(districtId) {
   villageSelect.innerHTML = '<option value="">Pilih Desa/Kelurahan</option>';
 
   try {
-    const response = await fetch(`${WILAYAH_API_BASE}/villages/${districtId}.json`);
+    const response = await fetch(`${WILAYAH_API_BASE}/api/${districtId}.json`);
     const villages = await response.json();
     
     villages.forEach(village => {
