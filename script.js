@@ -457,7 +457,7 @@ function renderAddressFields() {
     addressFields.innerHTML = '';
     
     // Cek apakah ada produk fisik di keranjang
-    const hasPhysicalProducts = cart.some(item => item.type === 'fisik ');
+    const hasPhysicalProducts = cart.some(item => item.type === 'fisik');
 
     // Cek apakah ada produk digital di keranjang
     const hasDigitalProducts = cart.some(item => item.type === 'digital');
@@ -536,7 +536,7 @@ async function processCustomerForm() {
         const digitalEmail = document.getElementById('customer-email-digital')?.value;
         
         // Hanya wajib jika tidak ada produk fisik
-        if (!cart.some(item => item.type === 'physical') && !digitalEmail) {
+        if (!cart.some(item => item.type === 'fisik') && !digitalEmail) {
             showNotification('Email harus diisi untuk produk digital', 'error');
             return;
         }
