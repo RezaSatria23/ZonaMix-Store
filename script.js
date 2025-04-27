@@ -911,12 +911,12 @@ function resetDependentFields(fieldName) {
   document.getElementById('postal_code').value = '';
 }
 
-// Event Listeners
+// Event listener untuk provinsi
 document.getElementById('province').addEventListener('change', function() {
   if (this.value) {
     loadRegencies(this.value);
   } else {
-    resetDependentFields('province');
+    document.getElementById('regency').innerHTML = '<option value="">Pilih Provinsi terlebih dahulu</option>';
   }
 });
 
@@ -924,7 +924,7 @@ document.getElementById('regency').addEventListener('change', function() {
   if (this.value) {
     loadDistricts(this.value);
   } else {
-    resetDependentFields('regency');
+    document.getElementById('district').innerHTML = '<option value="">Pilih Kab/Kota terlebih dahulu</option>';
   }
 });
 
@@ -932,7 +932,7 @@ document.getElementById('district').addEventListener('change', function() {
   if (this.value) {
     loadVillages(this.value);
   } else {
-    resetDependentFields('district');
+    document.getElementById('village').innerHTML = '<option value="">Pilih Provinsi terlebih dahulu</option>';
   }
 });
 
