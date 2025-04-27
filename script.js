@@ -501,22 +501,43 @@ function renderAddressFields() {
                 <label for="postal_code">Kode Pos*</label>
                 <input type="text" id="postal_code" class="form-control" required>
             </div>
-        `;
-        loadProvinces();
-        
-        // Event listener untuk perubahan provinsi
+        `;        
+        // Event listener untuk provinsi
         document.getElementById('province').addEventListener('change', function() {
-        if (this.value) {
-            loadCities(this.value);
-        }
+            if (this.value) {
+            loadRegencies(this.value);
+            } else {
+            document.getElementById('regency').innerHTML = '<option value="">Pilih Provinsi terlebih dahulu</option>';
+            }
         });
         
-        // Event listener untuk perubahan kota
-        document.getElementById('city').addEventListener('change', function() {
-        if (this.value) {
-            calculateTotalWeightAndShipping();
-        }
+        document.getElementById('regency').addEventListener('change', function() {
+            if (this.value) {
+            loadDistricts(this.value);
+            } else {
+            document.getElementById('district').innerHTML = '<option value="">Pilih Kab/Kota terlebih dahulu</option>';
+            }
         });
+        
+        document.getElementById('district').addEventListener('change', function() {
+            if (this.value) {
+            loadVillages(this.value);
+            } else {
+            document.getElementById('village').innerHTML = '<option value="">Pilih Provinsi terlebih dahulu</option>';
+            }
+        });
+        
+        document.getElementById('village').addEventListener('change', function() {
+            if (this.value) {
+            document.getElementById('postal_code').value = 
+                this.selectedOptions[0].dataset.postal || '';
+            
+            // Tampilkan opsi pengiriman setelah alamat lengkap
+            document.getElementById('shipping-section').style.display = 'block';
+            calculateShipping();
+            }
+        });
+  
     }
     
     if (hasDigitalProducts) {
@@ -910,42 +931,6 @@ function resetDependentFields(fieldName) {
   });
   document.getElementById('postal_code').value = '';
 }
-
-// Event listener untuk provinsi
-document.getElementById('province').addEventListener('change', function() {
-  if (this.value) {
-    loadRegencies(this.value);
-  } else {
-    document.getElementById('regency').innerHTML = '<option value="">Pilih Provinsi terlebih dahulu</option>';
-  }
-});
-
-document.getElementById('regency').addEventListener('change', function() {
-  if (this.value) {
-    loadDistricts(this.value);
-  } else {
-    document.getElementById('district').innerHTML = '<option value="">Pilih Kab/Kota terlebih dahulu</option>';
-  }
-});
-
-document.getElementById('district').addEventListener('change', function() {
-  if (this.value) {
-    loadVillages(this.value);
-  } else {
-    document.getElementById('village').innerHTML = '<option value="">Pilih Provinsi terlebih dahulu</option>';
-  }
-});
-
-document.getElementById('village').addEventListener('change', function() {
-  if (this.value) {
-    document.getElementById('postal_code').value = 
-      this.selectedOptions[0].dataset.postal || '';
-    
-    // Tampilkan opsi pengiriman setelah alamat lengkap
-    document.getElementById('shipping-section').style.display = 'block';
-    calculateShipping();
-  }
-});
 
 // Inisialisasi
 document.addEventListener('DOMContentLoaded', () => {
