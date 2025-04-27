@@ -483,6 +483,21 @@ function renderAddressFields() {
                 <input type="text" id="customer-postal" required>
             </div>
         `;
+        loadProvinces();
+        
+        // Event listener untuk perubahan provinsi
+        document.getElementById('province').addEventListener('change', function() {
+        if (this.value) {
+            loadCities(this.value);
+        }
+        });
+        
+        // Event listener untuk perubahan kota
+        document.getElementById('city').addEventListener('change', function() {
+        if (this.value) {
+            calculateTotalWeightAndShipping();
+        }
+        });
     }
     
     if (hasDigitalProducts) {
@@ -505,6 +520,18 @@ async function processCustomerForm() {
     if (!name || !phone) {
         showNotification('Nama dan nomor WhatsApp harus diisi', 'error');
         return;
+    }
+
+    // Tambahkan data pengiriman
+    if (selectedShipping) {
+        orderData.shipping = {
+        province: document.getElementById('province').selectedOptions[0].text,
+        city: document.getElementById('city').selectedOptions[0].text,
+        service: selectedShipping.service,
+        cost: selectedShipping.cost,
+        etd: selectedShipping.etd,
+        insurance: document.getElementById('insurance-checkbox').checked
+        };
     }
 
     const orderData = {
@@ -741,4 +768,141 @@ function showQuickView(productId) {
             onComplete: () => quickViewModal.remove()
         });
     });
+}
+// Konfigurasi RajaOngkir
+const RAJAONGKIR_API_KEY = 'UYAVNGwHd0aca6b1808c712ctUAix4js'; // Ganti dengan API key Anda
+const RAJAONGKIR_BASE_URL = 'https://api.rajaongkir.com/starter';
+const SHOP_ORIGIN_CITY_ID = '249'; // ID kota asal pengiriman (contoh: 39 untuk Bandung)
+
+async function getShippingCost(destinationCityId, weight) {
+  try {
+    const response = await fetch(`${RAJAONGKIR_BASE_URL}/cost`, {
+      method: 'POST',
+      headers: {
+        'key': RAJAONGKIR_API_KEY,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        origin: SHOP_ORIGIN_CITY_ID,
+        destination: destinationCityId,
+        weight: weight,
+        courier: 'jne:jnt' // Bisa disesuaikan
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.rajaongkir.status.code !== 200) {
+      throw new Error(data.rajaongkir.status.description);
+    }
+    
+    return data.rajaongkir.results[0].costs;
+  } catch (error) {
+    console.error('Error fetching shipping cost:', error);
+    showNotification('Gagal memuat ongkos kirim. Silakan coba lagi.', 'error');
+    return null;
+  }
+}
+// Load daftar provinsi dari RajaOngkir
+async function loadProvinces() {
+  try {
+    const response = await fetch(`${RAJAONGKIR_BASE_URL}/province`, {
+      headers: { 'key': RAJAONGKIR_API_KEY }
+    });
+    
+    const data = await response.json();
+    const provinceSelect = document.getElementById('province');
+    
+    data.rajaongkir.results.forEach(province => {
+      const option = document.createElement('option');
+      option.value = province.province_id;
+      option.textContent = province.province;
+      provinceSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Error loading provinces:', error);
+  }
+}
+
+// Load daftar kota berdasarkan provinsi
+async function loadCities(provinceId) {
+  try {
+    const response = await fetch(`${RAJAONGKIR_BASE_URL}/city?province=${provinceId}`, {
+      headers: { 'key': RAJAONGKIR_API_KEY }
+    });
+    
+    const data = await response.json();
+    const citySelect = document.getElementById('city');
+    
+    citySelect.innerHTML = '<option value="">Pilih Kota</option>';
+    citySelect.disabled = false;
+    
+    data.rajaongkir.results.forEach(city => {
+      const option = document.createElement('option');
+      option.value = city.city_id;
+      option.textContent = city.type + ' ' + city.city_name;
+      option.dataset.postal = city.postal_code;
+      citySelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Error loading cities:', error);
+  }
+}
+function renderShippingOptions(options) {
+  const container = document.getElementById('shipping-methods-container');
+  container.innerHTML = '';
+  
+  options.forEach(service => {
+    const serviceEl = document.createElement('div');
+    serviceEl.className = 'shipping-method';
+    serviceEl.innerHTML = `
+      <input type="radio" name="shipping-method" id="shipping-${service.service}" 
+             value="${service.service}" data-cost="${service.cost[0].value}">
+      <label for="shipping-${service.service}">
+        <strong>${service.service}</strong>
+        <div>Estimasi: ${service.cost[0].etd} hari</div>
+        <div class="price">Rp ${service.cost[0].value.toLocaleString('id-ID')}</div>
+      </label>
+    `;
+    
+    serviceEl.querySelector('input').addEventListener('change', function() {
+      selectedShipping = {
+        service: service.service,
+        cost: service.cost[0].value,
+        etd: service.cost[0].etd
+      };
+      updatePriceSummary();
+    });
+    
+    container.appendChild(serviceEl);
+  });
+}
+function updatePriceSummary() {
+  const subtotal = calculateSubtotal();
+  const shippingCost = selectedShipping ? selectedShipping.cost : 0;
+  let insuranceCost = 0;
+  
+  // Hitung asuransi jika checkbox aktif
+  const insuranceCheckbox = document.getElementById('insurance-checkbox');
+  if (insuranceCheckbox && insuranceCheckbox.checked) {
+    insuranceCost = Math.floor(subtotal * 0.002); // 0.2% dari subtotal
+  }
+  
+  // Update tampilan
+  document.getElementById('subtotal-price').textContent = formatPrice(subtotal);
+  document.getElementById('shipping-price').textContent = formatPrice(shippingCost);
+  document.getElementById('insurance-fee').textContent = formatPrice(insuranceCost);
+  
+  if (insuranceCheckbox) {
+    document.getElementById('insurance-price').textContent = 
+      `(${formatPrice(insuranceCost)})`;
+  }
+  
+  // Hitung total
+  const total = subtotal + shippingCost + insuranceCost;
+  document.getElementById('total-payment').textContent = formatPrice(total);
+}
+
+function formatPrice(amount) {
+  return `Rp ${amount.toLocaleString('id-ID')}`;
 }

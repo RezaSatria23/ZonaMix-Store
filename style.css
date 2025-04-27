@@ -2020,3 +2020,34 @@ body {
     align-items: center;
     z-index: 9999;
 }
+/* Style untuk opsi pengiriman */
+.shipping-method {
+  display: block;
+  margin: 10px 0;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.shipping-method input[type="radio"] {
+  margin-right: 10px;
+}
+
+.shipping-method label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.shipping-method .price {
+  color: #d4af37;
+  font-weight: bold;
+}
+
+/* Loading state */
+.loading-shipping {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
