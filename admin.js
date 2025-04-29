@@ -70,7 +70,7 @@ async function saveProduct(productData) {
       console.error('Error menyimpan produk:', error.message);
       return null;
     }
-  }
+}
 // ======================
 // 3. FUNGSI BANTUAN
 // ======================
@@ -149,7 +149,6 @@ function initEventListeners() {
         const isValidImage = await validateImageUrl(imageUrl);
         const type = document.getElementById('product-type').value;
         const stock = parseInt(document.getElementById('product-stock').value);
-        const weight = type === 'fisik' ? parseInt(document.getElementById('product-weight').value) : null;
         const messageElement = document.getElementById('product-message');
 
         const savedProduct = await saveProduct(productData);
@@ -158,6 +157,9 @@ function initEventListeners() {
         if (!name || !price || !category || !type || isNaN(stock)) {
             showMessage('Harap isi semua field yang wajib diisi', 'error', messageElement);
             return;
+        }
+        if (type === 'fisik') {
+            weight = parseInt(document.getElementById('product-weight').value);
         }
 
         // Validasi khusus untuk produk fisik
