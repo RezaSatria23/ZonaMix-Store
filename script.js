@@ -939,29 +939,27 @@ async function calculateShipping() {
     const villageSelect = document.getElementById('village');
     const postalCode = document.getElementById('postal_code').value;
     
-    // Validasi
-    if (!regencyId) {
-        showNotification('Harap pilih kabupaten/kota terlebih dahulu', 'error');
-        return;
-    }
-    
-    if (!villageSelect.value) {
-        showNotification('Harap pilih kelurahan terlebih dahulu', 'error');
-        return;
-    }
-    
-    if (!postalCode) {
-        showNotification('Harap pastikan kode pos terisi', 'error');
+    // Validasi lebih ketat
+    if (!regencyId || !villageSelect || !villageSelect.value || !postalCode) {
+        showNotification('Harap lengkapi semua data alamat terlebih dahulu', 'error');
         return;
     }
 
     try {
-        // Hitung berat total (dalam gram)
-        const weight = cart.reduce((total, item) => {
-            return total + (item.weight || 500) * item.quantity; // Default 500g jika berat tidak ada
-        }, 0);
+        // Hitung berat total (minimal 1kg)
+        const weight = Math.max(cart.reduce((total, item) => {
+            return total + (item.weight || 500) * item.quantity;
+        }, 0), 1000); // Minimal 1kg (1000 gram)
         
-        // Gunakan proxy endpoint di Vercel
+        // Tampilkan loading
+        const shippingOptions = document.getElementById('shipping-options');
+        shippingOptions.innerHTML = `
+            <div class="shipping-loading">
+                <i class="fas fa-spinner fa-spin"></i> Menghitung ongkos kirim...
+            </div>
+        `;
+
+        // Gunakan proxy endpoint
         const response = await fetch('/api/rajaongkir', {
             method: 'POST',
             headers: {
@@ -971,7 +969,7 @@ async function calculateShipping() {
                 origin: SHOP_ORIGIN_CITY_ID,
                 destination: regencyId,
                 weight: weight,
-                courier: 'jne' // bisa diganti dengan kurir lain: jne, tiki, pos
+                courier: 'jne:jnt' // Coba semua kurir utama
             })
         });
         
@@ -981,20 +979,37 @@ async function calculateShipping() {
             throw new Error(data.error);
         }
         
-        if (!data.rajaongkir || !data.rajaongkir.results || data.rajaongkir.results.length === 0) {
-            throw new Error('Tidak ada layanan pengiriman tersedia');
+        // Cek semua kemungkinan hasil dari berbagai kurir
+        const allCosts = [];
+        if (data.rajaongkir.results) {
+            data.rajaongkir.results.forEach(courier => {
+                if (courier.costs && courier.costs.length > 0) {
+                    allCosts.push(...courier.costs);
+                }
+            });
+        }
+
+        if (allCosts.length === 0) {
+            throw new Error('Tidak ada layanan pengiriman tersedia untuk alamat ini. Silakan coba alamat lain atau hubungi kami.');
         }
         
-        renderShippingOptions(data.rajaongkir.results[0].costs);
+        renderShippingOptions(allCosts);
         
     } catch (error) {
         console.error('Error calculating shipping:', error);
-        showNotification('Gagal menghitung ongkos kirim: ' + error.message, 'error');
+        const errorMessage = error.message.includes('Tidak ada layanan pengiriman') 
+            ? error.message
+            : 'Gagal menghitung ongkos kirim. Silakan coba lagi atau hubungi kami.';
+        
         document.getElementById('shipping-options').innerHTML = `
-            <div class="alert alert-warning">
-                ${error.message || 'Tidak ada layanan pengiriman tersedia'}
+            <div class="shipping-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>${errorMessage}</p>
+                <button class="btn-retry" id="retry-shipping">Coba Hitung Lagi</button>
             </div>
         `;
+        
+        document.getElementById('retry-shipping').addEventListener('click', calculateShipping);
     }
 }
 
@@ -1005,66 +1020,80 @@ function renderShippingOptions(costs) {
     
     if (!costs || costs.length === 0) {
         shippingOptions.innerHTML = `
-            <div class="alert alert-warning">
-                Tidak ada opsi pengiriman tersedia untuk alamat ini
+            <div class="shipping-not-available">
+                <i class="fas fa-truck"></i>
+                <p>Layanan pengiriman tidak tersedia untuk alamat ini</p>
+                <small>Silakan coba alamat lain atau hubungi kami</small>
             </div>
         `;
         return;
     }
     
-    // Buat container untuk opsi pengiriman
-    const container = document.createElement('div');
-    container.className = 'shipping-options-list';
+    // Kelompokkan berdasarkan kurir
+    const couriers = {
+        jne: { name: 'JNE', options: [] },
+        jnt: { name: 'JNT', options: [] },
+        lainnya: { name: 'Lainnya', options: [] }
+    };
     
-    // Header
-    const header = document.createElement('div');
-    header.className = 'shipping-header';
-    header.innerHTML = `
-        <h4>Pilihan Pengiriman</h4>
-        <small>Berat total: ${calculateTotalWeight()} gram</small>
-    `;
-    container.appendChild(header);
-    
-    // Tambahkan masing-masing opsi
     costs.forEach(cost => {
-        if (!cost.cost || cost.cost.length === 0) return;
+        if (!cost.service || !cost.cost || cost.cost.length === 0) return;
         
-        const option = document.createElement('div');
-        option.className = 'shipping-option';
-        option.innerHTML = `
-            <input type="radio" name="shipping" id="shipping-${cost.service.toLowerCase()}" 
-                   value="${cost.service}" data-cost="${cost.cost[0].value}"
-                   ${costs.length === 1 ? 'checked' : ''}>
-            <label for="shipping-${cost.service.toLowerCase()}">
-                <div class="shipping-service">${cost.service.toUpperCase()}</div>
-                <div class="shipping-price">Rp ${cost.cost[0].value.toLocaleString('id-ID')}</div>
-                <div class="shipping-estimate">Estimasi: ${cost.cost[0].etd} hari</div>
-            </label>
-        `;
+        const courierKey = cost.service.toLowerCase().includes('jne') ? 'jne' :
+                         cost.service.toLowerCase().includes('jnt') ? 'jnt' : 'lainnya';
         
-        // Update otomatis saat opsi dipilih
-        option.querySelector('input').addEventListener('change', function() {
-            selectedShipping = {
-                service: cost.service,
-                cost: cost.cost[0].value,
-                etd: cost.cost[0].etd
-            };
-            updateOrderSummary();
-        });
-        
-        container.appendChild(option);
+        couriers[courierKey].options.push(cost);
     });
     
-    shippingOptions.appendChild(container);
+    // Buat tampilan untuk masing-masing kurir
+    for (const [key, courier] of Object.entries(couriers)) {
+        if (courier.options.length === 0) continue;
+        
+        const courierSection = document.createElement('div');
+        courierSection.className = 'courier-section';
+        courierSection.innerHTML = `
+            <h5 class="courier-name">${courier.name}</h5>
+            <div class="courier-options" id="${key}-options"></div>
+        `;
+        
+        shippingOptions.appendChild(courierSection);
+        
+        const optionsContainer = document.getElementById(`${key}-options`);
+        
+        courier.options.forEach(cost => {
+            cost.cost.forEach(priceDetail => {
+                const option = document.createElement('div');
+                option.className = 'shipping-option';
+                option.innerHTML = `
+                    <input type="radio" name="shipping" id="shipping-${key}-${cost.service.toLowerCase()}" 
+                           value="${cost.service}" data-cost="${priceDetail.value}" data-etd="${priceDetail.etd}">
+                    <label for="shipping-${key}-${cost.service.toLowerCase()}">
+                        <span class="service-name">${cost.service.toUpperCase()}</span>
+                        <span class="service-price">Rp ${priceDetail.value.toLocaleString('id-ID')}</span>
+                        <span class="service-etd">${priceDetail.etd} hari</span>
+                    </label>
+                `;
+                
+                option.querySelector('input').addEventListener('change', function() {
+                    selectedShipping = {
+                        service: cost.service,
+                        cost: priceDetail.value,
+                        etd: priceDetail.etd
+                    };
+                    updateOrderSummary();
+                });
+                
+                optionsContainer.appendChild(option);
+            });
+        });
+    }
     
-    // Otomatis pilih opsi pertama jika ada
-    if (costs.length > 0 && costs[0].cost && costs[0].cost.length > 0) {
-        selectedShipping = {
-            service: costs[0].service,
-            cost: costs[0].cost[0].value,
-            etd: costs[0].cost[0].etd
-        };
-        updateOrderSummary();
+    // Otomatis pilih opsi pertama
+    const firstOption = shippingOptions.querySelector('input[type="radio"]');
+    if (firstOption) {
+        firstOption.checked = true;
+        const event = new Event('change');
+        firstOption.dispatchEvent(event);
     }
 }
 
@@ -1136,12 +1165,16 @@ function setupAddressFormListeners() {
         
         if (postalCode) {
             postalCodeInput.readOnly = true;
-            // Hitung ongkir setelah 500ms untuk menghindari multiple calls
-            setTimeout(() => calculateShipping(), 500);
+            // Beri sedikit delay sebelum menghitung ongkir
+            setTimeout(() => {
+                calculateShipping();
+            }, 300);
         } else {
             postalCodeInput.readOnly = false;
             postalCodeInput.placeholder = 'Masukkan kode pos manual';
             showNotification('Kode pos tidak tersedia untuk kelurahan ini. Silakan masukkan manual lalu tekan Enter.', 'warning');
+            
+            // Hitung ongkir saat tekan Enter di input kode pos
             postalCodeInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     calculateShipping();
