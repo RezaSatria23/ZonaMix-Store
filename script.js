@@ -39,12 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
             onComplete: () => preloader.style.display = 'none'
         });
     }, 1500);
-});
 
-// Panggil inisialisasi saat DOM siap
-document.addEventListener('DOMContentLoaded', () => {
-  loadProvinces();
-  setupAddressFormListeners();
+    loadProvinces();
+    setupAddressFormListeners();
 });
 
 // Load produk dari Supabase
