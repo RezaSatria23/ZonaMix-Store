@@ -501,43 +501,7 @@ function renderAddressFields() {
                 <label for="postal_code">Kode Pos*</label>
                 <input type="text" id="postal_code" class="form-control" required>
             </div>
-        `;        
-        // Event listener untuk provinsi
-        document.getElementById('province').addEventListener('change', function() {
-            if (this.value) {
-            loadRegencies(this.value);
-            } else {
-            document.getElementById('regency').innerHTML = '<option value="">Pilih Provinsi terlebih dahulu</option>';
-            }
-        });
-        
-        document.getElementById('regency').addEventListener('change', function() {
-            if (this.value) {
-            loadDistricts(this.value);
-            } else {
-            document.getElementById('district').innerHTML = '<option value="">Pilih Kab/Kota terlebih dahulu</option>';
-            }
-        });
-        
-        document.getElementById('district').addEventListener('change', function() {
-            if (this.value) {
-            loadVillages(this.value);
-            } else {
-            document.getElementById('village').innerHTML = '<option value="">Pilih Provinsi terlebih dahulu</option>';
-            }
-        });
-        
-        document.getElementById('village').addEventListener('change', function() {
-            if (this.value) {
-            document.getElementById('postal_code').value = 
-                this.selectedOptions[0].dataset.postal || '';
-            
-            // Tampilkan opsi pengiriman setelah alamat lengkap
-            document.getElementById('shipping-section').style.display = 'block';
-            calculateShipping();
-            }
-        });
-  
+        `;
     }
     
     if (hasDigitalProducts) {
@@ -810,24 +774,23 @@ function showQuickView(productId) {
     });
 }
 // Konfigurasi API
-const WILAYAH_API = "https://wilayah.id";
+const WILAYAH_API = "https://www.emsifa.com/api-wilayah-indonesia/api";
+const RAJAONGKIR_API = "https://api.rajaongkir.com/starter";
+const RAJAONGKIR_KEY = "UYAVNGwHd0aca6b1808c712ctUAix4js"; // Ganti dengan API key RajaOngkir Anda
+const SHOP_ORIGIN_CITY_ID = "249"; // ID kota asal pengiriman (contoh: Jakarta)
 
-// Fungsi load provinsi yang sudah diperbaiki
+// Fungsi untuk memuat provinsi
 async function loadProvinces() {
   const provinceSelect = document.getElementById('province');
   
   try {
-    // Tampilkan loading
     provinceSelect.innerHTML = '<option value="">Memuat provinsi...</option>';
     
-    // Gunakan API terbaru
-    const response = await fetch(`${WILAYAH_API}/api/provinces.json`);
-    
+    const response = await fetch(`${WILAYAH_API}/provinces.json`);
     if (!response.ok) throw new Error("Gagal memuat provinsi");
     
     const provinces = await response.json();
     
-    // Kosongkan dan isi dropdown
     provinceSelect.innerHTML = '<option value="">Pilih Provinsi</option>';
     
     provinces.forEach(province => {
@@ -842,7 +805,7 @@ async function loadProvinces() {
   }
 }
 
-// Fungsi load kabupaten/kota
+// Fungsi untuk memuat kabupaten/kota
 async function loadRegencies(provinceId) {
   const regencySelect = document.getElementById('regency');
   
@@ -850,14 +813,15 @@ async function loadRegencies(provinceId) {
     regencySelect.disabled = true;
     regencySelect.innerHTML = '<option value="">Memuat kabupaten...</option>';
     
-    const response = await fetch(`${WILAYAH_API}/api/${provinceId}.json`);
+    const response = await fetch(`${WILAYAH_API}/regencies/${provinceId}.json`);
+    if (!response.ok) throw new Error("Gagal memuat kabupaten");
+    
     const regencies = await response.json();
     
     regencySelect.innerHTML = '<option value="">Pilih Kabupaten/Kota</option>';
     
     regencies.forEach(regency => {
       const option = new Option(regency.name, regency.id);
-      option.dataset.type = regency.type; // Kabupaten/Kota
       regencySelect.add(option);
     });
     
@@ -869,74 +833,35 @@ async function loadRegencies(provinceId) {
   }
 }
 
+// Fungsi untuk memuat kecamatan
 async function loadDistricts(regencyId) {
   const districtSelect = document.getElementById('district');
-  districtSelect.disabled = true;
-  districtSelect.innerHTML = '<option value="">Pilih Kecamatan</option>';
-
+  
   try {
-    const response = await fetch(`${WILAYAH_API_BASE}/api/${regencyId}.json`);
+    districtSelect.disabled = true;
+    districtSelect.innerHTML = '<option value="">Memuat kecamatan...</option>';
+    
+    const response = await fetch(`${WILAYAH_API}/districts/${regencyId}.json`);
+    if (!response.ok) throw new Error("Gagal memuat kecamatan");
+    
     const districts = await response.json();
+    
+    districtSelect.innerHTML = '<option value="">Pilih Kecamatan</option>';
     
     districts.forEach(district => {
       const option = new Option(district.name, district.id);
-      option.dataset.regency = regencyId;
       districtSelect.add(option);
     });
     
     districtSelect.disabled = false;
-    resetDependentFields('district');
+    
   } catch (error) {
-    console.error('Gagal memuat kecamatan:', error);
-    showNotification('Gagal memuat data kecamatan', 'error');
+    console.error("Error:", error);
+    districtSelect.innerHTML = '<option value="">Gagal memuat kecamatan</option>';
   }
 }
 
-async function loadVillages(districtId) {
-  const villageSelect = document.getElementById('village');
-  villageSelect.disabled = true;
-  villageSelect.innerHTML = '<option value="">Pilih Desa/Kelurahan</option>';
-
-  try {
-    const response = await fetch(`${WILAYAH_API_BASE}/api/${districtId}.json`);
-    const villages = await response.json();
-    
-    villages.forEach(village => {
-      const option = new Option(village.name, village.id);
-      option.dataset.postal = village.postal; // Asumsi API menyediakan kode pos
-      villageSelect.add(option);
-    });
-    
-    villageSelect.disabled = false;
-  } catch (error) {
-    console.error('Gagal memuat desa:', error);
-    showNotification('Gagal memuat data desa/kelurahan', 'error');
-  }
-}
-
-function resetDependentFields(fieldName) {
-  const fields = {
-    'province': ['regency', 'district', 'village'],
-    'regency': ['district', 'village'],
-    'district': ['village']
-  };
-
-  fields[fieldName].forEach(field => {
-    const element = document.getElementById(field);
-    element.value = '';
-    element.disabled = true;
-    if (field !== 'village') {
-      element.innerHTML = `<option value="">Pilih ${field === 'regency' ? 'Kabupaten/Kota' : 'Kecamatan'}</option>`;
-    }
-  });
-  document.getElementById('postal_code').value = '';
-}
-
-// Inisialisasi
-document.addEventListener('DOMContentLoaded', () => {
-  loadProvinces();
-});
-
+// Fungsi untuk menghitung ongkir
 async function calculateShipping() {
   const regencyId = document.getElementById('regency').value;
   
@@ -946,40 +871,131 @@ async function calculateShipping() {
   }
 
   try {
-    // Konversi ID wilayah.id ke ID RajaOngkir jika diperlukan
-    const rajaOngkirCityId = await convertToRajaOngkirId(regencyId);
-    const weight = calculateTotalWeight();
+    // Hitung berat total (dalam gram)
+    const weight = cart.reduce((total, item) => {
+      return total + (item.weight || 500) * item.quantity; // Default 500g jika berat tidak ada
+    }, 0);
     
-    const response = await fetch('https://api.rajaongkir.com/starter/cost', {
+    const response = await fetch(`${RAJAONGKIR_API}/cost`, {
       method: 'POST',
       headers: {
-        'key': 'UYAVNGwHd0aca6b1808c712ctUAix4js',
+        'key': RAJAONGKIR_KEY,
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams({
         origin: SHOP_ORIGIN_CITY_ID,
-        destination: rajaOngkirCityId,
+        destination: regencyId,
         weight: weight,
-        courier: 'jne:jnt'
+        courier: 'jne' // bisa diganti dengan kurir lain: jne, tiki, pos
       })
     });
     
     const data = await response.json();
+    
+    if (data.rajaongkir.status.code !== 200) {
+      throw new Error(data.rajaongkir.status.description);
+    }
+    
     renderShippingOptions(data.rajaongkir.results[0].costs);
+    
   } catch (error) {
     console.error('Error calculating shipping:', error);
-    showNotification('Gagal menghitung ongkos kirim', 'error');
+    showNotification('Gagal menghitung ongkos kirim: ' + error.message, 'error');
   }
 }
 
-// Fungsi konversi ID (simulasi)
-async function convertToRajaOngkirId(wilayahId) {
-  // Implementasi mapping ID wilayah.id ke RajaOngkir
-  // Contoh:
-  const mapping = {
-    '3308': '249', // ID Kab. Magelang
-    '3371': '107'  // ID Kota Magelang
-  };
+// Fungsi untuk menampilkan opsi pengiriman
+function renderShippingOptions(costs) {
+  const shippingOptions = document.getElementById('shipping-options');
+  shippingOptions.innerHTML = '';
   
-  return mapping[wilayahId] || wilayahId;
+  if (!costs || costs.length === 0) {
+    shippingOptions.innerHTML = '<div class="shipping-option">Tidak ada opsi pengiriman tersedia</div>';
+    return;
+  }
+  
+  costs.forEach(cost => {
+    const option = document.createElement('div');
+    option.className = 'shipping-option';
+    option.innerHTML = `
+      <input type="radio" name="shipping" id="shipping-${cost.service}" 
+             value="${cost.service}" data-cost="${cost.cost[0].value}">
+      <label for="shipping-${cost.service}">
+        <strong>${cost.service.toUpperCase()}</strong>
+        <span>${cost.cost[0].value.toLocaleString('id-ID')}</span>
+        <small>${cost.cost[0].etd} hari</small>
+      </label>
+    `;
+    
+    option.querySelector('input').addEventListener('change', () => {
+      updateOrderSummary();
+    });
+    
+    shippingOptions.appendChild(option);
+  });
 }
+
+// Update ringkasan pesanan setelah memilih pengiriman
+function updateOrderSummary() {
+  const selectedShipping = document.querySelector('input[name="shipping"]:checked');
+  const shippingCost = selectedShipping ? parseInt(selectedShipping.dataset.cost) : 0;
+  const subtotal = calculateTotal();
+  const total = subtotal + shippingCost;
+  
+  document.getElementById('subtotal-amount').textContent = subtotal.toLocaleString('id-ID');
+  document.getElementById('shipping-amount').textContent = shippingCost.toLocaleString('id-ID');
+  document.getElementById('total-amount').textContent = total.toLocaleString('id-ID');
+}
+
+// Inisialisasi event listeners untuk form alamat
+function setupAddressFormListeners() {
+  // Provinsi
+  document.getElementById('province').addEventListener('change', function() {
+    if (this.value) {
+      loadRegencies(this.value);
+      resetDependentFields('province');
+    }
+  });
+  
+  // Kabupaten/Kota
+  document.getElementById('regency').addEventListener('change', function() {
+    if (this.value) {
+      loadDistricts(this.value);
+      resetDependentFields('regency');
+      calculateShipping();
+    }
+  });
+  
+  // Kecamatan
+  document.getElementById('district').addEventListener('change', function() {
+    if (this.value) {
+      resetDependentFields('district');
+    }
+  });
+}
+
+// Reset field yang tergantung
+function resetDependentFields(fieldName) {
+  const fields = {
+    'province': ['regency', 'district'],
+    'regency': ['district']
+  };
+
+  if (fields[fieldName]) {
+    fields[fieldName].forEach(field => {
+      const element = document.getElementById(field);
+      element.value = '';
+      element.disabled = true;
+      element.innerHTML = `<option value="">Pilih ${field === 'regency' ? 'Kabupaten/Kota' : 'Kecamatan'}</option>`;
+    });
+  }
+  
+  // Reset shipping options
+  document.getElementById('shipping-options').innerHTML = '';
+}
+
+// Panggil inisialisasi saat DOM siap
+document.addEventListener('DOMContentLoaded', () => {
+  loadProvinces();
+  setupAddressFormListeners();
+});
