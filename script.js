@@ -24,12 +24,14 @@ async function initializeApp() {
     renderCartItems(); // Render cart saat pertama kali load
 }
 // Inisialisasi Aplikasi
+// Inisialisasi Aplikasi
 document.addEventListener('DOMContentLoaded', () => {
     loadProductsFromSupabase();
     setupEventListeners();
     setupCartEventListeners(); 
     updateCartCount();
     renderCartItems();
+    
     // Animasi preloader
     setTimeout(() => {
         const preloader = document.querySelector('.preloader');
@@ -40,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }, 1500);
 });
-
 // Panggil inisialisasi saat DOM siap
 document.addEventListener('DOMContentLoaded', () => {
   loadProvinces();
@@ -239,7 +240,7 @@ function setupEventListeners() {
         if (cart.length > 0) {
             closeModal(cartModal);
             openModal(customerModal);
-            renderAddressFields();
+            renderAddressFields(); // Ini akan merender form alamat jika ada produk fisik
         } else {
             showNotification('Keranjang belanja kosong');
         }
@@ -469,8 +470,7 @@ function renderAddressFields() {
     const hasDigitalProducts = cart.some(item => item.type === 'digital');
     
     if (hasPhysicalProducts) {
-        addressFields.innerHTML += `
-
+        addressFields.innerHTML = `
             <div class="form-group">
                 <label for="province">Provinsi*</label>
                 <select id="province" class="form-control" required>
@@ -490,28 +490,31 @@ function renderAddressFields() {
                 <select id="district" class="form-control" required disabled>
                     <option value="">Pilih kabupaten terlebih dahulu</option>
                 </select>
-            </div>  };
+            </div>
 
-            <!-- Desa/Kelurahan -->
             <div class="form-group">
                 <label for="village">Kelurahan*</label>
                 <select id="village" class="form-control" required disabled>
-                    <option value="">Pilih Kecamatan terlebih dahulu</option>
+                    <option value="">Pilih kecamatan terlebih dahulu</option>
                 </select>
-            </div>  };
+            </div>
 
-            <!-- Kode Pos -->
             <div class="form-group">
                 <label for="postal_code">Kode Pos*</label>
                 <input type="text" id="postal_code" class="form-control" required>
             </div>
+
+            <div id="shipping-options" class="shipping-options-container"></div>
         `;
+        
+        loadProvinces();
+        setupAddressFormListeners();
     }
     
     if (hasDigitalProducts) {
         addressFields.innerHTML += `
             <div class="form-group">
-                <label for="customer-email">Email* (untuk produk digital)</label>
+                <label for="customer-email-digital">Email* (untuk produk digital)</label>
                 <input type="email" id="customer-email-digital" ${hasPhysicalProducts ? '' : 'required'}>
                 <small>Link produk digital akan dikirim ke email ini</small>
             </div>
@@ -876,30 +879,36 @@ async function loadDistricts(regencyId) {
 
 // Fungsi untuk memuat kecamatan
 async function loadVillages(districtId) {
-  const villageSelect = document.getElementById('village');
-  
-  try {
-    villageSelect.disabled = true;
-    villageSelect.innerHTML = '<option value="">Memuat Kelurahan...</option>';
+    const villageSelect = document.getElementById('village');
     
-    const response = await fetch(`${WILAYAH_API}/districts/${districtId}.json`);
-    if (!response.ok) throw new Error("Gagal memuat Kelurahan");
+    if (!villageSelect) {
+        console.error('Elemen village tidak ditemukan');
+        return;
+    }
     
-    const village = await response.json();
-    
-    villageSelect.innerHTML = '<option value="">Pilih Kelurahan</option>';
-    
-    village.forEach(district => {
-      const option = new Option(village.name, village.id);
-      villageSelect.add(option);
-    });
-    
-    villageSelect.disabled = false;
-    
-  } catch (error) {
-    console.error("Error:", error);
-    villageSelect.innerHTML = '<option value="">Gagal memuat Kelurahan</option>';
-  }
+    try {
+        villageSelect.disabled = true;
+        villageSelect.innerHTML = '<option value="">Memuat kelurahan...</option>';
+        
+        const response = await fetch(`${WILAYAH_API}/villages/${districtId}.json`);
+        if (!response.ok) throw new Error("Gagal memuat kelurahan");
+        
+        const villages = await response.json();
+        
+        villageSelect.innerHTML = '<option value="">Pilih Kelurahan</option>';
+        
+        villages.forEach(village => {
+            const option = new Option(village.name, village.id);
+            option.dataset.postal = village.postal_code; // Simpan kode pos di data attribute
+            villageSelect.add(option);
+        });
+        
+        villageSelect.disabled = false;
+        
+    } catch (error) {
+        console.error("Error:", error);
+        villageSelect.innerHTML = '<option value="">Gagal memuat kelurahan</option>';
+    }
 }
 
 // Fungsi untuk menghitung ongkir
@@ -992,9 +1001,10 @@ function updateOrderSummary() {
 function setupAddressFormListeners() {
     const provinceSelect = document.getElementById('province');
     const regencySelect = document.getElementById('regency');
+    const districtSelect = document.getElementById('district');
+    const villageSelect = document.getElementById('village');
     
-    // Pastikan elemen ada sebelum menambahkan event listener
-    if (!provinceSelect || !regencySelect) {
+    if (!provinceSelect || !regencySelect || !districtSelect || !villageSelect) {
         console.error('Elemen form alamat tidak ditemukan');
         return;
     }
@@ -1012,26 +1022,55 @@ function setupAddressFormListeners() {
         if (this.value) {
             loadDistricts(this.value);
             resetDependentFields('regency');
+        }
+    });
+    
+    // Kecamatan
+    districtSelect.addEventListener('change', function() {
+        if (this.value) {
+            loadVillages(this.value);
+            resetDependentFields('district');
             calculateShipping();
+        }
+    });
+    
+    // Kelurahan
+    villageSelect.addEventListener('change', function() {
+        if (this.value) {
+            const selectedOption = this.options[this.selectedIndex];
+            document.getElementById('postal_code').value = selectedOption.dataset.postal || '';
         }
     });
 }
 // Reset field yang tergantung
 function resetDependentFields(fieldName) {
-  const fields = {
-    'province': ['regency', 'district'],
-    'regency': ['district']
-  };
+    const fields = {
+        'province': ['regency', 'district', 'village'],
+        'regency': ['district', 'village'],
+        'district': ['village']
+    };
 
-  if (fields[fieldName]) {
-    fields[fieldName].forEach(field => {
-      const element = document.getElementById(field);
-      element.value = '';
-      element.disabled = true;
-      element.innerHTML = `<option value="">Pilih ${field === 'regency' ? 'Kabupaten/Kota' : 'Kecamatan'}</option>`;
-    });
-  }
-  
-  // Reset shipping options
-  document.getElementById('shipping-options').innerHTML = '';
+    if (fields[fieldName]) {
+        fields[fieldName].forEach(field => {
+            const element = document.getElementById(field);
+            if (element) {
+                element.value = '';
+                element.disabled = true;
+                element.innerHTML = `<option value="">Pilih ${field === 'regency' ? 'Kabupaten/Kota' : 
+                                    field === 'district' ? 'Kecamatan' : 'Kelurahan'}</option>`;
+            }
+        });
+    }
+    
+    // Reset shipping options
+    const shippingOptions = document.getElementById('shipping-options');
+    if (shippingOptions) {
+        shippingOptions.innerHTML = '';
+    }
+    
+    // Reset kode pos
+    const postalCode = document.getElementById('postal_code');
+    if (postalCode) {
+        postalCode.value = '';
+    }
 }
