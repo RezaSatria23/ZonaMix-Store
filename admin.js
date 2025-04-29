@@ -251,30 +251,42 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
 
     // Function to show product summary
     function showProductSummary(product) {
-        document.querySelector('.summary-placeholder').style.display = 'none';
+        // Sembunyikan placeholder
+        const placeholder = document.querySelector('.summary-placeholder');
+        if (placeholder) placeholder.style.display = 'none';
+        
+        // Tampilkan container ringkasan
         const summaryContent = document.getElementById('summary-content');
+        if (!summaryContent) {
+            console.error('Element summary-content tidak ditemukan');
+            return;
+        }
         
-        // Populate summary data
-        document.getElementById('summary-name').textContent = product.name;
-        document.getElementById('summary-price').textContent = 'Rp ' + product.price.toLocaleString('id-ID');
-        document.getElementById('summary-category').textContent = product.category;
-        document.getElementById('summary-type').textContent = product.type;
-        document.getElementById('summary-stock').textContent = product.stock;
+        // Isi data produk
+        document.getElementById('summary-name').textContent = product.name || '-';
+        document.getElementById('summary-price').textContent = product.price ? 'Rp ' + product.price.toLocaleString('id-ID') : '-';
+        document.getElementById('summary-category').textContent = product.category || '-';
+        document.getElementById('summary-type').textContent = product.type || '-';
+        document.getElementById('summary-stock').textContent = product.stock || '0';
         document.getElementById('summary-description').textContent = product.description || 'Tidak ada deskripsi';
-        document.getElementById('summary-weight').textContent = product.weight;
-
-        // Handle image
-        const summaryImage = document.getElementById('summary-image');
-        summaryImage.src = product.image_url;
-        summaryImage.onerror = function() {
-            this.src = 'https://via.placeholder.com/300x200?text=Gambar+Tidak+Tersedia';
-        };
         
-        // Show summary
+        // Handle gambar produk
+        const summaryImage = document.getElementById('summary-image');
+        if (summaryImage) {
+            summaryImage.src = product.image_url || '';
+            summaryImage.onerror = function() {
+                this.src = 'https://via.placeholder.com/300x200?text=Gambar+Tidak+Tersedia';
+            };
+        }
+        
+        // Tampilkan ringkasan
         summaryContent.style.display = 'block';
         
-        // Store the product ID in the confirm button
-        document.getElementById('confirm-product').dataset.productId = product.id;
+        // Set product ID untuk tombol konfirmasi
+        const confirmBtn = document.getElementById('confirm-product');
+        if (confirmBtn) {
+            confirmBtn.dataset.productId = product.id;
+        }
     }
 
     // Confirm product button handler
