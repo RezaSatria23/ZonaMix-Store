@@ -138,77 +138,69 @@ function initEventListeners() {
         }
     });
     // Add Product Form
-    document.getElementById('add-product-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const name = document.getElementById('product-name').value.trim();
-        const price = parseFloat(document.getElementById('product-price').value);
-        const category = document.getElementById('product-category').value;
-        const description = document.getElementById('product-description').value.trim();
-        const imageUrl = document.getElementById('product-image').value.trim();
-        const isValidImage = await validateImageUrl(imageUrl);
-        const type = document.getElementById('product-type').value;
-        const stock = parseInt(document.getElementById('product-stock').value);
-        const messageElement = document.getElementById('product-message');
+document.getElementById('add-product-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Dapatkan semua nilai dari form
+    const productData = {
+        name: document.getElementById('product-name').value.trim(),
+        price: parseFloat(document.getElementById('product-price').value),
+        category: document.getElementById('product-category').value,
+        type: document.getElementById('product-type').value,
+        stock: parseInt(document.getElementById('product-stock').value),
+        description: document.getElementById('product-description').value.trim(),
+        image_url: document.getElementById('product-image').value.trim()
+    };
 
+    // Tambahkan berat jika produk fisik
+    if (productData.type === 'fisik') {
+        productData.weight = parseInt(document.getElementById('product-weight').value) || 500; // default 500 gram
+    }
+
+    const messageElement = document.getElementById('product-message');
+    messageElement.style.display = 'none';
+
+    // Validasi
+    if (!productData.name || isNaN(productData.price) || !productData.category || 
+        !productData.type || isNaN(productData.stock)) {
+        showMessage('Harap isi semua field yang wajib diisi', 'error', messageElement);
+        return;
+    }
+
+    if (productData.type === 'fisik' && (isNaN(productData.weight) || productData.weight < 1)) {
+        showMessage('Berat produk harus minimal 1 gram', 'error', messageElement);
+        return;
+    }
+
+    try {
+        // Validasi gambar
+        const img = new Image();
+        img.src = productData.image_url;
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = () => reject(new Error('URL gambar tidak valid'));
+        });
+
+        // Simpan produk ke Supabase
         const savedProduct = await saveProduct(productData);
-
-        // Validasi dasar
-        if (!name || !price || !category || !type || isNaN(stock)) {
-            showMessage('Harap isi semua field yang wajib diisi', 'error', messageElement);
-            return;
-        }
-        if (type === 'fisik') {
-            weight = parseInt(document.getElementById('product-weight').value);
-        }
-
-        // Validasi khusus untuk produk fisik
-        if (type === 'fisik' && (!weight || isNaN(weight) || weight < 1)) {
-            showMessage('Berat produk harus minimal 1 gram', 'error', messageElement);
-            return;
-        }
-
+        
         if (savedProduct) {
-            showSuccessMessage('Produk berhasil dipublish!');
-            resetForm();
-        }
-
-        if (!isValidImage) {
-            document.getElementById('image-error').style.display = 'block';
-            document.getElementById('image-error').textContent = 'URL gambar tidak valid atau tidak dapat diakses';
-            return;
-        }
-        try {
-            const { data, error } = await supabase
-                .from('products')
-                .insert([{ 
-                    name, 
-                    price, 
-                    category,
-                    type,
-                    description, 
-                    image_url: imageUrl,
-                    stock,
-                    weight
-                }])
-                .select();
-    
-            if (error) throw error;
-    
-            // Show product summary
-            showProductSummary(data[0]);
+            // Tampilkan ringkasan produk
+            showProductSummary(savedProduct);
+            showMessage('Produk berhasil ditambahkan!', 'success', messageElement);
             
-            // Show success message
-            messageElement.textContent = 'Produk berhasil ditambahkan! Silahkan konfirmasi.';
-            messageElement.className = 'message success';
-            messageElement.style.display = 'block';
-            
-        } catch (error) {
-            messageElement.textContent = `Error: ${error.message}`;
-            messageElement.className = 'message error';
-            messageElement.style.display = 'block';
+            // Update preview gambar
+            const previewImg = document.getElementById('image-preview');
+            previewImg.src = savedProduct.image_url;
+            previewImg.style.display = 'block';
+        } else {
+            throw new Error('Gagal menyimpan produk');
         }
-    });
+    } catch (error) {
+        console.error('Error:', error);
+        showMessage(`Error: ${error.message}`, 'error', messageElement);
+    }
+});
     // Fungsi untuk memeriksa dan menampilkan preview gambar
     document.getElementById('product-image').addEventListener('input', function() {
         const imageUrl = this.value.trim();
