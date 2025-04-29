@@ -908,7 +908,7 @@ async function loadVillages(districtId) {
             const hasPostalCode = village.postal_code && village.postal_code.trim() !== '';
             const displayText = hasPostalCode 
                 ? `${village.name} (${village.postal_code})` 
-                : `${village.name} - Kode pos tidak tersedia`;
+                : `${village.name}`;
             
             const option = new Option(displayText, village.id);
             option.dataset.postal = hasPostalCode ? village.postal_code : '';
