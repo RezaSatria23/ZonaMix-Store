@@ -918,7 +918,6 @@ async function loadVillages(districtId) {
         
         // Tampilkan notifikasi jika banyak kelurahan tanpa kode pos
         if (villagesWithPostalCode === 0) {
-            showNotification('Kode pos tidak tersedia untuk kecamatan ini. Silakan masukkan manual.', 'warning');
             postalCodeInput.readOnly = false;
             postalCodeInput.placeholder = 'Masukkan kode pos manual';
         } else {
@@ -937,16 +936,29 @@ async function loadVillages(districtId) {
 // Fungsi untuk menghitung ongkir
 async function calculateShipping() {
     const regencyId = document.getElementById('regency').value;
+    const villageSelect = document.getElementById('village');
+    const postalCode = document.getElementById('postal_code').value;
     
+    // Validasi
     if (!regencyId) {
         showNotification('Harap pilih kabupaten/kota terlebih dahulu', 'error');
+        return;
+    }
+    
+    if (!villageSelect.value) {
+        showNotification('Harap pilih kelurahan terlebih dahulu', 'error');
+        return;
+    }
+    
+    if (!postalCode) {
+        showNotification('Harap pastikan kode pos terisi', 'error');
         return;
     }
 
     try {
         // Hitung berat total (dalam gram)
         const weight = cart.reduce((total, item) => {
-            return total + (item.weight || 500) * item.quantity;
+            return total + (item.weight || 500) * item.quantity; // Default 500g jika berat tidak ada
         }, 0);
         
         // Gunakan proxy endpoint di Vercel
@@ -959,7 +971,7 @@ async function calculateShipping() {
                 origin: SHOP_ORIGIN_CITY_ID,
                 destination: regencyId,
                 weight: weight,
-                courier: 'jne'
+                courier: 'jne' // bisa diganti dengan kurir lain: jne, tiki, pos
             })
         });
         
@@ -969,43 +981,97 @@ async function calculateShipping() {
             throw new Error(data.error);
         }
         
+        if (!data.rajaongkir || !data.rajaongkir.results || data.rajaongkir.results.length === 0) {
+            throw new Error('Tidak ada layanan pengiriman tersedia');
+        }
+        
         renderShippingOptions(data.rajaongkir.results[0].costs);
         
     } catch (error) {
         console.error('Error calculating shipping:', error);
         showNotification('Gagal menghitung ongkos kirim: ' + error.message, 'error');
+        document.getElementById('shipping-options').innerHTML = `
+            <div class="alert alert-warning">
+                ${error.message || 'Tidak ada layanan pengiriman tersedia'}
+            </div>
+        `;
     }
 }
 
 // Fungsi untuk menampilkan opsi pengiriman
 function renderShippingOptions(costs) {
-  const shippingOptions = document.getElementById('shipping-options');
-  shippingOptions.innerHTML = '';
-  
-  if (!costs || costs.length === 0) {
-    shippingOptions.innerHTML = '<div class="shipping-option">Tidak ada opsi pengiriman tersedia</div>';
-    return;
-  }
-  
-  costs.forEach(cost => {
-    const option = document.createElement('div');
-    option.className = 'shipping-option';
-    option.innerHTML = `
-      <input type="radio" name="shipping" id="shipping-${cost.service}" 
-             value="${cost.service}" data-cost="${cost.cost[0].value}">
-      <label for="shipping-${cost.service}">
-        <strong>${cost.service.toUpperCase()}</strong>
-        <span>${cost.cost[0].value.toLocaleString('id-ID')}</span>
-        <small>${cost.cost[0].etd} hari</small>
-      </label>
-    `;
+    const shippingOptions = document.getElementById('shipping-options');
+    shippingOptions.innerHTML = '';
     
-    option.querySelector('input').addEventListener('change', () => {
-      updateOrderSummary();
+    if (!costs || costs.length === 0) {
+        shippingOptions.innerHTML = `
+            <div class="alert alert-warning">
+                Tidak ada opsi pengiriman tersedia untuk alamat ini
+            </div>
+        `;
+        return;
+    }
+    
+    // Buat container untuk opsi pengiriman
+    const container = document.createElement('div');
+    container.className = 'shipping-options-list';
+    
+    // Header
+    const header = document.createElement('div');
+    header.className = 'shipping-header';
+    header.innerHTML = `
+        <h4>Pilihan Pengiriman</h4>
+        <small>Berat total: ${calculateTotalWeight()} gram</small>
+    `;
+    container.appendChild(header);
+    
+    // Tambahkan masing-masing opsi
+    costs.forEach(cost => {
+        if (!cost.cost || cost.cost.length === 0) return;
+        
+        const option = document.createElement('div');
+        option.className = 'shipping-option';
+        option.innerHTML = `
+            <input type="radio" name="shipping" id="shipping-${cost.service.toLowerCase()}" 
+                   value="${cost.service}" data-cost="${cost.cost[0].value}"
+                   ${costs.length === 1 ? 'checked' : ''}>
+            <label for="shipping-${cost.service.toLowerCase()}">
+                <div class="shipping-service">${cost.service.toUpperCase()}</div>
+                <div class="shipping-price">Rp ${cost.cost[0].value.toLocaleString('id-ID')}</div>
+                <div class="shipping-estimate">Estimasi: ${cost.cost[0].etd} hari</div>
+            </label>
+        `;
+        
+        // Update otomatis saat opsi dipilih
+        option.querySelector('input').addEventListener('change', function() {
+            selectedShipping = {
+                service: cost.service,
+                cost: cost.cost[0].value,
+                etd: cost.cost[0].etd
+            };
+            updateOrderSummary();
+        });
+        
+        container.appendChild(option);
     });
     
-    shippingOptions.appendChild(option);
-  });
+    shippingOptions.appendChild(container);
+    
+    // Otomatis pilih opsi pertama jika ada
+    if (costs.length > 0 && costs[0].cost && costs[0].cost.length > 0) {
+        selectedShipping = {
+            service: costs[0].service,
+            cost: costs[0].cost[0].value,
+            etd: costs[0].cost[0].etd
+        };
+        updateOrderSummary();
+    }
+}
+
+function calculateTotalWeight() {
+    return cart.reduce((total, item) => {
+        return total + (item.weight || 500) * item.quantity;
+    }, 0);
 }
 
 // Update ringkasan pesanan setelah memilih pengiriman
@@ -1070,11 +1136,17 @@ function setupAddressFormListeners() {
         
         if (postalCode) {
             postalCodeInput.readOnly = true;
-            calculateShipping();
+            // Hitung ongkir setelah 500ms untuk menghindari multiple calls
+            setTimeout(() => calculateShipping(), 500);
         } else {
             postalCodeInput.readOnly = false;
             postalCodeInput.placeholder = 'Masukkan kode pos manual';
-            showNotification('Kode pos tidak tersedia untuk kelurahan ini. Silakan masukkan manual.', 'warning');
+            showNotification('Kode pos tidak tersedia untuk kelurahan ini. Silakan masukkan manual lalu tekan Enter.', 'warning');
+            postalCodeInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    calculateShipping();
+                }
+            });
         }
     });
 }
