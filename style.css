@@ -2158,3 +2158,20 @@ body {
     color: #856404;
     border-left: 4px solid #ffc107;
 }
+/* Tambahkan di CSS */
+#weight-field-container {
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.help-text {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #666;
+}
+
+/* Style untuk field yang required */
+input:required, select:required {
+    border-left: 3px solid #4361ee;
+}

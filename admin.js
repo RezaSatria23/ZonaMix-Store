@@ -50,6 +50,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Fungsi simpan produk yang sudah diperbaiki
 async function saveProduct(productData) {
     try {
+    
+        if (productData.type === 'fisik' && !productData.weight) {
+            productData.weight = 500; // Default 500 gram jika tidak diisi
+        }
+
       // Pastikan is_published tidak NULL
       const completeData = {
         ...productData,
@@ -126,9 +131,17 @@ function initEventListeners() {
             }
         });
     });
-
+    document.getElementById('product-type').addEventListener('change', function() {
+        const weightField = document.getElementById('weight-field-container');
+        if (this.value === 'fisik') {
+            weightField.style.display = 'block';
+            document.getElementById('product-weight').required = true;
+        } else {
+            weightField.style.display = 'none';
+            document.getElementById('product-weight').required = false;
+        }
+    });
     // Add Product Form
-    // Update the form submission handler
     document.getElementById('add-product-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -140,9 +153,22 @@ function initEventListeners() {
         const isValidImage = await validateImageUrl(imageUrl);
         const type = document.getElementById('product-type').value;
         const stock = parseInt(document.getElementById('product-stock').value);
+        const weight = type === 'fisik' ? parseInt(document.getElementById('product-weight').value) : null;
         const messageElement = document.getElementById('product-message');
 
         const savedProduct = await saveProduct(productData);
+
+        // Validasi dasar
+        if (!name || !price || !category || !type || isNaN(stock)) {
+            showMessage('Harap isi semua field yang wajib diisi', 'error', messageElement);
+            return;
+        }
+
+        // Validasi khusus untuk produk fisik
+        if (type === 'fisik' && (!weight || isNaN(weight) || weight < 1)) {
+            showMessage('Berat produk harus minimal 1 gram', 'error', messageElement);
+            return;
+        }
 
         if (savedProduct) {
             showSuccessMessage('Produk berhasil dipublish!');
@@ -164,7 +190,8 @@ function initEventListeners() {
                     type,
                     description, 
                     image_url: imageUrl,
-                    stock
+                    stock,
+                    weight
                 }])
                 .select();
     
@@ -465,11 +492,18 @@ async function showEditModal(productId) {
                             </div>
                         </div>
                         
-                        <div class="form-group">
-                            <label>Stok Tersedia</label>
-                            <input type="number" id="edit-product-stock" min="0" value="${product.stock}" required>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Stok Tersedia</label>
+                                <input type="number" id="edit-product-stock" min="0" value="${product.stock}" required>
+                            </div>
+
+                            <div class="form-group" id="edit-weight-field-container" style="${product.type === 'fisik' ? '' : 'display: none;'}">
+                                <label>Berat Produk (gram)</label>
+                                <input type="number" id="edit-product-weight" min="1" value="${product.weight || 500}">
+                            </div>
                         </div>
-                        
+
                         <div class="form-group">
                             <label>Deskripsi Produk</label>
                             <textarea id="edit-product-description" rows="4">${product.description || ''}</textarea>
@@ -505,6 +539,16 @@ async function showEditModal(productId) {
             }
         });
 
+        // Toggle field berat berdasarkan jenis produk
+        document.getElementById('edit-product-type').addEventListener('change', function() {
+            const weightField = document.getElementById('edit-weight-field-container');
+            if (this.value === 'fisik') {
+                weightField.style.display = 'block';
+            } else {
+                weightField.style.display = 'none';
+            }
+        });
+
         // Handle form submission
         document.getElementById('edit-product-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -515,6 +559,7 @@ async function showEditModal(productId) {
             const category = document.getElementById('edit-product-category').value;
             const type = document.getElementById('edit-product-type').value;
             const stock = parseInt(document.getElementById('edit-product-stock').value);
+            const weight = type === 'fisik' ? parseInt(document.getElementById('edit-product-weight').value) : null;
             const description = document.getElementById('edit-product-description').value.trim();
             const image_url = document.getElementById('edit-product-image').value.trim();
             const messageElement = document.getElementById('edit-product-message');
@@ -528,6 +573,7 @@ async function showEditModal(productId) {
                         category,
                         type,
                         stock,
+                        weight,
                         description, 
                         image_url 
                     })
