@@ -39,9 +39,12 @@ document.addEventListener('DOMContentLoaded', () => {
             onComplete: () => preloader.style.display = 'none'
         });
     }, 1500);
+});
 
-    loadProvinces();
-    setupAddressFormListeners();
+// Panggil inisialisasi saat DOM siap
+document.addEventListener('DOMContentLoaded', () => {
+  loadProvinces();
+  setupAddressFormListeners();
 });
 
 // Load produk dari Supabase
@@ -782,30 +785,38 @@ const SHOP_ORIGIN_CITY_ID = "249"; // ID kota asal pengiriman (contoh: Jakarta)
 
 // Fungsi untuk memuat provinsi
 async function loadProvinces() {
-  const provinceSelect = document.getElementById('province');
-  
-  try {
-    provinceSelect.innerHTML = '<option value="">Memuat provinsi...</option>';
+    const provinceSelect = document.getElementById('province');
     
-    const response = await fetch(`${WILAYAH_API}/provinces.json`);
-    if (!response.ok) throw new Error("Gagal memuat provinsi");
+    // Pastikan elemen ada
+    if (!provinceSelect) {
+        console.error('Elemen province tidak ditemukan');
+        return;
+    }
     
-    const provinces = await response.json();
-    
-    provinceSelect.innerHTML = '<option value="">Pilih Provinsi</option>';
-    
-    provinces.forEach(province => {
-      const option = new Option(province.name, province.id);
-      provinceSelect.add(option);
-    });
-    
-  } catch (error) {
-    console.error("Error:", error);
-    provinceSelect.innerHTML = '<option value="">Gagal memuat provinsi</option>';
-    showNotification('Gagal memuat daftar provinsi', 'error');
-  }
+    try {
+        provinceSelect.innerHTML = '<option value="">Memuat provinsi...</option>';
+        
+        const response = await fetch(`${WILAYAH_API}/provinces.json`);
+        if (!response.ok) throw new Error("Gagal memuat provinsi");
+        
+        const provinces = await response.json();
+        
+        // Kosongkan dan isi dropdown
+        provinceSelect.innerHTML = '<option value="">Pilih Provinsi</option>';
+        
+        provinces.forEach(province => {
+            const option = new Option(province.name, province.id);
+            provinceSelect.add(option);
+        });
+        
+    } catch (error) {
+        console.error("Error:", error);
+        if (provinceSelect) {
+            provinceSelect.innerHTML = '<option value="">Gagal memuat provinsi</option>';
+        }
+        showNotification('Gagal memuat daftar provinsi', 'error');
+    }
 }
-
 // Fungsi untuk memuat kabupaten/kota
 async function loadRegencies(provinceId) {
   const regencySelect = document.getElementById('regency');
@@ -859,6 +870,35 @@ async function loadDistricts(regencyId) {
   } catch (error) {
     console.error("Error:", error);
     districtSelect.innerHTML = '<option value="">Gagal memuat kecamatan</option>';
+  }
+}
+
+
+// Fungsi untuk memuat kecamatan
+async function loadVillages(districtId) {
+  const villageSelect = document.getElementById('village');
+  
+  try {
+    villageSelect.disabled = true;
+    villageSelect.innerHTML = '<option value="">Memuat Kelurahan...</option>';
+    
+    const response = await fetch(`${WILAYAH_API}/districts/${districtId}.json`);
+    if (!response.ok) throw new Error("Gagal memuat Kelurahan");
+    
+    const village = await response.json();
+    
+    villageSelect.innerHTML = '<option value="">Pilih Kelurahan</option>';
+    
+    village.forEach(district => {
+      const option = new Option(village.name, village.id);
+      villageSelect.add(option);
+    });
+    
+    villageSelect.disabled = false;
+    
+  } catch (error) {
+    console.error("Error:", error);
+    villageSelect.innerHTML = '<option value="">Gagal memuat Kelurahan</option>';
   }
 }
 
@@ -950,31 +990,32 @@ function updateOrderSummary() {
 
 // Inisialisasi event listeners untuk form alamat
 function setupAddressFormListeners() {
-  // Provinsi
-  document.getElementById('province').addEventListener('change', function() {
-    if (this.value) {
-      loadRegencies(this.value);
-      resetDependentFields('province');
+    const provinceSelect = document.getElementById('province');
+    const regencySelect = document.getElementById('regency');
+    
+    // Pastikan elemen ada sebelum menambahkan event listener
+    if (!provinceSelect || !regencySelect) {
+        console.error('Elemen form alamat tidak ditemukan');
+        return;
     }
-  });
-  
-  // Kabupaten/Kota
-  document.getElementById('regency').addEventListener('change', function() {
-    if (this.value) {
-      loadDistricts(this.value);
-      resetDependentFields('regency');
-      calculateShipping();
-    }
-  });
-  
-  // Kecamatan
-  document.getElementById('district').addEventListener('change', function() {
-    if (this.value) {
-      resetDependentFields('district');
-    }
-  });
+    
+    // Provinsi
+    provinceSelect.addEventListener('change', function() {
+        if (this.value) {
+            loadRegencies(this.value);
+            resetDependentFields('province');
+        }
+    });
+    
+    // Kabupaten/Kota
+    regencySelect.addEventListener('change', function() {
+        if (this.value) {
+            loadDistricts(this.value);
+            resetDependentFields('regency');
+            calculateShipping();
+        }
+    });
 }
-
 // Reset field yang tergantung
 function resetDependentFields(fieldName) {
   const fields = {
