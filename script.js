@@ -501,7 +501,8 @@ function renderAddressFields() {
 
             <div class="form-group">
                 <label for="postal_code">Kode Pos*</label>
-                <input type="text" id="postal_code" class="form-control" required>
+                <input type="text" id="postal_code" class="form-control" required readonly>
+                <small class="text-muted">Kode pos akan otomatis terisi setelah memilih kelurahan</small>
             </div>
 
             <div id="shipping-options" class="shipping-options-container"></div>
@@ -878,17 +879,20 @@ async function loadDistricts(regencyId) {
 
 
 // Fungsi untuk memuat kecamatan
+// Fungsi untuk memuat kelurahan dan kode pos
 async function loadVillages(districtId) {
     const villageSelect = document.getElementById('village');
+    const postalCodeInput = document.getElementById('postal_code');
     
-    if (!villageSelect) {
-        console.error('Elemen village tidak ditemukan');
+    if (!villageSelect || !postalCodeInput) {
+        console.error('Elemen village atau postal_code tidak ditemukan');
         return;
     }
     
     try {
         villageSelect.disabled = true;
         villageSelect.innerHTML = '<option value="">Memuat kelurahan...</option>';
+        postalCodeInput.value = ''; // Reset kode pos
         
         const response = await fetch(`${WILAYAH_API}/villages/${districtId}.json`);
         if (!response.ok) throw new Error("Gagal memuat kelurahan");
@@ -898,8 +902,8 @@ async function loadVillages(districtId) {
         villageSelect.innerHTML = '<option value="">Pilih Kelurahan</option>';
         
         villages.forEach(village => {
-            const option = new Option(village.name, village.id);
-            option.dataset.postal = village.postal_code; // Simpan kode pos di data attribute
+            const option = new Option(`${village.name} (${village.postal_code || 'Kode pos tidak tersedia'})`, village.id);
+            option.dataset.postal = village.postal_code || '';
             villageSelect.add(option);
         });
         
@@ -908,6 +912,7 @@ async function loadVillages(districtId) {
     } catch (error) {
         console.error("Error:", error);
         villageSelect.innerHTML = '<option value="">Gagal memuat kelurahan</option>';
+        showNotification('Gagal memuat data kelurahan', 'error');
     }
 }
 
@@ -1003,8 +1008,9 @@ function setupAddressFormListeners() {
     const regencySelect = document.getElementById('regency');
     const districtSelect = document.getElementById('district');
     const villageSelect = document.getElementById('village');
+    const postalCodeInput = document.getElementById('postal_code');
     
-    if (!provinceSelect || !regencySelect || !districtSelect || !villageSelect) {
+    if (!provinceSelect || !regencySelect || !districtSelect || !villageSelect || !postalCodeInput) {
         console.error('Elemen form alamat tidak ditemukan');
         return;
     }
@@ -1014,6 +1020,7 @@ function setupAddressFormListeners() {
         if (this.value) {
             loadRegencies(this.value);
             resetDependentFields('province');
+            postalCodeInput.value = '';
         }
     });
     
@@ -1022,6 +1029,7 @@ function setupAddressFormListeners() {
         if (this.value) {
             loadDistricts(this.value);
             resetDependentFields('regency');
+            postalCodeInput.value = '';
         }
     });
     
@@ -1030,18 +1038,24 @@ function setupAddressFormListeners() {
         if (this.value) {
             loadVillages(this.value);
             resetDependentFields('district');
-            calculateShipping();
+            postalCodeInput.value = '';
         }
     });
     
-    // Kelurahan
+    // Kelurahan - Update kode pos saat dipilih
     villageSelect.addEventListener('change', function() {
-        if (this.value) {
-            const selectedOption = this.options[this.selectedIndex];
-            document.getElementById('postal_code').value = selectedOption.dataset.postal || '';
+        const selectedOption = this.options[this.selectedIndex];
+        const postalCode = selectedOption.dataset.postal || '';
+        
+        document.getElementById('postal_code').value = postalCode;
+        
+        // Jika kode pos tersedia, hitung ongkir
+        if (postalCode && this.value) {
+            calculateShipping();
         }
     });
 }
+
 // Reset field yang tergantung
 function resetDependentFields(fieldName) {
     const fields = {
