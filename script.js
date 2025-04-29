@@ -25,8 +25,6 @@ async function initializeApp() {
 }
 // Inisialisasi Aplikasi
 document.addEventListener('DOMContentLoaded', () => {
-    loadProvinces();
-    setupAddressFormListeners();
     loadProductsFromSupabase();
     setupEventListeners();
     setupCartEventListeners(); 
@@ -41,6 +39,12 @@ document.addEventListener('DOMContentLoaded', () => {
             onComplete: () => preloader.style.display = 'none'
         });
     }, 1500);
+});
+
+// Panggil inisialisasi saat DOM siap
+document.addEventListener('DOMContentLoaded', () => {
+  loadProvinces();
+  setupAddressFormListeners();
 });
 
 // Load produk dari Supabase
