@@ -50,17 +50,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Fungsi simpan produk yang sudah diperbaiki
 async function saveProduct(productData) {
     try {
-    
-        if (productData.type === 'fisik' && !productData.weight) {
-            productData.weight = 500; // Default 500 gram jika tidak diisi
-        }
 
       // Pastikan is_published tidak NULL
       const completeData = {
         ...productData,
         is_published: true // Langsung set TRUE
       };
-  
+      
       const { data, error } = await supabase
         .from('products')
         .insert([completeData])
