@@ -501,8 +501,9 @@ function renderAddressFields() {
 
             <div class="form-group">
                 <label for="postal_code">Kode Pos*</label>
-                <input type="text" id="postal_code" class="form-control" required readonly>
-                <small class="text-muted">Kode pos akan otomatis terisi setelah memilih kelurahan</small>
+                <input type="text" id="postal_code" class="form-control" required 
+                       placeholder="Pilih kelurahan terlebih dahulu">
+                <small class="text-muted" id="postal-code-help">Kode pos akan otomatis terisi jika tersedia</small>
             </div>
 
             <div id="shipping-options" class="shipping-options-container"></div>
@@ -877,8 +878,6 @@ async function loadDistricts(regencyId) {
   }
 }
 
-
-// Fungsi untuk memuat kecamatan
 // Fungsi untuk memuat kelurahan dan kode pos
 async function loadVillages(districtId) {
     const villageSelect = document.getElementById('village');
@@ -892,7 +891,8 @@ async function loadVillages(districtId) {
     try {
         villageSelect.disabled = true;
         villageSelect.innerHTML = '<option value="">Memuat kelurahan...</option>';
-        postalCodeInput.value = ''; // Reset kode pos
+        postalCodeInput.value = '';
+        postalCodeInput.placeholder = 'Pilih kelurahan terlebih dahulu';
         
         const response = await fetch(`${WILAYAH_API}/villages/${districtId}.json`);
         if (!response.ok) throw new Error("Gagal memuat kelurahan");
@@ -901,11 +901,29 @@ async function loadVillages(districtId) {
         
         villageSelect.innerHTML = '<option value="">Pilih Kelurahan</option>';
         
+        // Hitung berapa kelurahan yang punya kode pos
+        const villagesWithPostalCode = villages.filter(v => v.postal_code).length;
+        
         villages.forEach(village => {
-            const option = new Option(`${village.name} (${village.postal_code || 'Kode pos tidak tersedia'})`, village.id);
-            option.dataset.postal = village.postal_code || '';
+            const hasPostalCode = village.postal_code && village.postal_code.trim() !== '';
+            const displayText = hasPostalCode 
+                ? `${village.name} (${village.postal_code})` 
+                : `${village.name} - Kode pos tidak tersedia`;
+            
+            const option = new Option(displayText, village.id);
+            option.dataset.postal = hasPostalCode ? village.postal_code : '';
+            option.style.color = hasPostalCode ? '' : '#999'; // Warna abu untuk yang tidak punya kode pos
             villageSelect.add(option);
         });
+        
+        // Tampilkan notifikasi jika banyak kelurahan tanpa kode pos
+        if (villagesWithPostalCode === 0) {
+            showNotification('Kode pos tidak tersedia untuk kecamatan ini. Silakan masukkan manual.', 'warning');
+            postalCodeInput.readOnly = false;
+            postalCodeInput.placeholder = 'Masukkan kode pos manual';
+        } else {
+            postalCodeInput.readOnly = true;
+        }
         
         villageSelect.disabled = false;
         
@@ -1046,12 +1064,17 @@ function setupAddressFormListeners() {
     villageSelect.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         const postalCode = selectedOption.dataset.postal || '';
+        const postalCodeInput = document.getElementById('postal_code');
         
-        document.getElementById('postal_code').value = postalCode;
+        postalCodeInput.value = postalCode;
         
-        // Jika kode pos tersedia, hitung ongkir
-        if (postalCode && this.value) {
+        if (postalCode) {
+            postalCodeInput.readOnly = true;
             calculateShipping();
+        } else {
+            postalCodeInput.readOnly = false;
+            postalCodeInput.placeholder = 'Masukkan kode pos manual';
+            showNotification('Kode pos tidak tersedia untuk kelurahan ini. Silakan masukkan manual.', 'warning');
         }
     });
 }
@@ -1087,4 +1110,17 @@ function resetDependentFields(fieldName) {
     if (postalCode) {
         postalCode.value = '';
     }
+}
+function showNotification(message, type = 'success') {
+    notificationMessage.textContent = message;
+    notification.className = `notification show animate__animated animate__fadeInUp ${type}`;
+    
+    // Auto hide setelah 5 detik
+    setTimeout(() => {
+        notification.classList.remove('animate__fadeInUp');
+        notification.classList.add('animate__fadeOutDown');
+        setTimeout(() => {
+            notification.classList.remove('show', 'animate__fadeOutDown');
+        }, 500);
+    }, 5000);
 }
