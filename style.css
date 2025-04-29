@@ -611,7 +611,7 @@ body {
 .form-group textarea,
 .form-group select {
     padding: 12px 15px;
-    border: 1px solid var(--light-gray);
+    border: 1px solid #004085);
     border-radius: 4px;
     font-family: var(--font-body);
     transition: all 0.3s;
