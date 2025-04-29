@@ -25,6 +25,8 @@ async function initializeApp() {
 }
 // Inisialisasi Aplikasi
 document.addEventListener('DOMContentLoaded', () => {
+    loadProvinces();
+    setupAddressFormListeners();
     loadProductsFromSupabase();
     setupEventListeners();
     setupCartEventListeners(); 
@@ -468,33 +470,31 @@ function renderAddressFields() {
             <div class="form-group">
                 <label for="province">Provinsi*</label>
                 <select id="province" class="form-control" required>
-                <option value="">Pilih Provinsi</option>
+                    <option value="">Memuat provinsi...</option>
                 </select>
             </div>
 
-            <!-- Kabupaten/Kota -->
             <div class="form-group">
                 <label for="regency">Kabupaten/Kota*</label>
                 <select id="regency" class="form-control" required disabled>
-                <option value="">Pilih Kabupaten/Kota</option>
+                    <option value="">Pilih provinsi terlebih dahulu</option>
                 </select>
             </div>
 
-            <!-- Kecamatan -->
             <div class="form-group">
                 <label for="district">Kecamatan*</label>
                 <select id="district" class="form-control" required disabled>
-                <option value="">Pilih Kecamatan</option>
+                    <option value="">Pilih kabupaten terlebih dahulu</option>
                 </select>
-            </div>
+            </div>  };
 
             <!-- Desa/Kelurahan -->
             <div class="form-group">
-                <label for="village">Desa/Kelurahan</label>
-                <select id="village" class="form-control" disabled>
-                <option value="">Pilih Desa/Kelurahan</option>
+                <label for="village">Kelurahan*</label>
+                <select id="village" class="form-control" required disabled>
+                    <option value="">Pilih Kecamatan terlebih dahulu</option>
                 </select>
-            </div>
+            </div>  };
 
             <!-- Kode Pos -->
             <div class="form-group">
@@ -993,9 +993,3 @@ function resetDependentFields(fieldName) {
   // Reset shipping options
   document.getElementById('shipping-options').innerHTML = '';
 }
-
-// Panggil inisialisasi saat DOM siap
-document.addEventListener('DOMContentLoaded', () => {
-  loadProvinces();
-  setupAddressFormListeners();
-});
