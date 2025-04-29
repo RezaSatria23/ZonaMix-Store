@@ -913,45 +913,45 @@ async function loadVillages(districtId) {
 
 // Fungsi untuk menghitung ongkir
 async function calculateShipping() {
-  const regencyId = document.getElementById('regency').value;
-  
-  if (!regencyId) {
-    showNotification('Harap pilih kabupaten/kota terlebih dahulu', 'error');
-    return;
-  }
-
-  try {
-    // Hitung berat total (dalam gram)
-    const weight = cart.reduce((total, item) => {
-      return total + (item.weight || 500) * item.quantity; // Default 500g jika berat tidak ada
-    }, 0);
+    const regencyId = document.getElementById('regency').value;
     
-    const response = await fetch(`${RAJAONGKIR_API}/cost`, {
-      method: 'POST',
-      headers: {
-        'key': RAJAONGKIR_KEY,
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams({
-        origin: SHOP_ORIGIN_CITY_ID,
-        destination: regencyId,
-        weight: weight,
-        courier: 'jne' // bisa diganti dengan kurir lain: jne, tiki, pos
-      })
-    });
-    
-    const data = await response.json();
-    
-    if (data.rajaongkir.status.code !== 200) {
-      throw new Error(data.rajaongkir.status.description);
+    if (!regencyId) {
+        showNotification('Harap pilih kabupaten/kota terlebih dahulu', 'error');
+        return;
     }
-    
-    renderShippingOptions(data.rajaongkir.results[0].costs);
-    
-  } catch (error) {
-    console.error('Error calculating shipping:', error);
-    showNotification('Gagal menghitung ongkos kirim: ' + error.message, 'error');
-  }
+
+    try {
+        // Hitung berat total (dalam gram)
+        const weight = cart.reduce((total, item) => {
+            return total + (item.weight || 500) * item.quantity;
+        }, 0);
+        
+        // Gunakan proxy endpoint di Vercel
+        const response = await fetch('/api/rajaongkir', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                origin: SHOP_ORIGIN_CITY_ID,
+                destination: regencyId,
+                weight: weight,
+                courier: 'jne'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        renderShippingOptions(data.rajaongkir.results[0].costs);
+        
+    } catch (error) {
+        console.error('Error calculating shipping:', error);
+        showNotification('Gagal menghitung ongkos kirim: ' + error.message, 'error');
+    }
 }
 
 // Fungsi untuk menampilkan opsi pengiriman
