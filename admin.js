@@ -267,7 +267,8 @@ function initEventListeners() {
         document.getElementById('summary-type').textContent = product.type;
         document.getElementById('summary-stock').textContent = product.stock;
         document.getElementById('summary-description').textContent = product.description || 'Tidak ada deskripsi';
-        
+        document.getElementById('summary-weight').textContent = product.weight;
+
         // Handle image
         const summaryImage = document.getElementById('summary-image');
         summaryImage.src = product.image_url;
