@@ -340,7 +340,6 @@ async function loadCities() {
                 name,
                 type,
                 province_id,
-                provinces ( name )
             `)
             .order('name', { ascending: true });
         
