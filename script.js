@@ -464,6 +464,11 @@ function renderAddressFields() {
 
     // Cek apakah ada produk digital di keranjang
     const hasDigitalProducts = cart.some(item => item.type === 'digital');
+
+    // Hitung subtotal produk
+    const subtotal = calculateTotal();
+    document.getElementById('subtotal').value = subtotal;
+    document.getElementById('subtotal-display').textContent = 'Rp ' + subtotal.toLocaleString('id-ID');
     
     if (hasPhysicalProducts) {
         addressFields.innerHTML = `
@@ -503,6 +508,13 @@ function renderAddressFields() {
             </div>
 
             <div id="shipping-options" class="shipping-options-container"></div>
+            <div id="shipping-cost-container" style="display: none;">
+                <div class="cost-row">
+                    <span>Ongkos Kirim:</span>
+                    <span id="shipping-cost-display">Rp 0</span>
+                    <input type="hidden" id="shipping-cost" value="0">
+                </div>
+            </div>
         `;
         
         loadProvinces();
@@ -518,6 +530,7 @@ function renderAddressFields() {
             </div>
         `;
     }
+    updateOrderTotal();
 }
 
 // Proses Form Pelanggan dan Simpan ke Supabase
@@ -929,10 +942,14 @@ async function loadVillages(districtId) {
     }
 }
 
+function getCartItems() {
+    return cart;
+}
+
 // Fungsi untuk menghitung ongkir
 async function calculateShipping() {
     try {
-        const cartItems = products();
+        const cartItems = getCartItems();
         let totalWeight = 0;
         
         // Hitung total berat hanya untuk produk fisik
@@ -945,50 +962,76 @@ async function calculateShipping() {
         // Jika tidak ada produk fisik, set ongkir 0
         if (totalWeight === 0) {
             document.getElementById('shipping-cost').value = 0;
+            document.getElementById('shipping-cost-display').textContent = 'Rp 0';
+            document.getElementById('shipping-cost-container').style.display = 'none';
             updateOrderTotal();
             return;
         }
 
-        const city = document.getElementById('city').value;
+        const city = document.getElementById('regency').value;
         if (!city) {
-            alert('Silakan pilih kota tujuan');
+            showNotification('Silakan pilih kota tujuan terlebih dahulu', 'error');
             return;
         }
 
-        // Gunakan API RajaOngkir (ganti dengan API key Anda)
+        // Gunakan API RajaOngkir
         const response = await fetch('https://api.rajaongkir.com/starter/cost', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'key': 'UYAVNGwHd0aca6b1808c712ctUAix4js' // Ganti dengan API key Anda
             },
-            body: `origin=151&destination=${city}&weight=${totalWeight}&courier=jne`
+            body: `origin=${SHOP_ORIGIN_CITY_ID}&destination=${city}&weight=${totalWeight}&courier=jne`
         });
 
         const data = await response.json();
         
-        // Error handling untuk response API
         if (!data.rajaongkir || !data.rajaongkir.results) {
             throw new Error('Invalid API response');
         }
 
-        const shippingCost = data.rajaongkir.results[0]?.costs[0]?.cost[0]?.value || 15000;
+        const shippingOptions = data.rajaongkir.results[0]?.costs || [];
         
-        document.getElementById('shipping-cost').value = shippingCost;
-        updateOrderTotal();
+        if (shippingOptions.length > 0) {
+            const shippingCost = shippingOptions[0].cost[0].value;
+            document.getElementById('shipping-cost').value = shippingCost;
+            document.getElementById('shipping-cost-display').textContent = 'Rp ' + shippingCost.toLocaleString('id-ID');
+            document.getElementById('shipping-cost-container').style.display = 'block';
+            updateOrderTotal();
+            
+            // Tampilkan opsi pengiriman jika ada lebih dari 1 opsi
+            if (shippingOptions.length > 1) {
+                renderShippingOptions(shippingOptions);
+            }
+        } else {
+            // Default shipping cost jika tidak ada opsi
+            document.getElementById('shipping-cost').value = 15000;
+            document.getElementById('shipping-cost-display').textContent = 'Rp 15.000';
+            document.getElementById('shipping-cost-container').style.display = 'block';
+            updateOrderTotal();
+            showNotification('Layanan pengiriman tidak tersedia, menggunakan tarif default Rp15.000', 'warning');
+        }
 
     } catch (error) {
         console.error('Error calculating shipping:', error);
         // Fallback ke ongkir flat 15rb jika error
         document.getElementById('shipping-cost').value = 15000;
+        document.getElementById('shipping-cost-display').textContent = 'Rp 15.000';
+        document.getElementById('shipping-cost-container').style.display = 'block';
         updateOrderTotal();
-        alert('Gagal menghitung ongkir. Menggunakan tarif default Rp15.000');
+        showNotification('Gagal menghitung ongkir. Menggunakan tarif default Rp15.000', 'error');
     }
 }
 
 function updateOrderTotal() {
     const subtotal = parseFloat(document.getElementById('subtotal').value) || 0;
-    const shippingCost = parseFloat(document.getElementById('shipping-cost').value) || 0;
+    let shippingCost = 0;
+    
+    // Hanya hitung ongkir jika ada produk fisik
+    if (cart.some(item => item.type === 'fisik')) {
+        shippingCost = parseFloat(document.getElementById('shipping-cost').value) || 0;
+    }
+    
     const total = subtotal + shippingCost;
     
     document.getElementById('total-amount').value = total;
@@ -1110,12 +1153,13 @@ function setupAddressFormListeners() {
         return;
     }
     
-    // Provinsi
-    provinceSelect.addEventListener('change', function() {
+     // Provinsi
+     provinceSelect.addEventListener('change', function() {
         if (this.value) {
             loadRegencies(this.value);
             resetDependentFields('province');
             postalCodeInput.value = '';
+            document.getElementById('shipping-cost-container').style.display = 'none';
         }
     });
     
@@ -1125,6 +1169,7 @@ function setupAddressFormListeners() {
             loadDistricts(this.value);
             resetDependentFields('regency');
             postalCodeInput.value = '';
+            document.getElementById('shipping-cost-container').style.display = 'none';
         }
     });
     
@@ -1134,6 +1179,7 @@ function setupAddressFormListeners() {
             loadVillages(this.value);
             resetDependentFields('district');
             postalCodeInput.value = '';
+            document.getElementById('shipping-cost-container').style.display = 'none';
         }
     });
     
@@ -1147,10 +1193,8 @@ function setupAddressFormListeners() {
         
         if (postalCode) {
             postalCodeInput.readOnly = true;
-            // Beri sedikit delay sebelum menghitung ongkir
-            setTimeout(() => {
-                calculateShipping();
-            }, 300);
+            // Hitung ongkir setelah memilih kelurahan
+            calculateShipping();
         } else {
             postalCodeInput.readOnly = false;
             postalCodeInput.placeholder = 'Masukkan kode pos manual';
