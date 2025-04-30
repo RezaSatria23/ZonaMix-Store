@@ -27,6 +27,13 @@ const districtsForm = document.getElementById('districtsForm');
 const districtsNameInput = document.getElementById('districtsName');
 const districtsTable = document.getElementById('districtsTable').getElementsByTagName('tbody')[0];
 
+// Add these new DOM elements at the top
+const cityProvinceSelect = document.getElementById('cityProvince');
+const cityTypeSelect = document.getElementById('cityType');
+const cityCountElement = document.getElementById('city-count');
+const districtCountElement = document.getElementById('district-count');
+const courierCountElement = document.getElementById('courier-count');
+
 // Page Titles
 const pageTitles = {
     dashboard: 'Dashboard',
@@ -147,11 +154,22 @@ async function loadTabData(tabId) {
 // Load dashboard statistics
 async function loadDashboardStats() {
     try {
-        const { count: provinceCount } = await supabase
-            .from('provinces')
-            .select('*', { count: 'exact', head: true });
+        const [
+            { count: provinceCount },
+            { count: cityCount },
+            { count: districtCount },
+            { count: courierCount }
+        ] = await Promise.all([
+            supabase.from('provinces').select('*', { count: 'exact', head: true }),
+            supabase.from('cities').select('*', { count: 'exact', head: true }),
+            supabase.from('districts').select('*', { count: 'exact', head: true }),
+            supabase.from('couriers').select('*', { count: 'exact', head: true })
+        ]);
         
         document.getElementById('province-count').textContent = provinceCount || 0;
+        cityCountElement.textContent = cityCount || 0;
+        districtCountElement.textContent = districtCount || 0;
+        courierCountElement.textContent = courierCount || 0;
     } catch (error) {
         throw error;
     }
@@ -219,6 +237,30 @@ async function addProvince() {
         console.error('Error adding province:', error);
     } finally {
         hideLoading();
+    }
+}
+
+
+// Add function to load provinces dropdown
+async function loadProvincesForDropdown() {
+    try {
+        const { data, error } = await supabase
+            .from('provinces')
+            .select('id, name')
+            .order('name', { ascending: true });
+        
+        if (error) throw error;
+        
+        cityProvinceSelect.innerHTML = '<option value="">Pilih Provinsi</option>';
+        
+        data.forEach(province => {
+            const option = document.createElement('option');
+            option.value = province.id;
+            option.textContent = province.name;
+            cityProvinceSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading provinces for dropdown:', error);
     }
 }
 
@@ -293,7 +335,13 @@ async function loadCities() {
     try {
         const { data, error } = await supabase
             .from('cities')
-            .select('*')
+            .select(`
+                id,
+                name,
+                type,
+                province_id,
+                provinces ( name )
+            `)
             .order('name', { ascending: true });
         
         if (error) throw error;
@@ -305,6 +353,8 @@ async function loadCities() {
             row.innerHTML = `
                 <td>${city.id}</td>
                 <td>${city.name}</td>
+                <td>${city.type === 'kabupaten' ? 'Kabupaten' : 'Kota'}</td>
+                <td>${city.provinces.name}</td>
                 <td>
                     <button class="btn-action btn-edit" data-id="${city.id}">
                         <i class="fas fa-edit"></i> Edit
@@ -316,7 +366,6 @@ async function loadCities() {
             `;
         });
         
-        // Add event listeners to action buttons
         addCityActionListeners();
     } catch (error) {
         throw error;
@@ -324,10 +373,22 @@ async function loadCities() {
 }
 
 async function addCity() {
+    const provinceId = cityProvinceSelect.value;
     const name = citiesNameInput.value.trim();
+    const type = cityTypeSelect.value;
+    
+    if (!provinceId) {
+        showNotification('Harap pilih provinsi', 'error');
+        return;
+    }
     
     if (!name) {
         showNotification('Nama kota/kabupaten tidak boleh kosong', 'error');
+        return;
+    }
+    
+    if (!type) {
+        showNotification('Harap pilih jenis kota/kabupaten', 'error');
         return;
     }
     
@@ -336,7 +397,11 @@ async function addCity() {
     try {
         const { data, error } = await supabase
             .from('cities')
-            .insert([{ name }])
+            .insert([{ 
+                name, 
+                type,
+                province_id: provinceId 
+            }])
             .select();
             
         if (error) throw error;
@@ -344,6 +409,7 @@ async function addCity() {
         showNotification('Kota/Kabupaten berhasil ditambahkan');
         citiesForm.reset();
         await loadCities();
+        await loadDashboardStats(); // Update dashboard count
     } catch (error) {
         showNotification('Gagal menambahkan kota/kabupaten: ' + error.message, 'error');
         console.error('Error adding city:', error);
@@ -586,6 +652,9 @@ function initApp() {
             adminSidebar.classList.remove('active');
         }
     });
+    
+    // Load provinces dropdown when cities tab is activated
+    document.getElementById('cities').addEventListener('click', loadProvincesForDropdown);
 }
 
 // Initialize when DOM is loaded

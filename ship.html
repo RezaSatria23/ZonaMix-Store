@@ -98,7 +98,7 @@
             </header>
 
             <div class="content-wrapper">
-                <!-- Dashboard Tab -->
+                <<!-- Dashboard Tab -->
                 <div class="tab-content active" id="dashboard">
                     <div class="card-grid">
                         <div class="stat-card">
@@ -110,7 +110,33 @@
                                 <span class="card-value" id="province-count">0</span>
                             </div>
                         </div>
-                        <!-- Other cards... -->
+                        <div class="stat-card">
+                            <div class="card-icon green">
+                                <i class="fas fa-city"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-title">Total Kab/Kota</span>
+                                <span class="card-value" id="city-count">0</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="card-icon purple">
+                                <i class="fas fa-map-marked-alt"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-title">Total Kecamatan</span>
+                                <span class="card-value" id="district-count">0</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="card-icon orange">
+                                <i class="fas fa-shipping-fast"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-title">Total Ekspedisi</span>
+                                <span class="card-value" id="courier-count">0</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -157,6 +183,12 @@
                     <div class="form-container">
                         <h2><i class="fas fa-plus-circle"></i> Tambah Kota/Kabupaten</h2>
                         <form id="citiesForm">
+                            <div class="form-group">
+                                <label for="cityProvince">Provinsi</label>
+                                <select id="cityProvince" class="form-control" required>
+                                    <option value="">Pilih Provinsi</option>
+                                </select>
+                            </div>
                             <div class="form-group">
                                 <label for="citiesName">Nama Kota/Kabupaten</label>
                                 <input type="text" id="citiesName" class="form-control" required>
