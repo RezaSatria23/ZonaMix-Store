@@ -793,7 +793,7 @@ function showQuickView(productId) {
 }
 // Konfigurasi API
 const WILAYAH_API = "https://www.emsifa.com/api-wilayah-indonesia/api";
-const RAJAONGKIR_API = "https://api.rajaongkir.com/starter";
+const RAJAONGKIR_API = "https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost";
 const RAJAONGKIR_KEY = "UYAVNGwHd0aca6b1808c712ctUAix4js"; // Ganti dengan API key RajaOngkir Anda
 const SHOP_ORIGIN_CITY_ID = "249"; // ID kota asal pengiriman (contoh: Jakarta)
 
@@ -975,7 +975,7 @@ async function calculateShipping() {
         }
 
         // Gunakan API RajaOngkir
-        const response = await fetch('https://api.rajaongkir.com/starter/cost', {
+        const response = await fetch('https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
