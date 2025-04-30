@@ -935,84 +935,67 @@ async function loadVillages(districtId) {
 
 // Fungsi untuk menghitung ongkir
 async function calculateShipping() {
-    const regencyId = document.getElementById('regency').value;
-    const villageSelect = document.getElementById('village');
-    const postalCode = document.getElementById('postal_code').value;
+    // Dapatkan total berat produk dalam gram
+    let totalWeight = 0;
+    const cartItems = getCartItems(); // Fungsi untuk mendapatkan item cart
     
-    // Validasi lebih ketat
-    if (!regencyId || !villageSelect || !villageSelect.value || !postalCode) {
-        showNotification('Harap lengkapi semua data alamat terlebih dahulu', 'error');
+    cartItems.forEach(item => {
+        if (item.type === 'fisik') {
+            totalWeight += item.weight * item.quantity;
+        }
+    });
+
+    // Jika tidak ada produk fisik, tidak perlu hitung ongkir
+    if (totalWeight === 0) {
+        document.getElementById('shipping-cost').value = 0;
+        updateOrderTotal();
+        return;
+    }
+
+    // Dapatkan kota tujuan dari form
+    const city = document.getElementById('city').value;
+    if (!city) {
+        alert('Silakan pilih kota tujuan');
         return;
     }
 
     try {
-        // Hitung berat total (minimal 1kg)
-        const weight = Math.max(cart.reduce((total, item) => {
-            return total + (item.weight || 500) * item.quantity;
-        }, 0), 1000); // Minimal 1kg (1000 gram)
-        
-        // Tampilkan loading
-        const shippingOptions = document.getElementById('shipping-options');
-        shippingOptions.innerHTML = `
-            <div class="shipping-loading">
-                <i class="fas fa-spinner fa-spin"></i> Menghitung ongkos kirim...
-            </div>
-        `;
-
-        // Gunakan proxy endpoint
-        const response = await fetch('/api/rajaongkir', {
+        // Ganti dengan API penghitungan ongkir yang Anda gunakan
+        // Contoh menggunakan RajaOngkir
+        const response = await fetch('https://api.rajaongkir.com/starter/cost', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'key': 'API_KEY_ANDA' // Ganti dengan API key Anda
             },
-            body: JSON.stringify({
-                origin: SHOP_ORIGIN_CITY_ID,
-                destination: regencyId,
-                weight: weight,
-                courier: 'jne:jnt' // Coba semua kurir utama
-            })
+            body: `origin=151&destination=${city}&weight=${totalWeight}&courier=jne`
         });
-        
-        const data = await response.json();
-        
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        // Cek semua kemungkinan hasil dari berbagai kurir
-        const allCosts = [];
-        if (data.rajaongkir.results) {
-            data.rajaongkir.results.forEach(courier => {
-                if (courier.costs && courier.costs.length > 0) {
-                    allCosts.push(...courier.costs);
-                }
-            });
-        }
 
-        if (allCosts.length === 0) {
-            throw new Error('Tidak ada layanan pengiriman tersedia untuk alamat ini. Silakan coba alamat lain atau hubungi kami.');
-        }
-        
-        renderShippingOptions(allCosts);
+        const data = await response.json();
+        const shippingCost = data.rajaongkir.results[0].costs[0].cost[0].value;
+
+        // Update nilai ongkir di form
+        document.getElementById('shipping-cost').value = shippingCost;
+        updateOrderTotal();
         
     } catch (error) {
         console.error('Error calculating shipping:', error);
-        const errorMessage = error.message.includes('Tidak ada layanan pengiriman') 
-            ? error.message
-            : 'Gagal menghitung ongkos kirim. Silakan coba lagi atau hubungi kami.';
-        
-        document.getElementById('shipping-options').innerHTML = `
-            <div class="shipping-error">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>${errorMessage}</p>
-                <button class="btn-retry" id="retry-shipping">Coba Hitung Lagi</button>
-            </div>
-        `;
-        
-        document.getElementById('retry-shipping').addEventListener('click', calculateShipping);
+        // Fallback ke ongkir flat jika API error
+        document.getElementById('shipping-cost').value = 15000; // Default 15rb
+        updateOrderTotal();
     }
 }
+function updateOrderTotal() {
+    const subtotal = parseFloat(document.getElementById('subtotal').value) || 0;
+    const shippingCost = parseFloat(document.getElementById('shipping-cost').value) || 0;
+    const total = subtotal + shippingCost;
+    
+    document.getElementById('total-amount').value = total;
+    document.getElementById('order-total-display').textContent = 'Rp ' + total.toLocaleString('id-ID');
+}
 
+// Event listener untuk perubahan alamat
+document.getElementById('city').addEventListener('change', calculateShipping);
 // Fungsi untuk menampilkan opsi pengiriman
 function renderShippingOptions(costs) {
     const shippingOptions = document.getElementById('shipping-options');
@@ -1229,3 +1212,42 @@ function showNotification(message, type = 'success') {
         }, 500);
     }, 5000);
 }
+// Fungsi untuk memuat daftar kota (gunakan API RajaOngkir)
+async function loadCities() {
+    try {
+        const response = await fetch('https://api.rajaongkir.com/starter/city', {
+            headers: {
+                'key': 'UYAVNGwHd0aca6b1808c712ctUAix4js' // Ganti dengan API key Anda
+            }
+        });
+        
+        const data = await response.json();
+        const citySelect = document.getElementById('city');
+        
+        data.rajaongkir.results.forEach(city => {
+            const option = document.createElement('option');
+            option.value = city.city_id;
+            option.textContent = `${city.type} ${city.city_name}`;
+            citySelect.appendChild(option);
+        });
+        
+    } catch (error) {
+        console.error('Error loading cities:', error);
+        // Fallback ke beberapa kota utama
+        const cities = [
+            {id: 249, name: 'Kota Jakarta Pusat'},
+            // Tambahkan kota lainnya
+        ];
+        
+        const citySelect = document.getElementById('city');
+        cities.forEach(city => {
+            const option = document.createElement('option');
+            option.value = city.id;
+            option.textContent = city.name;
+            citySelect.appendChild(option);
+        });
+    }
+}
+
+// Panggil saat halaman dimuat
+document.addEventListener('DOMContentLoaded', loadCities);

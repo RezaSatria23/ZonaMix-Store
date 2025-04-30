@@ -133,6 +133,24 @@
                     <label for="customer-notes">Catatan (Opsional)</label>
                     <textarea id="customer-notes" rows="3"></textarea>
                 </div>
+
+                <div class="cost-summary">
+                    <div class="cost-row">
+                        <span>Subtotal Produk:</span>
+                        <span id="subtotal-display">Rp 0</span>
+                        <input type="hidden" id="subtotal" value="0">
+                    </div>
+                    <div class="cost-row">
+                        <span>Ongkos Kirim:</span>
+                        <span id="shipping-cost-display">Rp 0</span>
+                        <input type="hidden" id="shipping-cost" value="0">
+                    </div>
+                    <div class="cost-row total">
+                        <span>Total Pembayaran:</span>
+                        <span id="order-total-display">Rp 0</span>
+                        <input type="hidden" id="total-amount" name="total_amount" value="0">
+                    </div>
+                </div>
                 
                 <button type="submit" class="btn-submit">Lanjut ke Pembayaran</button>
             </form>
