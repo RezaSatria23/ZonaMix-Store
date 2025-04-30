@@ -46,11 +46,16 @@ body {
     flex-direction: column;
     transition: var(--transition);
     z-index: 100;
+    position: fixed;
+    height: 100vh;
 }
 
 .sidebar-header {
     padding: 20px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .logo {
@@ -64,6 +69,14 @@ body {
 
 .logo i {
     font-size: 1.8rem;
+}
+.sidebar-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 1.2rem;
+    cursor: pointer;
 }
 
 .sidebar-nav {
@@ -155,8 +168,8 @@ body {
     box-shadow: var(--shadow);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 30px;
+    position: sticky;
+    top: 0;
     z-index: 10;
     width: 100%;
 }
@@ -164,6 +177,7 @@ body {
 .header-left {
     display: flex;
     flex-direction: column;
+    gap: 20px;
 }
 
 .page-title {
@@ -706,8 +720,7 @@ body {
 }
 
 .header-container {
-    max-width: 100%;
-    margin: 0 auto;
+    width: 100%;
     padding: 0 30px;
     display: flex;
     justify-content: space-between;
@@ -723,21 +736,16 @@ body {
     color: var(--dark);
     font-size: 1.2rem;
     cursor: pointer;
-    margin-left: 15px;
 }
 
 /* Responsive Sidebar */
 @media (max-width: 992px) {
     .admin-sidebar {
-        position: fixed;
-        left: -280px;
-        height: 100vh;
-        z-index: 1000;
-        transition: var(--transition);
+        transform: translateX(-100%);
     }
     
     .admin-sidebar.active {
-        left: 0;
+        transform: translateX(0);
         box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
     }
     
@@ -753,10 +761,6 @@ body {
     .mobile-menu-toggle {
         display: block;
     }
-    
-    .sidebar-header {
-        justify-content: space-between;
-    }
 }
 
 @media (max-width: 768px) {
@@ -768,10 +772,8 @@ body {
         display: none;
     }
     
-    .search-box.mobile-visible {
-        display: block;
-        width: 100%;
-        margin: 10px 0;
+    .header-right .user-profile .username {
+        display: none;
     }
 }
 
