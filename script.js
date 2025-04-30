@@ -293,10 +293,7 @@ function setupEventListeners() {
 
 // Fungsi untuk menambahkan ke keranjang
 function addToCart(productId) {
-    if (typeof productId !== 'string') {
-        console.error('ID produk harus string/UUID');
-        return;
-    }
+    
     const product = products.find(p => p.id === productId);
     
     if (!product) {
