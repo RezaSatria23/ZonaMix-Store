@@ -244,6 +244,7 @@ async function addProvince() {
 // Add function to load provinces dropdown
 async function loadProvincesForDropdown() {
     try {
+        showLoading();
         const { data, error } = await supabase
             .from('provinces')
             .select('id, name')
@@ -261,9 +262,11 @@ async function loadProvincesForDropdown() {
         });
     } catch (error) {
         console.error('Error loading provinces for dropdown:', error);
+        showNotification('Gagal memuat daftar provinsi', 'error');
+    } finally {
+        hideLoading();
     }
 }
-
 function addProvinceActionListeners() {
     // Edit buttons
     document.querySelectorAll('.btn-edit').forEach(btn => {
@@ -333,6 +336,7 @@ async function deleteProvince(id) {
 // ========== CITY FUNCTIONS ========== //
 async function loadCities() {
     try {
+        showLoading();
         const { data, error } = await supabase
             .from('cities')
             .select(`
@@ -340,6 +344,7 @@ async function loadCities() {
                 name,
                 type,
                 province_id,
+                provinces (name)
             `)
             .order('name', { ascending: true });
         
@@ -353,7 +358,7 @@ async function loadCities() {
                 <td>${city.id}</td>
                 <td>${city.name}</td>
                 <td>${city.type === 'kabupaten' ? 'Kabupaten' : 'Kota'}</td>
-                <td>${city.provinces.name}</td>
+                <td>${city.provinces ? city.provinces.name : '-'}</td>
                 <td>
                     <button class="btn-action btn-edit" data-id="${city.id}">
                         <i class="fas fa-edit"></i> Edit
@@ -367,7 +372,10 @@ async function loadCities() {
         
         addCityActionListeners();
     } catch (error) {
-        throw error;
+        console.error('Error loading cities:', error);
+        showNotification('Gagal memuat data kota/kabupaten', 'error');
+    } finally {
+        hideLoading();
     }
 }
 
@@ -376,18 +384,22 @@ async function addCity() {
     const name = citiesNameInput.value.trim();
     const type = cityTypeSelect.value;
     
+    // Validasi
     if (!provinceId) {
-        showNotification('Harap pilih provinsi', 'error');
+        showNotification('Harap pilih provinsi terlebih dahulu', 'error');
+        cityProvinceSelect.focus();
         return;
     }
     
     if (!name) {
         showNotification('Nama kota/kabupaten tidak boleh kosong', 'error');
+        citiesNameInput.focus();
         return;
     }
     
     if (!type) {
         showNotification('Harap pilih jenis kota/kabupaten', 'error');
+        cityTypeSelect.focus();
         return;
     }
     
@@ -408,10 +420,10 @@ async function addCity() {
         showNotification('Kota/Kabupaten berhasil ditambahkan');
         citiesForm.reset();
         await loadCities();
-        await loadDashboardStats(); // Update dashboard count
+        await loadDashboardStats();
     } catch (error) {
-        showNotification('Gagal menambahkan kota/kabupaten: ' + error.message, 'error');
         console.error('Error adding city:', error);
+        showNotification(`Gagal menambahkan kota/kabupaten: ${error.message}`, 'error');
     } finally {
         hideLoading();
     }
@@ -436,26 +448,106 @@ function addCityActionListeners() {
 }
 
 async function editCity(id) {
-    const newName = prompt('Masukkan nama kota/kabupaten baru:');
-    if (!newName) return;
-    
-    showLoading();
-    
     try {
-        const { error } = await supabase
+        // Ambil data kota/kabupaten yang akan diedit
+        const { data: cityData, error: fetchError } = await supabase
             .from('cities')
-            .update({ name: newName })
-            .eq('id', id);
-            
-        if (error) throw error;
+            .select('name, type, province_id, provinces(name)')
+            .eq('id', id)
+            .single();
         
-        showNotification('Kota/Kabupaten berhasil diperbarui');
-        await loadCities();
+        if (fetchError) throw fetchError;
+        
+        // Ambil daftar provinsi untuk dropdown
+        const { data: provincesData, error: provincesError } = await supabase
+            .from('provinces')
+            .select('id, name')
+            .order('name', { ascending: true });
+        
+        if (provincesError) throw provincesError;
+        
+        // Buat form dialog
+        const dialog = document.createElement('div');
+        dialog.className = 'edit-dialog';
+        dialog.innerHTML = `
+            <div class="dialog-content">
+                <h3>Edit Kota/Kabupaten</h3>
+                <div class="form-group">
+                    <label for="editCityName">Nama</label>
+                    <input type="text" id="editCityName" class="form-control" value="${cityData.name}">
+                </div>
+                <div class="form-group">
+                    <label for="editCityType">Jenis</label>
+                    <select id="editCityType" class="form-control">
+                        <option value="kabupaten" ${cityData.type === 'kabupaten' ? 'selected' : ''}>Kabupaten</option>
+                        <option value="kota" ${cityData.type === 'kota' ? 'selected' : ''}>Kota</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editCityProvince">Provinsi</label>
+                    <select id="editCityProvince" class="form-control">
+                        ${provincesData.map(province => 
+                            `<option value="${province.id}" ${province.id === cityData.province_id ? 'selected' : ''}>
+                                ${province.name}
+                            </option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div class="dialog-buttons">
+                    <button type="button" id="cancelEditCity" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Batal
+                    </button>
+                    <button type="button" id="saveEditCity" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Simpan
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(dialog);
+        
+        // Event listeners untuk dialog
+        document.getElementById('cancelEditCity').addEventListener('click', () => {
+            dialog.remove();
+        });
+        
+        document.getElementById('saveEditCity').addEventListener('click', async () => {
+            const newName = document.getElementById('editCityName').value.trim();
+            const newType = document.getElementById('editCityType').value;
+            const newProvinceId = document.getElementById('editCityProvince').value;
+            
+            if (!newName) {
+                showNotification('Nama kota/kabupaten tidak boleh kosong', 'error');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const { error } = await supabase
+                    .from('cities')
+                    .update({ 
+                        name: newName,
+                        type: newType,
+                        province_id: newProvinceId
+                    })
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showNotification('Kota/Kabupaten berhasil diperbarui');
+                await loadCities();
+            } catch (error) {
+                console.error('Error updating city:', error);
+                showNotification('Gagal memperbarui kota/kabupaten', 'error');
+            } finally {
+                hideLoading();
+                dialog.remove();
+            }
+        });
     } catch (error) {
-        showNotification('Gagal memperbarui kota/kabupaten: ' + error.message, 'error');
-        console.error('Error updating city:', error);
-    } finally {
-        hideLoading();
+        console.error('Error preparing edit:', error);
+        showNotification('Gagal mempersiapkan form edit', 'error');
     }
 }
 
@@ -658,3 +750,46 @@ function initApp() {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', initApp);
+
+// Tambahkan CSS untuk edit dialog
+const style = document.createElement('style');
+style.textContent = `
+.edit-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.edit-dialog .dialog-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.edit-dialog h3 {
+    margin-bottom: 20px;
+    color: var(--dark);
+}
+
+.edit-dialog .form-group {
+    margin-bottom: 15px;
+}
+
+.edit-dialog .dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+`;
+document.head.appendChild(style);
