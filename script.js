@@ -994,8 +994,6 @@ function updateOrderTotal() {
     document.getElementById('order-total-display').textContent = 'Rp ' + total.toLocaleString('id-ID');
 }
 
-// Event listener untuk perubahan alamat
-document.getElementById('city').addEventListener('change', calculateShipping);
 // Fungsi untuk menampilkan opsi pengiriman
 function renderShippingOptions(costs) {
     const shippingOptions = document.getElementById('shipping-options');
@@ -1212,42 +1210,3 @@ function showNotification(message, type = 'success') {
         }, 500);
     }, 5000);
 }
-// Fungsi untuk memuat daftar kota (gunakan API RajaOngkir)
-async function loadCities() {
-    try {
-        const response = await fetch('https://api.rajaongkir.com/starter/city', {
-            headers: {
-                'key': 'UYAVNGwHd0aca6b1808c712ctUAix4js' // Ganti dengan API key Anda
-            }
-        });
-        
-        const data = await response.json();
-        const citySelect = document.getElementById('city');
-        
-        data.rajaongkir.results.forEach(city => {
-            const option = document.createElement('option');
-            option.value = city.city_id;
-            option.textContent = `${city.type} ${city.city_name}`;
-            citySelect.appendChild(option);
-        });
-        
-    } catch (error) {
-        console.error('Error loading cities:', error);
-        // Fallback ke beberapa kota utama
-        const cities = [
-            {id: 249, name: 'Kota Jakarta Pusat'},
-            // Tambahkan kota lainnya
-        ];
-        
-        const citySelect = document.getElementById('city');
-        cities.forEach(city => {
-            const option = document.createElement('option');
-            option.value = city.id;
-            option.textContent = city.name;
-            citySelect.appendChild(option);
-        });
-    }
-}
-
-// Panggil saat halaman dimuat
-document.addEventListener('DOMContentLoaded', loadCities);
