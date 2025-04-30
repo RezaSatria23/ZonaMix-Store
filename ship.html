@@ -3,265 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Tarif Ongkir - Supabase</title>
+    <title>Admin Shipping Rates</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="ship.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+    <div class="admin-wrapper">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-rocket"></i>
+                    <span>ShippingRate</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item active" data-tab="dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </li>
+                    <li class="nav-item" data-tab="provinces">
+                        <i class="fas fa-map"></i>
+                        <span>Provinsi</span>
+                    </li>
+                    <li class="nav-item" data-tab="cities">
+                        <i class="fas fa-city"></i>
+                        <span>Kota/Kab</span>
+                    </li>
+                    <li class="nav-item" data-tab="districts">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Kecamatan</span>
+                    </li>
+                    <li class="nav-item" data-tab="couriers">
+                        <i class="fas fa-shipping-fast"></i>
+                        <span>Ekspedisi</span>
+                    </li>
+                    <li class="nav-item" data-tab="services">
+                        <i class="fas fa-concierge-bell"></i>
+                        <span>Layanan</span>
+                    </li>
+                    <li class="nav-item" data-tab="rates">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Tarif</span>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="user-info">
+                        <span class="username">Admin</span>
+                        <span class="role">Super Admin</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
 
-    <div class="admin-header">
-        <h1>Admin Panel Tarif Ongkir</h1>
-        <p>Kelola data provinsi, kota, kecamatan, ekspedisi, dan tarif pengiriman</p>
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1 class="page-title">Shipping Rate Management</h1>
+                    <div class="breadcrumb">
+                        <span>Dashboard</span>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Shipping</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search...">
+                    </div>
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                <!-- Tab Contents -->
+                <div class="tab-content active" id="dashboard">
+                    <div class="card-grid">
+                        <div class="stat-card">
+                            <div class="card-icon blue">
+                                <i class="fas fa-map"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-title">Total Provinsi</span>
+                                <span class="card-value" id="province-count">0</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="card-icon green">
+                                <i class="fas fa-city"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-title">Total Kota</span>
+                                <span class="card-value" id="city-count">0</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="card-icon purple">
+                                <i class="fas fa-truck"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-title">Ekspedisi</span>
+                                <span class="card-value" id="courier-count">0</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="card-icon orange">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-title">Tarif</span>
+                                <span class="card-value" id="rate-count">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="provinces">
+                    <!-- Province content -->
+                </div>
+
+                <div class="tab-content" id="cities">
+                    <!-- City content -->
+                </div>
+
+                <div class="tab-content" id="districts">
+                    <!-- District content -->
+                </div>
+
+                <div class="tab-content" id="couriers">
+                    <!-- Courier content -->
+                </div>
+
+                <div class="tab-content" id="services">
+                    <!-- Service content -->
+                </div>
+
+                <div class="tab-content" id="rates">
+                    <!-- Rate content -->
+                </div>
+            </div>
+        </main>
     </div>
 
-    <div class="container">
-        
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="provinces">Provinsi</button>
-            <button class="tab-btn" data-tab="cities">Kota/Kabupaten</button>
-            <button class="tab-btn" data-tab="districts">Kecamatan</button>
-            <button class="tab-btn" data-tab="couriers">Ekspedisi</button>
-            <button class="tab-btn" data-tab="services">Layanan</button>
-            <button class="tab-btn" data-tab="rates">Tarif</button>
-        </div>
-        
-        <!-- Form Provinsi -->
-        <div id="provinces" class="tab-content active">
-            <h2>Tambah Provinsi</h2>
-            <form id="provinceForm">
-                <div class="form-group">
-                    <label for="provinceName">Nama Provinsi:</label>
-                    <input type="text" id="provinceName" required>
-                </div>
-                <button type="submit">Simpan</button>
-            </form>
-            <div class="table-container">
-                <h2>Daftar Provinsi</h2>
-                <table id="provincesTable">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nama Provinsi</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-        
-        <!-- Form Kota/Kabupaten -->
-        <div id="cities" class="tab-content">
-            <h2>Tambah Kota/Kabupaten</h2>
-            <form id="cityForm">
-                <div class="form-group">
-                    <label for="cityProvince">Provinsi:</label>
-                    <select id="cityProvince" required></select>
-                </div>
-                <div class="form-group">
-                    <label for="cityName">Nama Kota/Kabupaten:</label>
-                    <input type="text" id="cityName" required>
-                </div>
-                <div class="form-group">
-                    <label for="cityType">Jenis:</label>
-                    <select id="cityType" required>
-                        <option value="kabupaten">Kabupaten</option>
-                        <option value="kota">Kota</option>
-                    </select>
-                </div>
-                <button type="submit">Simpan</button>
-            </form>
-            <div class="table-container">
-                <h2>Daftar Kota/Kabupaten</h2>
-                <table id="citiesTable">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nama</th>
-                            <th>Jenis</th>
-                            <th>Provinsi</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-        
-        <!-- Form Kecamatan -->
-        <div id="districts" class="tab-content">
-            <h2>Tambah Kecamatan</h2>
-            <form id="districtForm">
-                <div class="form-group">
-                    <label for="districtCity">Kota/Kabupaten:</label>
-                    <select id="districtCity" required></select>
-                </div>
-                <div class="form-group">
-                    <label for="districtName">Nama Kecamatan:</label>
-                    <input type="text" id="districtName" required>
-                </div>
-                <button type="submit">Simpan</button>
-            </form>
-            <div class="table-container">
-                <h2>Daftar Kecamatan</h2>
-                <table id="districtsTable">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nama</th>
-                            <th>Kota/Kabupaten</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-        
-        <!-- Form Ekspedisi -->
-        <div id="couriers" class="tab-content">
-            <h2>Tambah Ekspedisi</h2>
-            <form id="courierForm">
-                <div class="form-group">
-                    <label for="courierName">Nama Ekspedisi:</label>
-                    <input type="text" id="courierName" required>
-                </div>
-                <div class="form-group">
-                    <label for="courierLogo">Logo URL:</label>
-                    <input type="text" id="courierLogo">
-                </div>
-                <div class="form-group">
-                    <label for="courierActive">Status:</label>
-                    <select id="courierActive">
-                        <option value="true">Aktif</option>
-                        <option value="false">Tidak Aktif</option>
-                    </select>
-                </div>
-                <button type="submit">Simpan</button>
-            </form>
-            <div class="table-container">
-                <h2>Daftar Ekspedisi</h2>
-                <table id="couriersTable">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nama</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-        
-        <!-- Form Layanan -->
-        <div id="services" class="tab-content">
-            <h2>Tambah Layanan Ekspedisi</h2>
-            <form id="serviceForm">
-                <div class="form-group">
-                    <label for="serviceCourier">Ekspedisi:</label>
-                    <select id="serviceCourier" required></select>
-                </div>
-                <div class="form-group">
-                    <label for="serviceName">Nama Layanan:</label>
-                    <input type="text" id="serviceName" required>
-                </div>
-                <div class="form-group">
-                    <label for="serviceDesc">Deskripsi:</label>
-                    <textarea id="serviceDesc"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="serviceEstimate">Estimasi Pengiriman:</label>
-                    <input type="text" id="serviceEstimate">
-                </div>
-                <button type="submit">Simpan</button>
-            </form>
-            <div class="table-container">
-                <h2>Daftar Layanan</h2>
-                <table id="servicesTable">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nama</th>
-                            <th>Ekspedisi</th>
-                            <th>Estimasi</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-        
-        <!-- Form Tarif -->
-        <div id="rates" class="tab-content">
-            <h2>Tambah Tarif Ongkir</h2>
-            <form id="rateForm">
-                <div class="form-group">
-                    <label for="rateService">Layanan:</label>
-                    <select id="rateService" required></select>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="rateOrigin">Asal (Kecamatan):</label>
-                        <select id="rateOrigin" required></select>
-                    </div>
-                    <div class="form-group">
-                        <label for="rateDestination">Tujuan (Kecamatan):</label>
-                        <select id="rateDestination" required></select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="rateMinWeight">Berat Minimal (kg):</label>
-                        <input type="number" id="rateMinWeight" step="0.01" min="0" value="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="rateMaxWeight">Berat Maksimal (kg):</label>
-                        <input type="number" id="rateMaxWeight" step="0.01" min="0.01" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="ratePrice">Harga (Rp):</label>
-                    <input type="number" id="ratePrice" min="0" required>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="rateEffective">Tanggal Berlaku:</label>
-                        <input type="date" id="rateEffective" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="rateExpiry">Tanggal Kadaluarsa:</label>
-                        <input type="date" id="rateExpiry">
-                    </div>
-                </div>
-                <button type="submit">Simpan</button>
-            </form>
-            <div class="table-container">
-                <h2>Daftar Tarif</h2>
-                <table id="ratesTable">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Ekspedisi</th>
-                            <th>Layanan</th>
-                            <th>Asal → Tujuan</th>
-                            <th>Berat</th>
-                            <th>Harga</th>
-                            <th>Berlaku</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    <!-- Floating Action Button -->
+    <button class="fab" id="addDataBtn">
+        <i class="fas fa-plus"></i>
+    </button>
 
-    <div class="notification" id="notification"></div>
+    <!-- Notification System -->
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner"></div>
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>Memuat data...</p>
+        </div>
     </div>
 
     <script src="ship.js"></script>
