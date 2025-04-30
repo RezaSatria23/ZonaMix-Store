@@ -935,55 +935,72 @@ async function loadVillages(districtId) {
 
 // Fungsi untuk menghitung ongkir
 async function calculateShipping() {
-    // Dapatkan total berat produk dalam gram
-    let totalWeight = 0;
-    const cartItems = getCartItems(); // Fungsi untuk mendapatkan item cart
-    
-    cartItems.forEach(item => {
-        if (item.type === 'fisik') {
-            totalWeight += item.weight * item.quantity;
-        }
-    });
-
-    // Jika tidak ada produk fisik, tidak perlu hitung ongkir
-    if (totalWeight === 0) {
-        document.getElementById('shipping-cost').value = 0;
-        updateOrderTotal();
-        return;
-    }
-
-    // Dapatkan kota tujuan dari form
-    const city = document.getElementById('city').value;
-    if (!city) {
-        alert('Silakan pilih kota tujuan');
-        return;
-    }
-
     try {
-        // Ganti dengan API penghitungan ongkir yang Anda gunakan
-        // Contoh menggunakan RajaOngkir
+        const cartItems = getCartItems();
+        let totalWeight = 0;
+        
+        // Hitung total berat hanya untuk produk fisik
+        cartItems.forEach(item => {
+            if (item.type === 'fisik') {
+                totalWeight += (item.weight || 500) * item.quantity;
+            }
+        });
+
+        // Jika tidak ada produk fisik, set ongkir 0
+        if (totalWeight === 0) {
+            document.getElementById('shipping-cost').value = 0;
+            updateOrderTotal();
+            return;
+        }
+
+        const city = document.getElementById('city').value;
+        if (!city) {
+            alert('Silakan pilih kota tujuan');
+            return;
+        }
+
+        // Gunakan API RajaOngkir (ganti dengan API key Anda)
         const response = await fetch('https://api.rajaongkir.com/starter/cost', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'key': 'API_KEY_ANDA' // Ganti dengan API key Anda
+                'key': '0df6d5bf733714cf6c66f08a9ece6a75' // Ganti dengan API key Anda
             },
             body: `origin=151&destination=${city}&weight=${totalWeight}&courier=jne`
         });
 
         const data = await response.json();
-        const shippingCost = data.rajaongkir.results[0].costs[0].cost[0].value;
+        
+        // Error handling untuk response API
+        if (!data.rajaongkir || !data.rajaongkir.results) {
+            throw new Error('Invalid API response');
+        }
 
-        // Update nilai ongkir di form
+        const shippingCost = data.rajaongkir.results[0]?.costs[0]?.cost[0]?.value || 15000;
+        
         document.getElementById('shipping-cost').value = shippingCost;
         updateOrderTotal();
-        
+
     } catch (error) {
         console.error('Error calculating shipping:', error);
-        // Fallback ke ongkir flat jika API error
-        document.getElementById('shipping-cost').value = 15000; // Default 15rb
+        // Fallback ke ongkir flat 15rb jika error
+        document.getElementById('shipping-cost').value = 15000;
         updateOrderTotal();
+        alert('Gagal menghitung ongkir. Menggunakan tarif default Rp15.000');
     }
+}
+// Fungsi untuk mendapatkan item cart dari localStorage
+function getCartItems() {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    return cart.map(item => {
+        return {
+            ...item,
+            // Pastikan properti weight ada (default 500 gram jika tidak ada)
+            weight: item.weight || 500,
+            // Pastikan type ada (default fisik jika tidak ada)
+            type: item.type || 'fisik'
+        };
+    });
 }
 function updateOrderTotal() {
     const subtotal = parseFloat(document.getElementById('subtotal').value) || 0;
