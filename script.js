@@ -329,7 +329,6 @@ function removeFromCart(productId) {
 
 // Fungsi untuk update quantity (versi sederhana)
 function updateQuantity(productId, isIncrease) {
-    // JANGAN konversi UUID ke number
     // productId harus tetap sebagai string
     if (typeof productId !== 'string') {
         console.error('ID produk harus string/UUID');
@@ -936,7 +935,7 @@ async function loadVillages(districtId) {
 // Fungsi untuk menghitung ongkir
 async function calculateShipping() {
     try {
-        const cartItems = getCartItems();
+        const cartItems = products();
         let totalWeight = 0;
         
         // Hitung total berat hanya untuk produk fisik
@@ -964,7 +963,7 @@ async function calculateShipping() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'key': '0df6d5bf733714cf6c66f08a9ece6a75' // Ganti dengan API key Anda
+                'key': 'UYAVNGwHd0aca6b1808c712ctUAix4js' // Ganti dengan API key Anda
             },
             body: `origin=151&destination=${city}&weight=${totalWeight}&courier=jne`
         });
@@ -989,19 +988,7 @@ async function calculateShipping() {
         alert('Gagal menghitung ongkir. Menggunakan tarif default Rp15.000');
     }
 }
-// Fungsi untuk mendapatkan item cart dari localStorage
-function getCartItems() {
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    return cart.map(item => {
-        return {
-            ...item,
-            // Pastikan properti weight ada (default 500 gram jika tidak ada)
-            weight: item.weight || 500,
-            // Pastikan type ada (default fisik jika tidak ada)
-            type: item.type || 'fisik'
-        };
-    });
-}
+
 function updateOrderTotal() {
     const subtotal = parseFloat(document.getElementById('subtotal').value) || 0;
     const shippingCost = parseFloat(document.getElementById('shipping-cost').value) || 0;
