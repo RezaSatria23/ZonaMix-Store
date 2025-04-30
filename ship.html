@@ -8,8 +8,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <div class="container">
+
+    <div class="admin-header">
         <h1>Admin Panel Tarif Ongkir</h1>
+        <p>Kelola data provinsi, kota, kecamatan, ekspedisi, dan tarif pengiriman</p>
+    </div>
+
+    <div class="container">
         
         <div class="tabs">
             <button class="tab-btn active" data-tab="provinces">Provinsi</button>
@@ -254,6 +259,11 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <div class="notification" id="notification"></div>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script src="ship.js"></script>
 </body>
 </html>
