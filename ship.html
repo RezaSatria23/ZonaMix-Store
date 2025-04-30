@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Tarif Ongkir - Supabase</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Panel Tarif Ongkir</h1>
+        
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="provinces">Provinsi</button>
+            <button class="tab-btn" data-tab="cities">Kota/Kabupaten</button>
+            <button class="tab-btn" data-tab="districts">Kecamatan</button>
+            <button class="tab-btn" data-tab="couriers">Ekspedisi</button>
+            <button class="tab-btn" data-tab="services">Layanan</button>
+            <button class="tab-btn" data-tab="rates">Tarif</button>
+        </div>
+        
+        <!-- Form Provinsi -->
+        <div id="provinces" class="tab-content active">
+            <h2>Tambah Provinsi</h2>
+            <form id="provinceForm">
+                <div class="form-group">
+                    <label for="provinceName">Nama Provinsi:</label>
+                    <input type="text" id="provinceName" required>
+                </div>
+                <button type="submit">Simpan</button>
+            </form>
+            <div class="table-container">
+                <h2>Daftar Provinsi</h2>
+                <table id="provincesTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nama Provinsi</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Form Kota/Kabupaten -->
+        <div id="cities" class="tab-content">
+            <h2>Tambah Kota/Kabupaten</h2>
+            <form id="cityForm">
+                <div class="form-group">
+                    <label for="cityProvince">Provinsi:</label>
+                    <select id="cityProvince" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="cityName">Nama Kota/Kabupaten:</label>
+                    <input type="text" id="cityName" required>
+                </div>
+                <div class="form-group">
+                    <label for="cityType">Jenis:</label>
+                    <select id="cityType" required>
+                        <option value="kabupaten">Kabupaten</option>
+                        <option value="kota">Kota</option>
+                    </select>
+                </div>
+                <button type="submit">Simpan</button>
+            </form>
+            <div class="table-container">
+                <h2>Daftar Kota/Kabupaten</h2>
+                <table id="citiesTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nama</th>
+                            <th>Jenis</th>
+                            <th>Provinsi</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Form Kecamatan -->
+        <div id="districts" class="tab-content">
+            <h2>Tambah Kecamatan</h2>
+            <form id="districtForm">
+                <div class="form-group">
+                    <label for="districtCity">Kota/Kabupaten:</label>
+                    <select id="districtCity" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="districtName">Nama Kecamatan:</label>
+                    <input type="text" id="districtName" required>
+                </div>
+                <button type="submit">Simpan</button>
+            </form>
+            <div class="table-container">
+                <h2>Daftar Kecamatan</h2>
+                <table id="districtsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nama</th>
+                            <th>Kota/Kabupaten</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Form Ekspedisi -->
+        <div id="couriers" class="tab-content">
+            <h2>Tambah Ekspedisi</h2>
+            <form id="courierForm">
+                <div class="form-group">
+                    <label for="courierName">Nama Ekspedisi:</label>
+                    <input type="text" id="courierName" required>
+                </div>
+                <div class="form-group">
+                    <label for="courierLogo">Logo URL:</label>
+                    <input type="text" id="courierLogo">
+                </div>
+                <div class="form-group">
+                    <label for="courierActive">Status:</label>
+                    <select id="courierActive">
+                        <option value="true">Aktif</option>
+                        <option value="false">Tidak Aktif</option>
+                    </select>
+                </div>
+                <button type="submit">Simpan</button>
+            </form>
+            <div class="table-container">
+                <h2>Daftar Ekspedisi</h2>
+                <table id="couriersTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nama</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Form Layanan -->
+        <div id="services" class="tab-content">
+            <h2>Tambah Layanan Ekspedisi</h2>
+            <form id="serviceForm">
+                <div class="form-group">
+                    <label for="serviceCourier">Ekspedisi:</label>
+                    <select id="serviceCourier" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="serviceName">Nama Layanan:</label>
+                    <input type="text" id="serviceName" required>
+                </div>
+                <div class="form-group">
+                    <label for="serviceDesc">Deskripsi:</label>
+                    <textarea id="serviceDesc"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="serviceEstimate">Estimasi Pengiriman:</label>
+                    <input type="text" id="serviceEstimate">
+                </div>
+                <button type="submit">Simpan</button>
+            </form>
+            <div class="table-container">
+                <h2>Daftar Layanan</h2>
+                <table id="servicesTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nama</th>
+                            <th>Ekspedisi</th>
+                            <th>Estimasi</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Form Tarif -->
+        <div id="rates" class="tab-content">
+            <h2>Tambah Tarif Ongkir</h2>
+            <form id="rateForm">
+                <div class="form-group">
+                    <label for="rateService">Layanan:</label>
+                    <select id="rateService" required></select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="rateOrigin">Asal (Kecamatan):</label>
+                        <select id="rateOrigin" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="rateDestination">Tujuan (Kecamatan):</label>
+                        <select id="rateDestination" required></select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="rateMinWeight">Berat Minimal (kg):</label>
+                        <input type="number" id="rateMinWeight" step="0.01" min="0" value="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="rateMaxWeight">Berat Maksimal (kg):</label>
+                        <input type="number" id="rateMaxWeight" step="0.01" min="0.01" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="ratePrice">Harga (Rp):</label>
+                    <input type="number" id="ratePrice" min="0" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="rateEffective">Tanggal Berlaku:</label>
+                        <input type="date" id="rateEffective" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="rateExpiry">Tanggal Kadaluarsa:</label>
+                        <input type="date" id="rateExpiry">
+                    </div>
+                </div>
+                <button type="submit">Simpan</button>
+            </form>
+            <div class="table-container">
+                <h2>Daftar Tarif</h2>
+                <table id="ratesTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Ekspedisi</th>
+                            <th>Layanan</th>
+                            <th>Asal → Tujuan</th>
+                            <th>Berat</th>
+                            <th>Harga</th>
+                            <th>Berlaku</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
