@@ -242,31 +242,32 @@ async function addProvince() {
 
 
 // Add function to load provinces dropdown
-async function loadProvincesForDropdown() {
+async function loadProvinceDropdown() {
     try {
-        showLoading();
-        const { data, error } = await supabase
+        const { data: provinces, error } = await supabase
             .from('provinces')
             .select('id, name')
             .order('name', { ascending: true });
-        
+
         if (error) throw error;
-        
-        cityProvinceSelect.innerHTML = '<option value="">Pilih Provinsi</option>';
-        
-        data.forEach(province => {
+
+        const provinceSelect = document.getElementById('cityProvince');
+        provinceSelect.innerHTML = '<option value="">Pilih Provinsi</option>';
+
+        provinces.forEach(province => {
             const option = document.createElement('option');
             option.value = province.id;
             option.textContent = province.name;
-            cityProvinceSelect.appendChild(option);
+            provinceSelect.appendChild(option);
         });
+
+        console.log('Dropdown provinsi berhasil dimuat:', provinces);
     } catch (error) {
-        console.error('Error loading provinces for dropdown:', error);
+        console.error('Gagal memuat dropdown provinsi:', error);
         showNotification('Gagal memuat daftar provinsi', 'error');
-    } finally {
-        hideLoading();
     }
 }
+
 function addProvinceActionListeners() {
     // Edit buttons
     document.querySelectorAll('.btn-edit').forEach(btn => {
@@ -337,28 +338,29 @@ async function deleteProvince(id) {
 async function loadCities() {
     try {
         showLoading();
-        const { data, error } = await supabase
+        const { data: cities, error } = await supabase
             .from('cities')
             .select(`
                 id,
                 name,
                 type,
                 province_id,
-                provinces (name)
+                provinces(name)
             `)
             .order('name', { ascending: true });
-        
+
         if (error) throw error;
-        
+
+        const citiesTable = document.getElementById('citiesTable').getElementsByTagName('tbody')[0];
         citiesTable.innerHTML = '';
-        
-        data.forEach(city => {
+
+        cities.forEach(city => {
             const row = citiesTable.insertRow();
             row.innerHTML = `
                 <td>${city.id}</td>
                 <td>${city.name}</td>
                 <td>${city.type === 'kabupaten' ? 'Kabupaten' : 'Kota'}</td>
-                <td>${city.provinces ? city.provinces.name : '-'}</td>
+                <td>${city.provinces?.name || '-'}</td>
                 <td>
                     <button class="btn-action btn-edit" data-id="${city.id}">
                         <i class="fas fa-edit"></i> Edit
@@ -369,8 +371,16 @@ async function loadCities() {
                 </td>
             `;
         });
-        
-        addCityActionListeners();
+
+        // Tambahkan event listener untuk tombol edit/hapus
+        document.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', (e) => editCity(e.target.dataset.id));
+        });
+
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', (e) => deleteCity(e.target.dataset.id));
+        });
+
     } catch (error) {
         console.error('Error loading cities:', error);
         showNotification('Gagal memuat data kota/kabupaten', 'error');
@@ -380,50 +390,50 @@ async function loadCities() {
 }
 
 async function addCity() {
-    const provinceId = cityProvinceSelect.value;
-    const name = citiesNameInput.value.trim();
-    const type = cityTypeSelect.value;
-    
-    // Validasi
+    const provinceId = document.getElementById('cityProvince').value;
+    const name = document.getElementById('citiesName').value.trim();
+    const type = document.getElementById('cityType').value;
+
+    // Validasi input
     if (!provinceId) {
         showNotification('Harap pilih provinsi terlebih dahulu', 'error');
-        cityProvinceSelect.focus();
+        document.getElementById('cityProvince').focus();
         return;
     }
-    
+
     if (!name) {
         showNotification('Nama kota/kabupaten tidak boleh kosong', 'error');
-        citiesNameInput.focus();
+        document.getElementById('citiesName').focus();
         return;
     }
-    
+
     if (!type) {
         showNotification('Harap pilih jenis kota/kabupaten', 'error');
-        cityTypeSelect.focus();
+        document.getElementById('cityType').focus();
         return;
     }
-    
+
     showLoading();
-    
+
     try {
         const { data, error } = await supabase
             .from('cities')
-            .insert([{ 
-                name, 
+            .insert([{
+                name,
                 type,
-                province_id: provinceId 
+                province_id: provinceId
             }])
             .select();
-            
+
         if (error) throw error;
-        
+
         showNotification('Kota/Kabupaten berhasil ditambahkan');
-        citiesForm.reset();
+        document.getElementById('citiesForm').reset();
         await loadCities();
         await loadDashboardStats();
     } catch (error) {
         console.error('Error adding city:', error);
-        showNotification(`Gagal menambahkan kota/kabupaten: ${error.message}`, 'error');
+        showNotification(`Gagal menambahkan: ${error.message}`, 'error');
     } finally {
         hideLoading();
     }
@@ -747,6 +757,16 @@ function initApp() {
     // Load provinces dropdown when cities tab is activated
     document.getElementById('cities').addEventListener('click', loadProvincesForDropdown);
 }
+document.addEventListener('DOMContentLoaded', () => {
+    // Load dropdown provinsi ketika menu kota/kab diakses
+    document.querySelector('[data-tab="cities"]').addEventListener('click', loadProvinceDropdown);
+    
+    // Form submission
+    document.getElementById('citiesForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await addCity();
+    });
+});
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', initApp);
