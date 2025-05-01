@@ -370,7 +370,7 @@ async function loadCities() {
                 province_id,
                 provinces(name)
             `)
-            .order('name', { ascending: true });
+            .order('created_at', { ascending: true });
 
         if (error) throw error;
 
@@ -436,7 +436,9 @@ async function addCity() {
             .from('cities')
             .select('id')
             .eq('name', name)
-            .eq('province_id', provinceId);
+            .eq('province_id', provinceId);            
+            .maybeSingle();
+
 
         if (checkError) throw checkError;
 
