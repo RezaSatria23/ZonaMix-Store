@@ -36,6 +36,19 @@ const courierCountElement = document.getElementById('courier-count');
 
 const districtCitySelect = document.getElementById('districtCity');
 
+// Deklarasi variabel baru
+const villageDistrictSelect = document.getElementById('villageDistrict');
+const villagesNameInput = document.getElementById('villagesName');
+const villagesForm = document.getElementById('villagesForm');
+const villagesTable = document.getElementById('villagesTable').getElementsByTagName('tbody')[0];
+
+// Deklarasi variabel baru
+const courierNameInput = document.getElementById('courierName');
+const courierTypeInput = document.getElementById('courierType');
+const courierPriceInput = document.getElementById('courierPrice');
+const couriersForm = document.getElementById('couriersForm');
+const couriersTable = document.getElementById('couriersTable').getElementsByTagName('tbody')[0];
+
 
 // Page Titles
 const pageTitles = {
@@ -43,8 +56,8 @@ const pageTitles = {
     provinces: 'Kelola Provinsi',
     cities: 'Kelola Kota/Kabupaten',
     districts: 'Kelola Kecamatan',
+    villages: 'Kelola Kelurahan',
     couriers: 'Kelola Ekspedisi',
-    services: 'Kelola Layanan',
     rates: 'Kelola Tarif'
 };
 
@@ -143,6 +156,9 @@ async function loadTabData(tabId) {
             case 'districts':
                 await loadDistricts();
                 break;
+            case 'villages':
+                await loadVillages();
+                break;
             default:
                 break;
         }
@@ -161,17 +177,20 @@ async function loadDashboardStats() {
             { count: provinceCount },
             { count: cityCount },
             { count: districtCount },
+            { count: villageCount },
             { count: courierCount }
         ] = await Promise.all([
             supabase.from('provinces').select('*', { count: 'exact', head: true }),
             supabase.from('cities').select('*', { count: 'exact', head: true }),
             supabase.from('districts').select('*', { count: 'exact', head: true }),
+            supabase.from('villages').select('*', { count: 'exact', head: true }),
             supabase.from('couriers').select('*', { count: 'exact', head: true })
         ]);
         
         document.getElementById('province-count').textContent = provinceCount || 0;
         cityCountElement.textContent = cityCount || 0;
         districtCountElement.textContent = districtCount || 0;
+        villageCountElement.textContent = villageCount || 0;
         courierCountElement.textContent = courierCount || 0;
     } catch (error) {
         throw error;
@@ -823,6 +842,112 @@ async function deleteDistrict(id) {
     }
 }
 
+// Fungsi untuk memuat dropdown kecamatan
+async function loadDistrictDropdown() {
+    try {
+        const { data: districts, error } = await supabase
+            .from('districts')
+            .select('id, name, cities(name)')
+            .order('name', { ascending: true });
+
+        if (error) throw error;
+
+        villageDistrictSelect.innerHTML = '<option value="">Pilih Kecamatan</option>';
+
+        districts.forEach(district => {
+            const option = document.createElement('option');
+            option.value = district.id;
+            option.textContent = `${district.name} (${district.cities?.name || '-'})`;
+            villageDistrictSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Gagal memuat daftar kecamatan:', error);
+        showNotification('Gagal memuat daftar kecamatan', 'error');
+    }
+}
+
+// Fungsi untuk menambahkan kelurahan
+async function addVillage() {
+    const districtId = villageDistrictSelect.value;
+    const name = villagesNameInput.value.trim();
+    
+    if (!districtId) {
+        showNotification('Harap pilih kecamatan terlebih dahulu', 'error');
+        villageDistrictSelect.focus();
+        return;
+    }
+    
+    if (!name) {
+        showNotification('Nama kelurahan tidak boleh kosong', 'error');
+        villagesNameInput.focus();
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const { data, error } = await supabase
+            .from('villages')
+            .insert([{ 
+                name,
+                district_id: districtId 
+            }])
+            .select();
+            
+        if (error) throw error;
+        
+        showNotification('Kelurahan berhasil ditambahkan');
+        villagesForm.reset();
+        await loadVillages();
+    } catch (error) {
+        showNotification('Gagal menambahkan kelurahan: ' + error.message, 'error');
+        console.error('Error adding village:', error);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Fungsi untuk memuat data kelurahan
+async function loadVillages() {
+    try {
+        const { data, error } = await supabase
+            .from('villages')
+            .select(`
+                id,
+                name,
+                district_id,
+                districts(name, cities(name))
+            `)
+            .order('name', { ascending: true });
+        
+        if (error) throw error;
+        
+        villagesTable.innerHTML = '';
+        
+        data.forEach(village => {
+            const row = villagesTable.insertRow();
+            row.innerHTML = `
+                <td>${village.id}</td>
+                <td>${village.districts?.name || '-'} (${village.districts?.cities?.name || '-'})</td>
+                <td>${village.name}</td>
+                <td>
+                    <button class="btn-action btn-edit" data-id="${village.id}">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn-action btn-delete" data-id="${village.id}">
+                        <i class="fas fa-trash"></i> Hapus
+                    </button>
+                </td>
+            `;
+        });
+        
+        addVillageActionListeners();
+    } catch (error) {
+        throw error;
+    }
+}
+
+
 // ========== FORM EVENT LISTENERS ========== //
 provinceForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -838,6 +963,109 @@ districtsForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     await addDistrict();
 });
+
+villagesForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await addVillage();
+});
+
+couriersForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await addCourier();
+});
+
+async function addCourier() {
+    const name = courierNameInput.value.trim();
+    const type = courierTypeInput.value.trim();
+    const price = courierPriceInput.value;
+    
+    if (!name) {
+        showNotification('Nama ekspedisi tidak boleh kosong', 'error');
+        courierNameInput.focus();
+        return;
+    }
+    
+    if (!type) {
+        showNotification('Jenis pengiriman tidak boleh kosong', 'error');
+        courierTypeInput.focus();
+        return;
+    }
+    
+    if (!price || price <= 0) {
+        showNotification('Harga harus lebih dari 0', 'error');
+        courierPriceInput.focus();
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const { data, error } = await supabase
+            .from('couriers')
+            .insert([{ 
+                name,
+                type,
+                price: parseFloat(price)
+            }])
+            .select();
+            
+        if (error) throw error;
+        
+        showNotification('Ekspedisi berhasil ditambahkan');
+        couriersForm.reset();
+        await loadCouriers();
+        await loadDashboardStats();
+    } catch (error) {
+        showNotification('Gagal menambahkan ekspedisi: ' + error.message, 'error');
+        console.error('Error adding courier:', error);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Fungsi untuk memuat data ekspedisi
+async function loadCouriers() {
+    try {
+        const { data, error } = await supabase
+            .from('couriers')
+            .select('*')
+            .order('name', { ascending: true });
+        
+        if (error) throw error;
+        
+        couriersTable.innerHTML = '';
+        
+        data.forEach(courier => {
+            const row = couriersTable.insertRow();
+            row.innerHTML = `
+                <td>${courier.id}</td>
+                <td>${courier.name}</td>
+                <td>${courier.type}</td>
+                <td>${formatCurrency(courier.price)}</td>
+                <td>
+                    <button class="btn-action btn-edit" data-id="${courier.id}">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn-action btn-delete" data-id="${courier.id}">
+                        <i class="fas fa-trash"></i> Hapus
+                    </button>
+                </td>
+            `;
+        });
+        
+        addCourierActionListeners();
+    } catch (error) {
+        throw error;
+    }
+}
+
+// Fungsi helper untuk format mata uang
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR'
+    }).format(amount);
+}
 
 // ========== INITIALIZE APP ========== //
 function initApp() {
@@ -863,9 +1091,6 @@ function initApp() {
             adminSidebar.classList.remove('active');
         }
     });
-    
-    // Load provinces dropdown when cities tab is activated
-    document.getElementById('cities').addEventListener('click', loadProvincesForDropdown);
 }
 document.addEventListener('DOMContentLoaded', () => {
     // Load dropdown provinsi ketika menu kota/kab diakses
@@ -877,6 +1102,16 @@ document.addEventListener('DOMContentLoaded', () => {
         await addCity();
     });
 });
+
+// Tambahkan tab villages
+document.querySelector('[data-tab="villages"]').addEventListener('click', () => {
+    loadDistrictDropdown();
+    loadVillages();
+});
+
+// Tambahkan tab couriers
+document.querySelector('[data-tab="couriers"]').addEventListener('click', loadCouriers);
+
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', initApp);
