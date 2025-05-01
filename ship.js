@@ -444,7 +444,7 @@ async function addCity() {
     if (checkError) throw checkError;
 
     // Di dalam fungsi addCity(), setelah cek duplikasi
-    if (existing) {
+    if (existingData) {
         showNotification(`Kota/Kabupaten "${name}" sudah terdaftar di provinsi ini`, 'error');
         highlightDuplicateRow(name, provinceId);
         return;
@@ -476,15 +476,15 @@ async function addCity() {
 }
 function highlightDuplicateRow(cityName, provinceId) {
     const rows = document.querySelectorAll('#citiesTable tbody tr');
+    
     rows.forEach(row => {
-        const nameCell = row.cells[3].textContent.toLowerCase(); // Sesuaikan index kolom
-        const provinceCell = row.cells[2].textContent.toLowerCase(); // Sesuaikan index kolom
+        const rowCityName = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+        const rowProvinceId = row.getAttribute('data-province-id');
         
-        if (nameCell === cityName.toLowerCase() && 
-            provinceCell.includes(provinceId)) {
-            row.classList.add('duplicate-row');
+        if (rowCityName === cityName.toLowerCase() && rowProvinceId === provinceId) {
+            row.classList.add('duplicate-highlight');
             setTimeout(() => {
-                row.classList.remove('duplicate-row');
+                row.classList.remove('duplicate-highlight');
             }, 3000);
         }
     });
