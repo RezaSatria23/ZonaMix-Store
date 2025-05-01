@@ -351,16 +351,15 @@ async function loadCities() {
 
         if (error) throw error;
 
-        const citiesTable = document.getElementById('citiesTable').getElementsByTagName('tbody')[0];
         citiesTable.innerHTML = '';
 
         cities.forEach(city => {
             const row = citiesTable.insertRow();
             row.innerHTML = `
                 <td>${city.id}</td>
-                <td>${city.name}</td>
                 <td>${city.type === 'kabupaten' ? 'Kabupaten' : 'Kota'}</td>
                 <td>${city.provinces?.name || '-'}</td>
+                <td>${city.name}</td>
                 <td>
                     <button class="btn-action btn-edit" data-id="${city.id}">
                         <i class="fas fa-edit"></i> Edit
@@ -372,14 +371,7 @@ async function loadCities() {
             `;
         });
 
-        // Tambahkan event listener untuk tombol edit/hapus
-        document.querySelectorAll('.btn-edit').forEach(btn => {
-            btn.addEventListener('click', (e) => editCity(e.target.dataset.id));
-        });
-
-        document.querySelectorAll('.btn-delete').forEach(btn => {
-            btn.addEventListener('click', (e) => deleteCity(e.target.dataset.id));
-        });
+        addCityActionListeners();
 
     } catch (error) {
         console.error('Error loading cities:', error);
@@ -390,20 +382,26 @@ async function loadCities() {
 }
 
 async function addCity() {
-    const provinceId = document.getElementById('cityProvince').value;
-    const name = document.getElementById('citiesName').value.trim();
-    const type = document.getElementById('cityType').value;
+    const provinceId = cityProvinceSelect.value;
+    const name = citiesNameInput.value.trim();
+    const type = cityTypeSelect.value; // Menggunakan variabel yang sudah didefinisikan
 
     // Validasi input
     if (!provinceId) {
         showNotification('Harap pilih provinsi terlebih dahulu', 'error');
-        document.getElementById('cityProvince').focus();
+        cityProvinceSelect.focus();
         return;
     }
 
     if (!name) {
         showNotification('Nama kota/kabupaten tidak boleh kosong', 'error');
-        document.getElementById('citiesName').focus();
+        citiesNameInput.focus();
+        return;
+    }
+
+    if (!type) {
+        showNotification('Harap pilih jenis kota/kabupaten', 'error');
+        cityTypeSelect.focus();
         return;
     }
 
@@ -422,7 +420,7 @@ async function addCity() {
         if (error) throw error;
 
         showNotification('Kota/Kabupaten berhasil ditambahkan');
-        document.getElementById('citiesForm').reset();
+        citiesForm.reset();
         await loadCities();
         await loadDashboardStats();
     } catch (error) {
