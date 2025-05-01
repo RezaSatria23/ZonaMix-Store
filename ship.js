@@ -436,7 +436,7 @@ async function addCity() {
             .from('cities')
             .select('id')
             .eq('name', name)
-            .eq('province_id', provinceId);            
+            .eq('province_id', provinceId)            
             .maybeSingle();
 
 
