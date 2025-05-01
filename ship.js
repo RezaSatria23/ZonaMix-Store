@@ -34,6 +34,9 @@ const cityCountElement = document.getElementById('city-count');
 const districtCountElement = document.getElementById('district-count');
 const courierCountElement = document.getElementById('courier-count');
 
+const districtCitySelect = document.getElementById('districtCity');
+
+
 // Page Titles
 const pageTitles = {
     dashboard: 'Dashboard',
@@ -581,7 +584,12 @@ async function loadDistricts() {
     try {
         const { data, error } = await supabase
             .from('districts')
-            .select('*')
+            .select(`
+                id,
+                name,
+                city_id,
+                cities(name, type)
+            `)
             .order('name', { ascending: true });
         
         if (error) throw error;
@@ -592,6 +600,7 @@ async function loadDistricts() {
             const row = districtsTable.insertRow();
             row.innerHTML = `
                 <td>${district.id}</td>
+                <td>${district.cities?.type === 'kabupaten' ? 'Kab.' : 'Kota'} ${district.cities?.name || '-'}</td>
                 <td>${district.name}</td>
                 <td>
                     <button class="btn-action btn-edit" data-id="${district.id}">
@@ -604,18 +613,53 @@ async function loadDistricts() {
             `;
         });
         
-        // Add event listeners to action buttons
         addDistrictActionListeners();
     } catch (error) {
         throw error;
     }
 }
 
+// Panggil loadCityDropdown ketika tab kecamatan diklik
+document.querySelector('[data-tab="districts"]').addEventListener('click', loadCityDropdown);
+
+// Fungsi untuk memuat dropdown kota/kabupaten
+async function loadCityDropdown() {
+    try {
+        const { data: cities, error } = await supabase
+            .from('cities')
+            .select('id, name, type')
+            .order('name', { ascending: true });
+
+        if (error) throw error;
+
+        districtCitySelect.innerHTML = '<option value="">Pilih Kota/Kabupaten</option>';
+
+        cities.forEach(city => {
+            const option = document.createElement('option');
+            option.value = city.id;
+            option.textContent = `${city.type === 'kabupaten' ? 'Kab.' : 'Kota'} ${city.name}`;
+            districtCitySelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Gagal memuat daftar kota:', error);
+        showNotification('Gagal memuat daftar kota/kabupaten', 'error');
+    }
+}
+
+
 async function addDistrict() {
+    const cityId = districtCitySelect.value;
     const name = districtsNameInput.value.trim();
+    
+    if (!cityId) {
+        showNotification('Harap pilih kota/kabupaten terlebih dahulu', 'error');
+        districtCitySelect.focus();
+        return;
+    }
     
     if (!name) {
         showNotification('Nama kecamatan tidak boleh kosong', 'error');
+        districtsNameInput.focus();
         return;
     }
     
@@ -624,7 +668,10 @@ async function addDistrict() {
     try {
         const { data, error } = await supabase
             .from('districts')
-            .insert([{ name }])
+            .insert([{ 
+                name,
+                city_id: cityId 
+            }])
             .select();
             
         if (error) throw error;
@@ -659,26 +706,97 @@ function addDistrictActionListeners() {
 }
 
 async function editDistrict(id) {
-    const newName = prompt('Masukkan nama kecamatan baru:');
-    if (!newName) return;
-    
-    showLoading();
-    
     try {
-        const { error } = await supabase
+        // Ambil data kecamatan yang akan diedit
+        const { data: districtData, error: fetchError } = await supabase
             .from('districts')
-            .update({ name: newName })
-            .eq('id', id);
-            
-        if (error) throw error;
+            .select('name, city_id, cities(name, type)')
+            .eq('id', id)
+            .single();
         
-        showNotification('Kecamatan berhasil diperbarui');
-        await loadDistricts();
+        if (fetchError) throw fetchError;
+        
+        // Ambil daftar kota untuk dropdown
+        const { data: citiesData, error: citiesError } = await supabase
+            .from('cities')
+            .select('id, name, type')
+            .order('name', { ascending: true });
+        
+        if (citiesError) throw citiesError;
+        
+        // Buat form dialog
+        const dialog = document.createElement('div');
+        dialog.className = 'edit-dialog';
+        dialog.innerHTML = `
+            <div class="dialog-content">
+                <h3>Edit Kecamatan</h3>
+                <div class="form-group">
+                    <label for="editDistrictCity">Kota/Kabupaten</label>
+                    <select id="editDistrictCity" class="form-control">
+                        ${citiesData.map(city => 
+                            `<option value="${city.id}" ${city.id === districtData.city_id ? 'selected' : ''}>
+                                ${city.type === 'kabupaten' ? 'Kab.' : 'Kota'} ${city.name}
+                            </option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editDistrictName">Nama Kecamatan</label>
+                    <input type="text" id="editDistrictName" class="form-control" value="${districtData.name}">
+                </div>
+                <div class="dialog-buttons">
+                    <button type="button" id="cancelEditDistrict" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Batal
+                    </button>
+                    <button type="button" id="saveEditDistrict" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Simpan
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(dialog);
+        
+        // Event listeners untuk dialog
+        document.getElementById('cancelEditDistrict').addEventListener('click', () => {
+            dialog.remove();
+        });
+        
+        document.getElementById('saveEditDistrict').addEventListener('click', async () => {
+            const newCityId = document.getElementById('editDistrictCity').value;
+            const newName = document.getElementById('editDistrictName').value.trim();
+            
+            if (!newName) {
+                showNotification('Nama kecamatan tidak boleh kosong', 'error');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const { error } = await supabase
+                    .from('districts')
+                    .update({ 
+                        name: newName,
+                        city_id: newCityId
+                    })
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showNotification('Kecamatan berhasil diperbarui');
+                await loadDistricts();
+            } catch (error) {
+                console.error('Error updating district:', error);
+                showNotification('Gagal memperbarui kecamatan', 'error');
+            } finally {
+                hideLoading();
+                dialog.remove();
+            }
+        });
     } catch (error) {
-        showNotification('Gagal memperbarui kecamatan: ' + error.message, 'error');
-        console.error('Error updating district:', error);
-    } finally {
-        hideLoading();
+        console.error('Error preparing edit:', error);
+        showNotification('Gagal mempersiapkan form edit', 'error');
     }
 }
 

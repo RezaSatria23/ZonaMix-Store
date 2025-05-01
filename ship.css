@@ -347,11 +347,11 @@ body {
 
 /* Form Styles */
 .form-container {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    box-shadow: var(--shadow);
-    margin-bottom: 30px;
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .form-container h2 {
@@ -373,6 +373,7 @@ body {
 
 .form-group {
     flex: 1;
+    margin-bottom: 16px; /* Jarak antar form group */
 }
 
 .form-group label {
@@ -385,12 +386,11 @@ body {
 
 .form-control {
     width: 100%;
-    padding: 12px 15px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    transition: var(--transition);
-    background-color: #f8f9fa;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-top: 4px; /* Jarak antara label dan input */
 }
 
 .form-control:focus {
