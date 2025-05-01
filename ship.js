@@ -370,7 +370,7 @@ async function loadCities() {
                 province_id,
                 provinces(name)
             `)
-            .order('name', { ascending: true });
+            .order('created_at', { ascending: true });
 
         if (error) throw error;
 
@@ -392,6 +392,9 @@ async function loadCities() {
                     </button>
                 </td>
             `;
+            // Tambahkan data attribute untuk validasi duplikat
+            row.setAttribute('data-city-name', city.name.toLowerCase());
+            row.setAttribute('data-province-id', city.province_id);
         });
 
         addCityActionListeners();
@@ -435,22 +438,15 @@ async function addCity() {
        .from('cities')
        .select('id')
        .eq('name', name)
-       .eq('province_id', provinceId);
+       .eq('province_id', provinceId)
+       .maybeSingle();
 
     if (checkError) throw checkError;
 
     // Di dalam fungsi addCity(), setelah cek duplikasi
-    if (existingCities && existingCities.length > 0) {
-        showNotification('Kota/Kabupaten ini sudah terdaftar di provinsi tersebut', 'error');
-        
-        // Highlight row yang sudah ada
-        const existingRow = document.querySelector(`[data-city="${name.toLowerCase()}"][data-province="${provinceId}"]`);
-        if (existingRow) {
-            existingRow.classList.add('duplicate-warning');
-            setTimeout(() => {
-                existingRow.classList.remove('duplicate-warning');
-            }, 3000);
-        }
+    if (existing) {
+        showNotification(`Kota/Kabupaten "${name}" sudah terdaftar di provinsi ini`, 'error');
+        highlightDuplicateRow(name, provinceId);
         return;
     }
 
@@ -465,16 +461,33 @@ async function addCity() {
         .select();
 
         if (error) throw error;
+
         showNotification('Kota/Kabupaten berhasil ditambahkan');
         citiesForm.reset();
         await loadCities();
         await loadDashboardStats();
+
     } catch (error) {
         console.error('Error adding city:', error);
         showNotification(`Gagal menambahkan: ${error.message}`, 'error');
     } finally {
         hideLoading();
     }
+}
+function highlightDuplicateRow(cityName, provinceId) {
+    const rows = document.querySelectorAll('#citiesTable tbody tr');
+    rows.forEach(row => {
+        const nameCell = row.cells[3].textContent.toLowerCase(); // Sesuaikan index kolom
+        const provinceCell = row.cells[2].textContent.toLowerCase(); // Sesuaikan index kolom
+        
+        if (nameCell === cityName.toLowerCase() && 
+            provinceCell.includes(provinceId)) {
+            row.classList.add('duplicate-row');
+            setTimeout(() => {
+                row.classList.remove('duplicate-row');
+            }, 3000);
+        }
+    });
 }
 
 function addCityActionListeners() {
