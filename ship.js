@@ -376,10 +376,10 @@ async function loadCities() {
 
         citiesTable.innerHTML = '';
 
-        cities.forEach(city => {
+        cities.forEach((city, index) => {
             const row = citiesTable.insertRow();
             row.innerHTML = `
-                <td>${city.id}</td>
+                <td>${index + 1}</td> <!-- Nomor urut -->
                 <td>${city.type === 'kabupaten' ? 'Kabupaten' : 'Kota'}</td>
                 <td>${city.provinces?.name || '-'}</td>
                 <td>${city.name}</td>
@@ -395,7 +395,6 @@ async function loadCities() {
         });
 
         addCityActionListeners();
-
     } catch (error) {
         console.error('Error loading cities:', error);
         showNotification('Gagal memuat data kota/kabupaten', 'error');
@@ -431,17 +430,41 @@ async function addCity() {
     showLoading();
 
     try {
-        const { data, error } = await supabase
-            .from('cities')
-            .insert([{
-                name,
-                type,
-                province_id: provinceId
-            }])
-            .select();
+       // Cek apakah data sudah ada
+       const { data: existingCities, error: checkError } = await supabase
+       .from('cities')
+       .select('id')
+       .eq('name', name)
+       .eq('province_id', provinceId);
+
+    if (checkError) throw checkError;
+
+    // Di dalam fungsi addCity(), setelah cek duplikasi
+    if (existingCities && existingCities.length > 0) {
+        showNotification('Kota/Kabupaten ini sudah terdaftar di provinsi tersebut', 'error');
+        
+        // Highlight row yang sudah ada
+        const existingRow = document.querySelector(`[data-city="${name.toLowerCase()}"][data-province="${provinceId}"]`);
+        if (existingRow) {
+            existingRow.classList.add('duplicate-warning');
+            setTimeout(() => {
+                existingRow.classList.remove('duplicate-warning');
+            }, 3000);
+        }
+        return;
+    }
+
+    // Jika tidak ada duplikasi, simpan data
+    const { data, error } = await supabase
+        .from('cities')
+        .insert([{
+            name,
+            type,
+            province_id: provinceId
+        }])
+        .select();
 
         if (error) throw error;
-
         showNotification('Kota/Kabupaten berhasil ditambahkan');
         citiesForm.reset();
         await loadCities();

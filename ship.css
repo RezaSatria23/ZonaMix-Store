@@ -793,3 +793,13 @@ body {
     background-color: var(--primary);
     border-radius: 3px 0 0 3px;
 }
+.duplicate-warning {
+    animation: blink-warning 0.5s 3;
+    background-color: rgba(255, 213, 0, 0.3);
+}
+
+@keyframes blink-warning {
+    0% { background-color: rgba(255, 213, 0, 0.3); }
+    50% { background-color: rgba(255, 213, 0, 0.7); }
+    100% { background-color: rgba(255, 213, 0, 0.3); }
+}
