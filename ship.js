@@ -993,14 +993,39 @@ couriersForm.addEventListener('submit', async (e) => {
     await addCourier();
 });
 
+function addCourierActionListeners() {
+    // Edit buttons
+    document.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = e.currentTarget.dataset.id;
+            await editCourier(id);
+        });
+    });
+    
+    // Delete buttons
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = e.currentTarget.dataset.id;
+            await deleteCourier(id);
+        });
+    });
+}
+
 async function addCourier() {
     const name = courierNameInput.value.trim();
+    const code = document.getElementById('courierCode').value.trim();
     const type = courierTypeInput.value.trim();
     const price = courierPriceInput.value;
     
     if (!name) {
         showNotification('Nama ekspedisi tidak boleh kosong', 'error');
         courierNameInput.focus();
+        return;
+    }
+    
+    if (!code) {
+        showNotification('Kode ekspedisi tidak boleh kosong', 'error');
+        document.getElementById('courierCode').focus();
         return;
     }
     
@@ -1023,6 +1048,7 @@ async function addCourier() {
             .from('couriers')
             .insert([{ 
                 name,
+                code,
                 type,
                 price: parseFloat(price)
             }])
@@ -1075,6 +1101,123 @@ async function loadCouriers() {
         addCourierActionListeners();
     } catch (error) {
         throw error;
+    }
+}
+
+async function editCourier(id) {
+    try {
+        // Ambil data ekspedisi yang akan diedit
+        const { data: courierData, error: fetchError } = await supabase
+            .from('couriers')
+            .select('*')
+            .eq('id', id)
+            .single();
+        
+        if (fetchError) throw fetchError;
+        
+        // Buat form dialog
+        const dialog = document.createElement('div');
+        dialog.className = 'edit-dialog';
+        dialog.innerHTML = `
+            <div class="dialog-content">
+                <h3>Edit Ekspedisi</h3>
+                <div class="form-group">
+                    <label for="editCourierName">Nama Ekspedisi</label>
+                    <input type="text" id="editCourierName" class="form-control" value="${courierData.name}">
+                </div>
+                <div class="form-group">
+                    <label for="editCourierCode">Kode</label>
+                    <input type="text" id="editCourierCode" class="form-control" value="${courierData.code}">
+                </div>
+                <div class="form-group">
+                    <label for="editCourierType">Jenis Pengiriman</label>
+                    <input type="text" id="editCourierType" class="form-control" value="${courierData.type}">
+                </div>
+                <div class="form-group">
+                    <label for="editCourierPrice">Harga</label>
+                    <input type="number" id="editCourierPrice" class="form-control" value="${courierData.price}">
+                </div>
+                <div class="dialog-buttons">
+                    <button type="button" id="cancelEditCourier" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Batal
+                    </button>
+                    <button type="button" id="saveEditCourier" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Simpan
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(dialog);
+        
+        // Event listeners untuk dialog
+        document.getElementById('cancelEditCourier').addEventListener('click', () => {
+            dialog.remove();
+        });
+        
+        document.getElementById('saveEditCourier').addEventListener('click', async () => {
+            const newName = document.getElementById('editCourierName').value.trim();
+            const newCode = document.getElementById('editCourierCode').value.trim();
+            const newType = document.getElementById('editCourierType').value.trim();
+            const newPrice = document.getElementById('editCourierPrice').value;
+            
+            if (!newName || !newCode || !newType || !newPrice) {
+                showNotification('Semua field harus diisi', 'error');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const { error } = await supabase
+                    .from('couriers')
+                    .update({ 
+                        name: newName,
+                        code: newCode,
+                        type: newType,
+                        price: parseFloat(newPrice)
+                    })
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showNotification('Ekspedisi berhasil diperbarui');
+                await loadCouriers();
+            } catch (error) {
+                console.error('Error updating courier:', error);
+                showNotification('Gagal memperbarui ekspedisi', 'error');
+            } finally {
+                hideLoading();
+                dialog.remove();
+            }
+        });
+    } catch (error) {
+        console.error('Error preparing edit:', error);
+        showNotification('Gagal mempersiapkan form edit', 'error');
+    }
+}
+
+async function deleteCourier(id) {
+    if (!confirm('Apakah Anda yakin ingin menghapus ekspedisi ini?')) return;
+    
+    showLoading();
+    
+    try {
+        const { error } = await supabase
+            .from('couriers')
+            .delete()
+            .eq('id', id);
+            
+        if (error) throw error;
+        
+        showNotification('Ekspedisi berhasil dihapus');
+        await loadCouriers();
+        await loadDashboardStats();
+    } catch (error) {
+        showNotification('Gagal menghapus ekspedisi: ' + error.message, 'error');
+        console.error('Error deleting courier:', error);
+    } finally {
+        hideLoading();
     }
 }
 
