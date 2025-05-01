@@ -370,7 +370,7 @@ async function loadCities() {
                 province_id,
                 provinces(name)
             `)
-            .order('created_at', { ascending: true });
+            .order('display_id', { ascending: true });
 
         if (error) throw error;
 
@@ -1338,3 +1338,28 @@ style.textContent = `
 }
 `;
 document.head.appendChild(style);
+
+// Fungsi untuk mengupdate display_id di semua tabel
+async function updateDisplayIds(tableName) {
+    try {
+        // Dapatkan semua data diurutkan berdasarkan created_at
+        const { data: allData, error: fetchError } = await supabase
+            .from(tableName)
+            .select('*')
+            .order('created_at', { ascending: true });
+        
+        if (fetchError) throw fetchError;
+        
+        // Update display_id secara berurutan
+        const updates = allData.map((item, index) => {
+            return supabase
+                .from(tableName)
+                .update({ display_id: index + 1 })
+                .eq('id', item.id);
+        });
+        
+        await Promise.all(updates);
+    } catch (error) {
+        console.error(`Error updating display_id for ${tableName}:`, error);
+    }
+}
