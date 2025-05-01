@@ -1084,6 +1084,7 @@ async function loadCouriers() {
             const row = couriersTable.insertRow();
             row.innerHTML = `
                 <td>${courier.id}</td>
+                <td>${courier.code}</td>
                 <td>${courier.name}</td>
                 <td>${courier.type}</td>
                 <td>${formatCurrency(courier.price)}</td>
