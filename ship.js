@@ -407,12 +407,6 @@ async function addCity() {
         return;
     }
 
-    if (!type) {
-        showNotification('Harap pilih jenis kota/kabupaten', 'error');
-        document.getElementById('cityType').focus();
-        return;
-    }
-
     showLoading();
 
     try {
