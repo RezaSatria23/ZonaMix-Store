@@ -908,6 +908,24 @@ async function addVillage() {
     }
 }
 
+function addVillageActionListeners() {
+    // Edit buttons
+    document.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = e.currentTarget.dataset.id;
+            await editVillage(id);
+        });
+    });
+    
+    // Delete buttons
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = e.currentTarget.dataset.id;
+            await deleteVillage(id);
+        });
+    });
+}
+
 // Fungsi untuk memuat data kelurahan
 async function loadVillages() {
     try {
