@@ -407,65 +407,48 @@ async function loadCities() {
 async function addCity() {
     const provinceId = cityProvinceSelect.value;
     const name = citiesNameInput.value.trim();
-    const type = cityTypeSelect.value; // Menggunakan variabel yang sudah didefinisikan
+    const type = cityTypeSelect.value;
 
     // Validasi input
-    if (!provinceId) {
-        showNotification('Harap pilih provinsi terlebih dahulu', 'error');
-        cityProvinceSelect.focus();
-        return;
-    }
-
-    if (!name) {
-        showNotification('Nama kota/kabupaten tidak boleh kosong', 'error');
-        citiesNameInput.focus();
-        return;
-    }
-
-    if (!type) {
-        showNotification('Harap pilih jenis kota/kabupaten', 'error');
-        cityTypeSelect.focus();
+    if (!provinceId || !name || !type) {
+        showNotification('Harap lengkapi semua field!', 'error');
         return;
     }
 
     showLoading();
 
     try {
-       // Cek apakah data sudah ada
-        const { data: existingCities, error: checkError } = await supabase
+        // 1. Cek duplikasi secara manual
+        const { data: existing, error: checkError } = await supabase
             .from('cities')
             .select('id')
             .eq('name', name)
-            .eq('province_id', provinceId)            
+            .eq('province_id', provinceId)
             .maybeSingle();
-
 
         if (checkError) throw checkError;
 
-        if (existingCities && existingCities.length > 0) {
-            showNotification('Kota/Kabupaten ini sudah terdaftar di provinsi tersebut', 'error');
+        // 2. Jika data sudah ada, beri peringatan
+        if (existing) {
+            showNotification(`${type === 'kabupaten' ? 'Kabupaten' : 'Kota'} "${name}" sudah ada di provinsi ini!`, 'error');
             return;
         }
 
-        // Jika tidak ada duplikasi, simpan data
+        // 3. Jika belum ada, simpan data
         const { data, error } = await supabase
             .from('cities')
-            .insert([{
-                name,
-                type,
-                province_id: provinceId
-            }])
+            .insert([{ name, type, province_id: provinceId }])
             .select();
 
         if (error) throw error;
 
-        showNotification('Kota/Kabupaten berhasil ditambahkan');
+        showNotification('Data berhasil ditambahkan!');
         citiesForm.reset();
         await loadCities();
-        await loadDashboardStats();
+
     } catch (error) {
-        console.error('Error adding city:', error);
-        showNotification(`Gagal menambahkan: ${error.message}`, 'error');
+        console.error('Error:', error);
+        showNotification('Terjadi kesalahan: ' + error.message, 'error');
     } finally {
         hideLoading();
     }
