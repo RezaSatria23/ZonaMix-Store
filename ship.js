@@ -40,6 +40,7 @@ const districtCitySelect = document.getElementById('districtCity');
 const villageDistrictSelect = document.getElementById('villageDistrict');
 const villagesNameInput = document.getElementById('villagesName');
 const villagesForm = document.getElementById('villagesForm');
+const villageCountElement = document.getElementById('village-count');
 const villagesTable = document.getElementById('villagesTable').getElementsByTagName('tbody')[0];
 
 // Deklarasi variabel baru
