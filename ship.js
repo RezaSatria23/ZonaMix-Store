@@ -146,9 +146,6 @@ function switchTab(tabId) {
     if (window.innerWidth < 992) {
         adminSidebar.classList.remove('active');
     }
-    
-    // Load data for the tab
-    loadTabData(tabId);
 }
 
 // Toggle sidebar
@@ -176,6 +173,12 @@ async function loadTabData(tabId) {
                 break;
             case 'villages':
                 await loadVillages();
+                break;
+            case 'couriers':
+                await loadCouriers();
+                break;
+            case 'rates':
+                await loadRates();
                 break;
             default:
                 break;
@@ -1485,9 +1488,10 @@ function initApp() {
     
     // Add event listeners for nav items
     navItems.forEach(item => {
-        item.addEventListener('click', () => {
-            switchTab(item.dataset.tab);
-        });
+        // Hapus event listener lama jika ada
+        item.removeEventListener('click', handleNavClick);
+        // Tambahkan event listener baru
+        item.addEventListener('click', handleNavClick);
     });
     
     // Sidebar toggle
@@ -1892,38 +1896,30 @@ async function useHistoryItem(historyId) {
 
 // Initialize Rates Tab
 function initRatesTab() {
-    // Load initial data
-    loadProvincesForCalculator();
-    loadCourierServices();
-    loadShippingHistory();
+    if (!window.ratesTabInitialized) {
+        // Load initial data
+        loadProvincesForCalculator();
+        loadCourierServices();
+        loadShippingHistory();
 
-    // Event listeners for province changes
-    originProvinceSelect.addEventListener('change', async (e) => {
-        await loadCitiesForCalculator(e.target.value, originCitySelect);
-    });
+        // Event listeners for province changes
+        originProvinceSelect.addEventListener('change', async (e) => {
+            await loadCitiesForCalculator(e.target.value, originCitySelect);
+        });
 
-    destinationProvinceSelect.addEventListener('change', async (e) => {
-        await loadCitiesForCalculator(e.target.value, destinationCitySelect);
-    });
+        destinationProvinceSelect.addEventListener('change', async (e) => {
+            await loadCitiesForCalculator(e.target.value, destinationCitySelect);
+        });
 
-    // Form submission
-    shippingCalculatorForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        await calculateShippingRates();
-    });
+        // Form submission
+        shippingCalculatorForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await calculateShippingRates();
+        });
 
-    // Refresh history button
-    refreshHistoryBtn.addEventListener('click', loadShippingHistory);
-}
-
-// Add to switchTab function
-async function switchTab(tabId) {
-    // ... existing code ...
-    
-    // Load data for the tab
-    if (tabId === 'rates') {
-        initRatesTab();
-    } else {
-        loadTabData(tabId);
+        // Refresh history button
+        refreshHistoryBtn.addEventListener('click', loadShippingHistory);
+        
+        window.ratesTabInitialized = true;
     }
 }
