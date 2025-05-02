@@ -1578,3 +1578,347 @@ async function updateDisplayIds(tableName) {
         console.error(`Error updating display_id for ${tableName}:`, error);
     }
 }
+// DOM Elements for Rates
+const shippingCalculatorForm = document.getElementById('shippingCalculatorForm');
+const originProvinceSelect = document.getElementById('originProvince');
+const originCitySelect = document.getElementById('originCity');
+const destinationProvinceSelect = document.getElementById('destinationProvince');
+const destinationCitySelect = document.getElementById('destinationCity');
+const courierServiceSelect = document.getElementById('courierService');
+const packageWeightInput = document.getElementById('packageWeight');
+const shippingResults = document.getElementById('shippingResults');
+const ratesResultsBody = document.getElementById('ratesResultsBody');
+const originSummary = document.getElementById('originSummary');
+const destinationSummary = document.getElementById('destinationSummary');
+const weightSummary = document.getElementById('weightSummary');
+const ratesHistoryTable = document.getElementById('ratesHistoryTable').getElementsByTagName('tbody')[0];
+const refreshHistoryBtn = document.getElementById('refreshHistory');
+
+// Load Provinces for Shipping Calculator
+async function loadProvincesForCalculator() {
+    try {
+        const { data: provinces, error } = await supabase
+            .from('provinces')
+            .select('id, name')
+            .order('name', { ascending: true });
+
+        if (error) throw error;
+
+        // Clear and populate both province selects
+        [originProvinceSelect, destinationProvinceSelect].forEach(select => {
+            select.innerHTML = '<option value="">Pilih Provinsi</option>';
+            provinces.forEach(province => {
+                const option = document.createElement('option');
+                option.value = province.id;
+                option.textContent = province.name;
+                select.appendChild(option);
+            });
+        });
+    } catch (error) {
+        showNotification('Gagal memuat daftar provinsi', 'error');
+    }
+}
+
+// Load Cities based on selected Province
+async function loadCitiesForCalculator(provinceId, targetSelect) {
+    try {
+        if (!provinceId) {
+            targetSelect.innerHTML = '<option value="">Pilih Kota/Kabupaten</option>';
+            targetSelect.disabled = true;
+            return;
+        }
+
+        const { data: cities, error } = await supabase
+            .from('cities')
+            .select('id, name, type')
+            .eq('province_id', provinceId)
+            .order('name', { ascending: true });
+
+        if (error) throw error;
+
+        targetSelect.innerHTML = '<option value="">Pilih Kota/Kabupaten</option>';
+        cities.forEach(city => {
+            const option = document.createElement('option');
+            option.value = city.id;
+            option.textContent = `${city.type === 'kabupaten' ? 'Kab.' : 'Kota'} ${city.name}`;
+            targetSelect.appendChild(option);
+        });
+        targetSelect.disabled = false;
+    } catch (error) {
+        showNotification('Gagal memuat daftar kota', 'error');
+    }
+}
+
+// Load Courier Services
+async function loadCourierServices() {
+    try {
+        const { data: couriers, error } = await supabase
+            .from('couriers')
+            .select('id, name, code, type, price')
+            .order('name', { ascending: true });
+
+        if (error) throw error;
+
+        courierServiceSelect.innerHTML = '<option value="">Pilih Ekspedisi</option>';
+        couriers.forEach(courier => {
+            const option = document.createElement('option');
+            option.value = courier.id;
+            option.textContent = `${courier.name} (${courier.type})`;
+            courierServiceSelect.appendChild(option);
+        });
+    } catch (error) {
+        showNotification('Gagal memuat daftar ekspedisi', 'error');
+    }
+}
+
+// Calculate Shipping Rates
+async function calculateShippingRates() {
+    const originCityId = originCitySelect.value;
+    const destinationCityId = destinationCitySelect.value;
+    const courierId = courierServiceSelect.value;
+    const weight = parseFloat(packageWeightInput.value);
+
+    if (!originCityId || !destinationCityId || !courierId || !weight || weight <= 0) {
+        showNotification('Harap lengkapi semua field dengan benar', 'error');
+        return;
+    }
+
+    showLoading();
+
+    try {
+        // Get origin and destination data
+        const [{ data: originData }, { data: destinationData }, { data: courierData }] = await Promise.all([
+            supabase
+                .from('cities')
+                .select('name, type, provinces(name)')
+                .eq('id', originCityId)
+                .single(),
+            supabase
+                .from('cities')
+                .select('name, type, provinces(name)')
+                .eq('id', destinationCityId)
+                .single(),
+            supabase
+                .from('couriers')
+                .select('*')
+                .eq('id', courierId)
+                .single()
+        ]);
+
+        // Calculate shipping cost
+        const baseCost = courierData.price;
+        let totalCost = baseCost * weight;
+        
+        // Apply additional rules (example: additional cost for different provinces)
+        if (originData.provinces.id !== destinationData.provinces.id) {
+            totalCost += 5000; // Additional cost for inter-province shipping
+        }
+
+        // Display results
+        originSummary.textContent = `${originData.type === 'kabupaten' ? 'Kab.' : 'Kota'} ${originData.name}, ${originData.provinces.name}`;
+        destinationSummary.textContent = `${destinationData.type === 'kabupaten' ? 'Kab.' : 'Kota'} ${destinationData.name}, ${destinationData.provinces.name}`;
+        weightSummary.textContent = `${weight} kg`;
+
+        ratesResultsBody.innerHTML = `
+            <tr>
+                <td>${courierData.name}</td>
+                <td>${courierData.type}</td>
+                <td>2-3 hari</td>
+                <td>${formatCurrency(totalCost)}</td>
+                <td>
+                    <button class="btn-action btn-save" data-cost="${totalCost}">
+                        <i class="fas fa-save"></i> Simpan
+                    </button>
+                </td>
+            </tr>
+        `;
+
+        // Add event listener to save button
+        document.querySelector('.btn-save').addEventListener('click', async () => {
+            await saveShippingCalculation(
+                originCityId,
+                destinationCityId,
+                courierId,
+                weight,
+                totalCost,
+                `${originData.type === 'kabupaten' ? 'Kab.' : 'Kota'} ${originData.name}, ${originData.provinces.name}`,
+                `${destinationData.type === 'kabupaten' ? 'Kab.' : 'Kota'} ${destinationData.name}, ${destinationData.provinces.name}`,
+                courierData.name
+            );
+        });
+
+        shippingResults.style.display = 'block';
+    } catch (error) {
+        showNotification('Gagal menghitung ongkir: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Save Shipping Calculation to History
+async function saveShippingCalculation(
+    originCityId, 
+    destinationCityId, 
+    courierId, 
+    weight, 
+    cost,
+    originText,
+    destinationText,
+    courierText
+) {
+    try {
+        const { error } = await supabase
+            .from('shipping_history')
+            .insert([{
+                origin_city_id: originCityId,
+                destination_city_id: destinationCityId,
+                courier_id: courierId,
+                weight: weight,
+                cost: cost,
+                origin_text: originText,
+                destination_text: destinationText,
+                courier_text: courierText
+            }]);
+
+        if (error) throw error;
+
+        showNotification('Perhitungan berhasil disimpan');
+        await loadShippingHistory();
+    } catch (error) {
+        showNotification('Gagal menyimpan perhitungan: ' + error.message, 'error');
+    }
+}
+
+// Load Shipping History
+async function loadShippingHistory() {
+    try {
+        const { data: history, error } = await supabase
+            .from('shipping_history')
+            .select('*')
+            .order('created_at', { descending: true })
+            .limit(50);
+
+        if (error) throw error;
+
+        ratesHistoryTable.innerHTML = '';
+
+        history.forEach(item => {
+            const row = ratesHistoryTable.insertRow();
+            row.innerHTML = `
+                <td>${new Date(item.created_at).toLocaleString()}</td>
+                <td>${item.origin_text}</td>
+                <td>${item.destination_text}</td>
+                <td>${item.courier_text}</td>
+                <td>${item.weight} kg</td>
+                <td>${formatCurrency(item.cost)}</td>
+                <td>
+                    <button class="btn-action btn-history" data-id="${item.id}">
+                        <i class="fas fa-redo"></i> Gunakan Lagi
+                    </button>
+                </td>
+            `;
+        });
+
+        // Add event listeners to history buttons
+        document.querySelectorAll('.btn-history').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const historyId = e.currentTarget.dataset.id;
+                await useHistoryItem(historyId);
+            });
+        });
+    } catch (error) {
+        showNotification('Gagal memuat riwayat perhitungan', 'error');
+    }
+}
+
+// Use History Item
+async function useHistoryItem(historyId) {
+    try {
+        const { data: historyItem, error } = await supabase
+            .from('shipping_history')
+            .select('*')
+            .eq('id', historyId)
+            .single();
+
+        if (error) throw error;
+
+        // Set origin province and city
+        const { data: originCity, error: originError } = await supabase
+            .from('cities')
+            .select('province_id')
+            .eq('id', historyItem.origin_city_id)
+            .single();
+
+        if (originError) throw originError;
+
+        originProvinceSelect.value = originCity.province_id;
+        await loadCitiesForCalculator(originCity.province_id, originCitySelect);
+        
+        // Wait for cities to load
+        setTimeout(() => {
+            originCitySelect.value = historyItem.origin_city_id;
+        }, 500);
+
+        // Set destination province and city
+        const { data: destinationCity, error: destinationError } = await supabase
+            .from('cities')
+            .select('province_id')
+            .eq('id', historyItem.destination_city_id)
+            .single();
+
+        if (destinationError) throw destinationError;
+
+        destinationProvinceSelect.value = destinationCity.province_id;
+        await loadCitiesForCalculator(destinationCity.province_id, destinationCitySelect);
+        
+        setTimeout(() => {
+            destinationCitySelect.value = historyItem.destination_city_id;
+        }, 500);
+
+        // Set courier and weight
+        courierServiceSelect.value = historyItem.courier_id;
+        packageWeightInput.value = historyItem.weight;
+
+        showNotification('Data riwayat telah dimuat. Klik "Hitung Ongkir" untuk menghitung ulang.');
+    } catch (error) {
+        showNotification('Gagal memuat data riwayat', 'error');
+    }
+}
+
+// Initialize Rates Tab
+function initRatesTab() {
+    // Load initial data
+    loadProvincesForCalculator();
+    loadCourierServices();
+    loadShippingHistory();
+
+    // Event listeners for province changes
+    originProvinceSelect.addEventListener('change', async (e) => {
+        await loadCitiesForCalculator(e.target.value, originCitySelect);
+    });
+
+    destinationProvinceSelect.addEventListener('change', async (e) => {
+        await loadCitiesForCalculator(e.target.value, destinationCitySelect);
+    });
+
+    // Form submission
+    shippingCalculatorForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await calculateShippingRates();
+    });
+
+    // Refresh history button
+    refreshHistoryBtn.addEventListener('click', loadShippingHistory);
+}
+
+// Add to switchTab function
+async function switchTab(tabId) {
+    // ... existing code ...
+    
+    // Load data for the tab
+    if (tabId === 'rates') {
+        initRatesTab();
+    } else {
+        loadTabData(tabId);
+    }
+}

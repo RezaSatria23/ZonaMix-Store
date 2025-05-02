@@ -398,7 +398,119 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Tarif Tab -->
+                <div class="tab-content" id="rates">
+                    <div class="card shipping-calculator">
+                        <h2><i class="fas fa-calculator"></i> Kalkulator Tarif Pengiriman</h2>
+                        <form id="shippingCalculatorForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="originProvince">Provinsi Asal</label>
+                                    <select id="originProvince" class="form-control" required>
+                                        <option value="">Pilih Provinsi</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="originCity">Kota/Kabupaten Asal</label>
+                                    <select id="originCity" class="form-control" required disabled>
+                                        <option value="">Pilih Kota/Kabupaten</option>
+                                    </select>
+                                </div>
+                            </div>
 
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="destinationProvince">Provinsi Tujuan</label>
+                                    <select id="destinationProvince" class="form-control" required>
+                                        <option value="">Pilih Provinsi</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="destinationCity">Kota/Kabupaten Tujuan</label>
+                                    <select id="destinationCity" class="form-control" required disabled>
+                                        <option value="">Pilih Kota/Kabupaten</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="courierService">Ekspedisi</label>
+                                    <select id="courierService" class="form-control" required>
+                                        <option value="">Pilih Ekspedisi</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="packageWeight">Berat Paket (kg)</label>
+                                    <input type="number" id="packageWeight" class="form-control" min="0.1" step="0.1" value="1" required>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-calculator"></i> Hitung Ongkir
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="card shipping-results" id="shippingResults" style="display: none;">
+                        <h3><i class="fas fa-receipt"></i> Hasil Perhitungan</h3>
+                        <div class="result-summary">
+                            <div class="summary-item">
+                                <span class="summary-label">Asal Pengiriman:</span>
+                                <span class="summary-value" id="originSummary"></span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Tujuan Pengiriman:</span>
+                                <span class="summary-value" id="destinationSummary"></span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Berat Paket:</span>
+                                <span class="summary-value" id="weightSummary"></span>
+                            </div>
+                        </div>
+
+                        <table class="result-table">
+                            <thead>
+                                <tr>
+                                    <th>Ekspedisi</th>
+                                    <th>Layanan</th>
+                                    <th>Estimasi</th>
+                                    <th>Biaya</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ratesResultsBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="card shipping-history">
+                        <div class="table-header">
+                            <h3><i class="fas fa-history"></i> Riwayat Perhitungan</h3>
+                            <div class="table-actions">
+                                <button class="btn btn-primary" id="refreshHistory">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table" id="ratesHistoryTable">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Asal</th>
+                                        <th>Tujuan</th>
+                                        <th>Ekspedisi</th>
+                                        <th>Berat</th>
+                                        <th>Tarif</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
