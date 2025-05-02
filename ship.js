@@ -206,15 +206,13 @@ async function loadDashboardStats() {
             { count: cityCount },
             { count: districtCount },
             { count: villageCount },
-            { count: courierCount },
-            { count: ratesCount }
+            { count: courierCount }
         ] = await Promise.all([
             supabase.from('provinces').select('*', { count: 'exact', head: true }),
             supabase.from('cities').select('*', { count: 'exact', head: true }),
             supabase.from('districts').select('*', { count: 'exact', head: true }),
             supabase.from('villages').select('*', { count: 'exact', head: true }),
             supabase.from('couriers').select('*', { count: 'exact', head: true }),
-            supabase.from('rates').select('*', { count: 'exact', head: true }),
         ]);
         
         document.getElementById('province-count').textContent = provinceCount || 0;
@@ -222,7 +220,6 @@ async function loadDashboardStats() {
         districtCountElement.textContent = districtCount || 0;
         villageCountElement.textContent = villageCount || 0;
         courierCountElement.textContent = courierCount || 0;
-        document.getElementById('rates-count').textContent = ratesCount || 0;
     } catch (error) {
         throw error;
     }
