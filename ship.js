@@ -17,17 +17,16 @@ const pageTitle = document.getElementById('pageTitle');
 // Form Elements
 const provinceForm = document.getElementById('provinceForm');
 const provinceNameInput = document.getElementById('provinceName');
-const provincesTable = document.getElementById('provincesTable').getElementsByTagName('tbody')[0];
+const provincesTable = document.getElementById('provincesTable')?.getElementsByTagName('tbody')[0];
 
 const citiesForm = document.getElementById('citiesForm');
 const citiesNameInput = document.getElementById('citiesName');
-const citiesTable = document.getElementById('citiesTable').getElementsByTagName('tbody')[0];
+const citiesTable = document.getElementById('citiesTable')?.getElementsByTagName('tbody')[0];
 
 const districtsForm = document.getElementById('districtsForm');
 const districtsNameInput = document.getElementById('districtsName');
-const districtsTable = document.getElementById('districtsTable').getElementsByTagName('tbody')[0];
+const districtsTable = document.getElementById('districtsTable')?.getElementsByTagName('tbody')[0];
 
-// Add these new DOM elements at the top
 const cityProvinceSelect = document.getElementById('cityProvince');
 const cityTypeSelect = document.getElementById('cityType');
 const cityCountElement = document.getElementById('city-count');
@@ -35,21 +34,17 @@ const districtCountElement = document.getElementById('district-count');
 const courierCountElement = document.getElementById('courier-count');
 
 const districtCitySelect = document.getElementById('districtCity');
-
-// Deklarasi variabel baru
 const villageDistrictSelect = document.getElementById('villageDistrict');
 const villagesNameInput = document.getElementById('villagesName');
 const villagesForm = document.getElementById('villagesForm');
 const villageCountElement = document.getElementById('village-count');
-const villagesTable = document.getElementById('villagesTable').getElementsByTagName('tbody')[0];
+const villagesTable = document.getElementById('villagesTable')?.getElementsByTagName('tbody')[0];
 
-// Deklarasi variabel baru
 const courierNameInput = document.getElementById('courierName');
 const courierTypeInput = document.getElementById('courierType');
 const courierPriceInput = document.getElementById('courierPrice');
 const couriersForm = document.getElementById('couriersForm');
-const couriersTable = document.getElementById('couriersTable').getElementsByTagName('tbody')[0];
-
+const couriersTable = document.getElementById('couriersTable')?.getElementsByTagName('tbody')[0];
 
 // DOM Elements for Rates
 const shippingCalculatorForm = document.getElementById('shippingCalculatorForm');
@@ -64,9 +59,8 @@ const ratesResultsBody = document.getElementById('ratesResultsBody');
 const originSummary = document.getElementById('originSummary');
 const destinationSummary = document.getElementById('destinationSummary');
 const weightSummary = document.getElementById('weightSummary');
-const ratesHistoryTable = document.getElementById('ratesHistoryTable').getElementsByTagName('tbody')[0];
+const ratesHistoryTable = document.getElementById('ratesHistoryTable')?.getElementsByTagName('tbody')[0];
 const refreshHistoryBtn = document.getElementById('refreshHistory');
-
 
 // Page Titles
 const pageTitles = {
@@ -79,7 +73,10 @@ const pageTitles = {
     rates: 'Kelola Tarif'
 };
 
-// Show loading overlay
+// Track initialized tabs
+const initializedTabs = new Set();
+
+// Utility Functions
 function showLoading() {
     loadingOverlay.style.display = 'flex';
     setTimeout(() => {
@@ -87,7 +84,6 @@ function showLoading() {
     }, 10);
 }
 
-// Hide loading overlay
 function hideLoading() {
     loadingOverlay.style.opacity = '0';
     setTimeout(() => {
@@ -95,7 +91,6 @@ function hideLoading() {
     }, 300);
 }
 
-// Show notification
 function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
@@ -118,8 +113,18 @@ function showNotification(message, type = 'success') {
     }, 3000);
 }
 
-// Switch tabs
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0
+    }).format(amount);
+}
+
+// Main Functions
 function switchTab(tabId) {
+    if (!tabId || !pageTitles[tabId]) return;
+    
     // Update page title
     pageTitle.textContent = pageTitles[tabId] || 'Dashboard';
     
@@ -146,14 +151,14 @@ function switchTab(tabId) {
     if (window.innerWidth < 992) {
         adminSidebar.classList.remove('active');
     }
+    
+    // Load tab data if not already initialized
+    if (!initializedTabs.has(tabId)) {
+        loadTabData(tabId);
+        initializedTabs.add(tabId);
+    }
 }
 
-// Toggle sidebar
-function toggleSidebar() {
-    adminSidebar.classList.toggle('active');
-}
-
-// Load data for specific tab
 async function loadTabData(tabId) {
     showLoading();
     
@@ -166,19 +171,22 @@ async function loadTabData(tabId) {
                 await loadProvinces();
                 break;
             case 'cities':
+                await loadProvinceDropdown();
                 await loadCities();
                 break;
             case 'districts':
+                await loadCityDropdown();
                 await loadDistricts();
                 break;
             case 'villages':
+                await loadDistrictDropdown();
                 await loadVillages();
                 break;
             case 'couriers':
                 await loadCouriers();
                 break;
             case 'rates':
-                await loadRates();
+                initRatesTab();
                 break;
             default:
                 break;
@@ -191,7 +199,6 @@ async function loadTabData(tabId) {
     }
 }
 
-// Load dashboard statistics
 async function loadDashboardStats() {
     try {
         const [
@@ -200,7 +207,7 @@ async function loadDashboardStats() {
             { count: districtCount },
             { count: villageCount },
             { count: courierCount },
-            { count: ratesCount}
+            { count: ratesCount }
         ] = await Promise.all([
             supabase.from('provinces').select('*', { count: 'exact', head: true }),
             supabase.from('cities').select('*', { count: 'exact', head: true }),
@@ -215,7 +222,7 @@ async function loadDashboardStats() {
         districtCountElement.textContent = districtCount || 0;
         villageCountElement.textContent = villageCount || 0;
         courierCountElement.textContent = courierCount || 0;
-        ratesCountElement.textContent = ratesCount || 0;
+        document.getElementById('rates-count').textContent = ratesCount || 0;
     } catch (error) {
         throw error;
     }
@@ -249,7 +256,6 @@ async function loadProvinces() {
             `;
         });
         
-        // Add event listeners to action buttons
         addProvinceActionListeners();
     } catch (error) {
         throw error;
@@ -267,7 +273,7 @@ async function addProvince() {
     showLoading();
     
     try {
-        // Cek duplikasi
+        // Check for duplicates
         const { data: existing, error: checkError } = await supabase
             .from('provinces')
             .select('id')
@@ -299,8 +305,6 @@ async function addProvince() {
     }
 }
 
-
-// Add function to load provinces dropdown
 async function loadProvinceDropdown() {
     try {
         const { data: provinces, error } = await supabase
@@ -310,17 +314,14 @@ async function loadProvinceDropdown() {
 
         if (error) throw error;
 
-        const provinceSelect = document.getElementById('cityProvince');
-        provinceSelect.innerHTML = '<option value="">Pilih Provinsi</option>';
+        cityProvinceSelect.innerHTML = '<option value="">Pilih Provinsi</option>';
 
         provinces.forEach(province => {
             const option = document.createElement('option');
             option.value = province.id;
             option.textContent = province.name;
-            provinceSelect.appendChild(option);
+            cityProvinceSelect.appendChild(option);
         });
-
-        console.log('Dropdown provinsi berhasil dimuat:', provinces);
     } catch (error) {
         console.error('Gagal memuat dropdown provinsi:', error);
         showNotification('Gagal memuat daftar provinsi', 'error');
@@ -363,7 +364,6 @@ async function editProvince(id) {
         await loadProvinces();
     } catch (error) {
         showNotification('Gagal memperbarui provinsi: ' + error.message, 'error');
-        console.error('Error updating province:', error);
     } finally {
         hideLoading();
     }
@@ -384,10 +384,9 @@ async function deleteProvince(id) {
         
         showNotification('Provinsi berhasil dihapus');
         await loadProvinces();
-        await loadDashboardStats(); // Update dashboard count
+        await loadDashboardStats();
     } catch (error) {
         showNotification('Gagal menghapus provinsi: ' + error.message, 'error');
-        console.error('Error deleting province:', error);
     } finally {
         hideLoading();
     }
@@ -405,7 +404,7 @@ async function loadCities() {
                 province_id,
                 provinces(name)
             `)
-            .order('id', { ascending: true }); // Urutkan berdasarkan ID
+            .order('id', { ascending: true });
 
         if (error) throw error;
 
@@ -435,7 +434,6 @@ async function loadCities() {
     }
 }
 
-
 async function addCity() {
     const provinceId = cityProvinceSelect.value;
     const name = citiesNameInput.value.trim();
@@ -449,7 +447,7 @@ async function addCity() {
     showLoading();
     
     try {
-        // Cek duplikasi
+        // Check for duplicates
         const { data: existing, error: checkError } = await supabase
             .from('cities')
             .select('id')
@@ -478,13 +476,13 @@ async function addCity() {
         showNotification('Data berhasil ditambahkan!');
         citiesForm.reset();
         await loadCities();
+        await loadDashboardStats();
     } catch (error) {
         showNotification('Gagal menambahkan data: ' + error.message, 'error');
     } finally {
         hideLoading();
     }
 }
-
 
 function addCityActionListeners() {
     // Edit buttons
@@ -506,7 +504,7 @@ function addCityActionListeners() {
 
 async function editCity(id) {
     try {
-        // Ambil data kota/kabupaten yang akan diedit
+        // Get city data to edit
         const { data: cityData, error: fetchError } = await supabase
             .from('cities')
             .select('name, type, province_id, provinces(name)')
@@ -515,7 +513,7 @@ async function editCity(id) {
         
         if (fetchError) throw fetchError;
         
-        // Ambil daftar provinsi untuk dropdown
+        // Get provinces list for dropdown
         const { data: provincesData, error: provincesError } = await supabase
             .from('provinces')
             .select('id, name')
@@ -523,7 +521,7 @@ async function editCity(id) {
         
         if (provincesError) throw provincesError;
         
-        // Buat form dialog
+        // Create dialog form
         const dialog = document.createElement('div');
         dialog.className = 'edit-dialog';
         dialog.innerHTML = `
@@ -563,7 +561,7 @@ async function editCity(id) {
         
         document.body.appendChild(dialog);
         
-        // Event listeners untuk dialog
+        // Event listeners for dialog
         document.getElementById('cancelEditCity').addEventListener('click', () => {
             dialog.remove();
         });
@@ -623,9 +621,9 @@ async function deleteCity(id) {
         
         showNotification('Kota/Kabupaten berhasil dihapus');
         await loadCities();
+        await loadDashboardStats();
     } catch (error) {
         showNotification('Gagal menghapus kota/kabupaten: ' + error.message, 'error');
-        console.error('Error deleting city:', error);
     } finally {
         hideLoading();
     }
@@ -671,7 +669,6 @@ async function loadDistricts() {
     }
 }
 
-// Fungsi untuk memuat dropdown kota/kabupaten
 async function loadCityDropdown() {
     try {
         const { data: cities, error } = await supabase
@@ -712,7 +709,7 @@ async function addDistrict() {
     showLoading();
     
     try {
-        // Cek duplikasi
+        // Check for duplicates
         const { data: existing, error: checkError } = await supabase
             .from('districts')
             .select('id')
@@ -768,7 +765,7 @@ function addDistrictActionListeners() {
 
 async function editDistrict(id) {
     try {
-        // Ambil data kecamatan yang akan diedit
+        // Get district data to edit
         const { data: districtData, error: fetchError } = await supabase
             .from('districts')
             .select('name, city_id, cities(name, type)')
@@ -777,7 +774,7 @@ async function editDistrict(id) {
         
         if (fetchError) throw fetchError;
         
-        // Ambil daftar kota untuk dropdown
+        // Get cities list for dropdown
         const { data: citiesData, error: citiesError } = await supabase
             .from('cities')
             .select('id, name, type')
@@ -785,7 +782,7 @@ async function editDistrict(id) {
         
         if (citiesError) throw citiesError;
         
-        // Buat form dialog
+        // Create dialog form
         const dialog = document.createElement('div');
         dialog.className = 'edit-dialog';
         dialog.innerHTML = `
@@ -818,7 +815,7 @@ async function editDistrict(id) {
         
         document.body.appendChild(dialog);
         
-        // Event listeners untuk dialog
+        // Event listeners for dialog
         document.getElementById('cancelEditDistrict').addEventListener('click', () => {
             dialog.remove();
         });
@@ -835,7 +832,7 @@ async function editDistrict(id) {
             showLoading();
             
             try {
-                // Cek duplikasi
+                // Check for duplicates
                 const { data: existing, error: checkError } = await supabase
                     .from('districts')
                     .select('id')
@@ -875,7 +872,6 @@ async function editDistrict(id) {
     }
 }
 
-
 async function deleteDistrict(id) {
     if (!confirm('Apakah Anda yakin ingin menghapus kecamatan ini?')) return;
     
@@ -899,7 +895,7 @@ async function deleteDistrict(id) {
     }
 }
 
-// Fungsi untuk memuat dropdown kecamatan
+// ========== VILLAGE FUNCTIONS ========== //
 async function loadDistrictDropdown() {
     try {
         const { data: districts, error } = await supabase
@@ -923,7 +919,6 @@ async function loadDistrictDropdown() {
     }
 }
 
-// Fungsi untuk menambahkan kelurahan
 async function addVillage() {
     const districtId = villageDistrictSelect.value;
     const name = villagesNameInput.value.trim();
@@ -941,7 +936,7 @@ async function addVillage() {
     showLoading();
     
     try {
-        // Cek duplikasi
+        // Check for duplicates
         const { data: existing, error: checkError } = await supabase
             .from('villages')
             .select('id')
@@ -995,7 +990,6 @@ function addVillageActionListeners() {
     });
 }
 
-// Fungsi untuk memuat data kelurahan
 async function loadVillages() {
     try {
         const { data, error } = await supabase
@@ -1035,10 +1029,9 @@ async function loadVillages() {
     }
 }
 
-// Fungsi untuk mengedit kelurahan
 async function editVillage(id) {
     try {
-        // Ambil data kelurahan yang akan diedit
+        // Get village data to edit
         const { data: villageData, error: fetchError } = await supabase
             .from('villages')
             .select('name, district_id, districts(name, cities(name))')
@@ -1047,7 +1040,7 @@ async function editVillage(id) {
         
         if (fetchError) throw fetchError;
         
-        // Ambil daftar kecamatan untuk dropdown
+        // Get districts list for dropdown
         const { data: districtsData, error: districtsError } = await supabase
             .from('districts')
             .select('id, name, cities(name)')
@@ -1055,7 +1048,7 @@ async function editVillage(id) {
         
         if (districtsError) throw districtsError;
         
-        // Buat form dialog
+        // Create dialog form
         const dialog = document.createElement('div');
         dialog.className = 'edit-dialog';
         dialog.innerHTML = `
@@ -1088,7 +1081,7 @@ async function editVillage(id) {
         
         document.body.appendChild(dialog);
         
-        // Event listeners untuk dialog
+        // Event listeners for dialog
         document.getElementById('cancelEditVillage').addEventListener('click', () => {
             dialog.remove();
         });
@@ -1105,7 +1098,7 @@ async function editVillage(id) {
             showLoading();
             
             try {
-                // Cek duplikasi
+                // Check for duplicates
                 const { data: existing, error: checkError } = await supabase
                     .from('villages')
                     .select('id')
@@ -1145,7 +1138,6 @@ async function editVillage(id) {
     }
 }
 
-// Fungsi untuk menghapus kelurahan
 async function deleteVillage(id) {
     if (!confirm('Apakah Anda yakin ingin menghapus kelurahan ini?')) return;
     
@@ -1169,33 +1161,7 @@ async function deleteVillage(id) {
     }
 }
 
-
-// ========== FORM EVENT LISTENERS ========== //
-provinceForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    await addProvince();
-});
-
-citiesForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    await addCity();
-});
-
-districtsForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    await addDistrict();
-});
-
-villagesForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    await addVillage();
-});
-
-couriersForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    await addCourier();
-});
-
+// ========== COURIER FUNCTIONS ========== //
 function addCourierActionListeners() {
     // Edit buttons
     document.querySelectorAll('.btn-edit').forEach(btn => {
@@ -1214,7 +1180,6 @@ function addCourierActionListeners() {
     });
 }
 
-// Fungsi untuk menambahkan ekspedisi
 async function addCourier() {
     const name = courierNameInput.value.trim();
     const code = document.getElementById('courierCode').value.trim();
@@ -1234,7 +1199,7 @@ async function addCourier() {
     showLoading();
     
     try {
-        // Cek duplikasi kode ekspedisi
+        // Check for duplicate code
         const { data: existingCode, error: codeError } = await supabase
             .from('couriers')
             .select('id')
@@ -1248,7 +1213,7 @@ async function addCourier() {
             return;
         }
 
-        // Cek duplikasi nama ekspedisi
+        // Check for duplicate name
         const { data: existingName, error: nameError } = await supabase
             .from('couriers')
             .select('id')
@@ -1285,7 +1250,6 @@ async function addCourier() {
     }
 }
 
-// Fungsi untuk memuat data ekspedisi
 async function loadCouriers() {
     try {
         const { data, error } = await supabase
@@ -1322,10 +1286,9 @@ async function loadCouriers() {
     }
 }
 
-
 async function editCourier(id) {
     try {
-        // Ambil data ekspedisi yang akan diedit
+        // Get courier data to edit
         const { data: courierData, error: fetchError } = await supabase
             .from('couriers')
             .select('*')
@@ -1334,7 +1297,7 @@ async function editCourier(id) {
         
         if (fetchError) throw fetchError;
         
-        // Buat form dialog
+        // Create dialog form
         const dialog = document.createElement('div');
         dialog.className = 'edit-dialog';
         dialog.innerHTML = `
@@ -1369,7 +1332,7 @@ async function editCourier(id) {
         
         document.body.appendChild(dialog);
         
-        // Event listeners untuk dialog
+        // Event listeners for dialog
         document.getElementById('cancelEditCourier').addEventListener('click', () => {
             dialog.remove();
         });
@@ -1393,7 +1356,7 @@ async function editCourier(id) {
             showLoading();
             
             try {
-                // Cek duplikasi kode (kecuali untuk data saat ini)
+                // Check for duplicate code (excluding current record)
                 const { data: existingCode, error: codeError } = await supabase
                     .from('couriers')
                     .select('id')
@@ -1408,7 +1371,7 @@ async function editCourier(id) {
                     return;
                 }
 
-                // Cek duplikasi nama (kecuali untuk data saat ini)
+                // Check for duplicate name (excluding current record)
                 const { data: existingName, error: nameError } = await supabase
                     .from('couriers')
                     .select('id')
@@ -1472,130 +1435,7 @@ async function deleteCourier(id) {
     }
 }
 
-// Fungsi helper untuk format mata uang
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0
-    }).format(amount);
-}
-
-// ========== INITIALIZE APP ========== //
-function initApp() {
-    // Set default tab
-    switchTab('dashboard');
-    
-    // Sidebar toggle
-    sidebarToggle.addEventListener('click', toggleSidebar);
-    mobileMenuToggle.addEventListener('click', toggleSidebar);
-    
-    // Close sidebar when clicking outside
-    document.addEventListener('click', (e) => {
-        if (window.innerWidth < 992 && 
-            !e.target.closest('.admin-sidebar') && 
-            !e.target.closest('#mobileMenuToggle')) {
-            adminSidebar.classList.remove('active');
-        }
-    });
-}
-document.addEventListener('DOMContentLoaded', () => {
-    // Load dropdown provinsi ketika menu kota/kab diakses
-    document.querySelector('[data-tab="cities"]').addEventListener('click', loadProvinceDropdown);
-    
-    // Form submission
-    document.getElementById('citiesForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        await addCity();
-    });
-});
-
-document.querySelector('[data-tab="districts"]').addEventListener('click', async () => {
-    await loadCityDropdown();
-    await loadDistricts();
-});
-
-// Event listener untuk tab villages
-document.querySelector('[data-tab="villages"]').addEventListener('click', async () => {
-    await loadDistrictDropdown();
-    await loadVillages();
-});
-
-// Event listener untuk tab couriers
-document.querySelector('[data-tab="couriers"]').addEventListener('click', loadCouriers);
-
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', initApp);
-
-// Tambahkan CSS untuk edit dialog
-const style = document.createElement('style');
-style.textContent = `
-.edit-dialog {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.edit-dialog .dialog-content {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    width: 100%;
-    max-width: 500px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-}
-
-.edit-dialog h3 {
-    margin-bottom: 20px;
-    color: var(--dark);
-}
-
-.edit-dialog .form-group {
-    margin-bottom: 15px;
-}
-
-.edit-dialog .dialog-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
-}
-`;
-document.head.appendChild(style);
-
-// Fungsi untuk mengupdate display_id di semua tabel
-async function updateDisplayIds(tableName) {
-    try {
-        // Dapatkan semua data diurutkan berdasarkan created_at
-        const { data: allData, error: fetchError } = await supabase
-            .from(tableName)
-            .select('*')
-            .order('created_at', { ascending: true });
-        
-        if (fetchError) throw fetchError;
-        
-        // Update display_id secara berurutan
-        const updates = allData.map((item, index) => {
-            return supabase
-                .from(tableName)
-                .update({ display_id: index + 1 })
-                .eq('id', item.id);
-        });
-        
-        await Promise.all(updates);
-    } catch (error) {
-        console.error(`Error updating display_id for ${tableName}:`, error);
-    }
-}
-
-// Load Provinces for Shipping Calculator
+// ========== SHIPPING RATES FUNCTIONS ========== //
 async function loadProvincesForCalculator() {
     try {
         const { data: provinces, error } = await supabase
@@ -1620,7 +1460,6 @@ async function loadProvincesForCalculator() {
     }
 }
 
-// Load Cities based on selected Province
 async function loadCitiesForCalculator(provinceId, targetSelect) {
     try {
         if (!provinceId) {
@@ -1650,7 +1489,6 @@ async function loadCitiesForCalculator(provinceId, targetSelect) {
     }
 }
 
-// Load Courier Services
 async function loadCourierServices() {
     try {
         const { data: couriers, error } = await supabase
@@ -1672,7 +1510,6 @@ async function loadCourierServices() {
     }
 }
 
-// Calculate Shipping Rates
 async function calculateShippingRates() {
     const originCityId = originCitySelect.value;
     const destinationCityId = destinationCitySelect.value;
@@ -1756,7 +1593,6 @@ async function calculateShippingRates() {
     }
 }
 
-// Save Shipping Calculation to History
 async function saveShippingCalculation(
     originCityId, 
     destinationCityId, 
@@ -1790,7 +1626,6 @@ async function saveShippingCalculation(
     }
 }
 
-// Load Shipping History
 async function loadShippingHistory() {
     try {
         const { data: history, error } = await supabase
@@ -1832,7 +1667,6 @@ async function loadShippingHistory() {
     }
 }
 
-// Use History Item
 async function useHistoryItem(historyId) {
     try {
         const { data: historyItem, error } = await supabase
@@ -1886,9 +1720,8 @@ async function useHistoryItem(historyId) {
     }
 }
 
-// Initialize Rates Tab
 function initRatesTab() {
-    if (!window.ratesTabInitialized) {
+    if (!initializedTabs.has('rates')) {
         // Load initial data
         loadProvincesForCalculator();
         loadCourierServices();
@@ -1912,6 +1745,120 @@ function initRatesTab() {
         // Refresh history button
         refreshHistoryBtn.addEventListener('click', loadShippingHistory);
         
-        window.ratesTabInitialized = true;
+        initializedTabs.add('rates');
     }
 }
+
+// ========== INITIALIZE APP ========== //
+function initApp() {
+    // Set default tab
+    switchTab('dashboard');
+    
+    // Sidebar toggle
+    sidebarToggle.addEventListener('click', toggleSidebar);
+    mobileMenuToggle.addEventListener('click', toggleSidebar);
+    
+    // Close sidebar when clicking outside
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth < 992 && 
+            !e.target.closest('.admin-sidebar') && 
+            !e.target.closest('#mobileMenuToggle')) {
+            adminSidebar.classList.remove('active');
+        }
+    });
+    
+    // Add tab switch event listeners
+    navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const tabId = e.currentTarget.dataset.tab;
+            switchTab(tabId);
+        });
+    });
+    
+    // Add form submission listeners
+    if (provinceForm) {
+        provinceForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await addProvince();
+        });
+    }
+    
+    if (citiesForm) {
+        citiesForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await addCity();
+        });
+    }
+    
+    if (districtsForm) {
+        districtsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await addDistrict();
+        });
+    }
+    
+    if (villagesForm) {
+        villagesForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await addVillage();
+        });
+    }
+    
+    if (couriersForm) {
+        couriersForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await addCourier();
+        });
+    }
+    
+    // Add edit dialog styles
+    const style = document.createElement('style');
+    style.textContent = `
+    .edit-dialog {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .edit-dialog .dialog-content {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .edit-dialog h3 {
+        margin-bottom: 20px;
+        color: var(--dark);
+    }
+
+    .edit-dialog .form-group {
+        margin-bottom: 15px;
+    }
+
+    .edit-dialog .dialog-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    `;
+    document.head.appendChild(style);
+}
+
+function toggleSidebar() {
+    adminSidebar.classList.toggle('active');
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', initApp);
