@@ -1486,14 +1486,6 @@ function initApp() {
     // Set default tab
     switchTab('dashboard');
     
-    // Add event listeners for nav items
-    navItems.forEach(item => {
-        // Hapus event listener lama jika ada
-        item.removeEventListener('click', handleNavClick);
-        // Tambahkan event listener baru
-        item.addEventListener('click', handleNavClick);
-    });
-    
     // Sidebar toggle
     sidebarToggle.addEventListener('click', toggleSidebar);
     mobileMenuToggle.addEventListener('click', toggleSidebar);
