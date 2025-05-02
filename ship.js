@@ -51,6 +51,23 @@ const couriersForm = document.getElementById('couriersForm');
 const couriersTable = document.getElementById('couriersTable').getElementsByTagName('tbody')[0];
 
 
+// DOM Elements for Rates
+const shippingCalculatorForm = document.getElementById('shippingCalculatorForm');
+const originProvinceSelect = document.getElementById('originProvince');
+const originCitySelect = document.getElementById('originCity');
+const destinationProvinceSelect = document.getElementById('destinationProvince');
+const destinationCitySelect = document.getElementById('destinationCity');
+const courierServiceSelect = document.getElementById('courierService');
+const packageWeightInput = document.getElementById('packageWeight');
+const shippingResults = document.getElementById('shippingResults');
+const ratesResultsBody = document.getElementById('ratesResultsBody');
+const originSummary = document.getElementById('originSummary');
+const destinationSummary = document.getElementById('destinationSummary');
+const weightSummary = document.getElementById('weightSummary');
+const ratesHistoryTable = document.getElementById('ratesHistoryTable').getElementsByTagName('tbody')[0];
+const refreshHistoryBtn = document.getElementById('refreshHistory');
+
+
 // Page Titles
 const pageTitles = {
     dashboard: 'Dashboard',
@@ -1578,21 +1595,6 @@ async function updateDisplayIds(tableName) {
         console.error(`Error updating display_id for ${tableName}:`, error);
     }
 }
-// DOM Elements for Rates
-const shippingCalculatorForm = document.getElementById('shippingCalculatorForm');
-const originProvinceSelect = document.getElementById('originProvince');
-const originCitySelect = document.getElementById('originCity');
-const destinationProvinceSelect = document.getElementById('destinationProvince');
-const destinationCitySelect = document.getElementById('destinationCity');
-const courierServiceSelect = document.getElementById('courierService');
-const packageWeightInput = document.getElementById('packageWeight');
-const shippingResults = document.getElementById('shippingResults');
-const ratesResultsBody = document.getElementById('ratesResultsBody');
-const originSummary = document.getElementById('originSummary');
-const destinationSummary = document.getElementById('destinationSummary');
-const weightSummary = document.getElementById('weightSummary');
-const ratesHistoryTable = document.getElementById('ratesHistoryTable').getElementsByTagName('tbody')[0];
-const refreshHistoryBtn = document.getElementById('refreshHistory');
 
 // Load Provinces for Shipping Calculator
 async function loadProvincesForCalculator() {
