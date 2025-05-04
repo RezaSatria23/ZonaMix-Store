@@ -147,11 +147,20 @@ function renderProducts() {
                 <h3 class="product-title">${product.name}</h3>
                 <p class="product-description">${product.description}</p>
                 <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
-                <button class="add-to-cart" data-id="${product.id}">
-                    <i class="fas fa-shopping-bag"></i> Tambah ke Keranjang
+                <button class="view-detail" data-id="${product.id}">
+                    <i class="fas fa-eye"></i> Lihat Detail
                 </button>
             </div>
         `;
+        // Di dalam fungsi renderProducts(), perbaiki menjadi:
+        productCard.querySelector('.view-detail').addEventListener('click', () => {
+            const productId = parseInt(productCard.querySelector('.view-detail').getAttribute('data-id'));
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                showProductModal(product);
+            }
+        });
+
         productGrid.appendChild(productCard);
     });
     
@@ -1254,4 +1263,149 @@ function showNotification(message, type = 'success') {
             notification.classList.remove('show', 'animate__fadeOutDown');
         }, 500);
     }, 5000);
+}
+
+// Inisialisasi Banner Slider
+let currentSlide = 0;
+const slides = document.querySelectorAll('.banner-slide');
+const dotsContainer = document.querySelector('.banner-dots');
+
+// Buat dots untuk banner
+slides.forEach((_, index) => {
+    const dot = document.createElement('div');
+    dot.classList.add('banner-dot');
+    if (index === 0) dot.classList.add('active');
+    dot.addEventListener('click', () => {
+        goToSlide(index);
+    });
+    dotsContainer.appendChild(dot);
+});
+
+const dots = document.querySelectorAll('.banner-dot');
+
+function goToSlide(index) {
+    slides[currentSlide].classList.remove('active');
+    dots[currentSlide].classList.remove('active');
+    
+    currentSlide = (index + slides.length) % slides.length;
+    
+    slides[currentSlide].classList.add('active');
+    dots[currentSlide].classList.add('active');
+}
+
+// Navigasi banner
+document.querySelector('.banner-prev').addEventListener('click', () => {
+    goToSlide(currentSlide - 1);
+});
+
+document.querySelector('.banner-next').addEventListener('click', () => {
+    goToSlide(currentSlide + 1);
+});
+
+// Auto slide banner
+let slideInterval = setInterval(() => {
+    goToSlide(currentSlide + 1);
+}, 5000);
+
+// Hentikan auto slide saat hover
+const banner = document.querySelector('.hero-banner');
+banner.addEventListener('mouseenter', () => {
+    clearInterval(slideInterval);
+});
+
+banner.addEventListener('mouseleave', () => {
+    slideInterval = setInterval(() => {
+        goToSlide(currentSlide + 1);
+    }, 5000);
+});
+
+// Fungsi untuk menampilkan modal produk
+function showProductModal(product) {
+    const modal = document.getElementById('product-modal');
+    
+    // Isi data produk ke modal
+    document.getElementById('modal-product-image').src = product.image_url || 'https://via.placeholder.com/500';
+    document.getElementById('modal-product-image').alt = product.name;
+    document.getElementById('modal-product-title').textContent = product.name;
+    document.getElementById('modal-product-category').textContent = product.category;
+    document.getElementById('modal-product-price').textContent = `Rp ${product.price.toLocaleString('id-ID')}`;
+    document.getElementById('modal-product-description').textContent = product.description;
+    
+    // Isi spesifikasi produk (diasumsikan ada field specs di database)
+    const specsList = document.getElementById('modal-product-specs');
+    specsList.innerHTML = '';
+    
+    // Jika tidak ada spesifikasi, tampilkan pesan default
+    if (!product.specs || product.specs.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'Tidak ada spesifikasi tambahan';
+        specsList.appendChild(li);
+    } else {
+        product.specs.forEach(spec => {
+            const li = document.createElement('li');
+            li.textContent = spec;
+            specsList.appendChild(li);
+        });
+    }
+    
+    // Set badge produk berdasarkan type
+    const badge = document.getElementById('modal-product-badge');
+    badge.textContent = product.type === 'fisik' ? 'Produk Fisik' : 'Produk Digital';
+    badge.style.display = 'block';
+    
+    // Set WhatsApp button
+    const whatsappBtn = document.getElementById('whatsapp-contact');
+    const whatsappNumber = document.getElementById('whatsapp-number');
+    whatsappNumber.textContent = formatPhoneNumber(whatsappNumber); // Gunakan nomor default dari variabel
+    
+    const message = `Halo, saya tertarik dengan produk ${product.name} (ID: ${product.id}) di Luxury Store. Bisa dibantu?`;
+    whatsappBtn.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+    
+    // Tambahkan event listener untuk tombol tambah ke keranjang
+    const addToCartBtn = document.getElementById('modal-add-to-cart');
+    addToCartBtn.setAttribute('data-id', product.id);
+    addToCartBtn.onclick = function() {
+        addToCart(product.id);
+        showNotification(`${product.name} ditambahkan ke keranjang`, 'success');
+        closeModal(modal);
+    };
+    
+    // Kontrol kuantitas
+    const minusBtn = modal.querySelector('.quantity-btn.minus');
+    const plusBtn = modal.querySelector('.quantity-btn.plus');
+    const quantityInput = modal.querySelector('.quantity-value');
+    
+    minusBtn.addEventListener('click', () => {
+        let value = parseInt(quantityInput.value);
+        if (value > 1) {
+            quantityInput.value = value - 1;
+        }
+    });
+    
+    plusBtn.addEventListener('click', () => {
+        let value = parseInt(quantityInput.value);
+        quantityInput.value = value + 1;
+    });
+    
+    // Tampilkan modal
+    openModal(modal);
+}
+
+function formatPhoneNumber(number) {
+    // Hilangkan semua karakter non-digit
+    const cleaned = ('' + number).replace(/\D/g, '');
+    
+    // Cek jika nomor dimulai dengan 0
+    if (cleaned.startsWith('0')) {
+        return cleaned.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+    }
+    // Cek jika nomor dimulai dengan 62
+    else if (cleaned.startsWith('62')) {
+        const localNumber = cleaned.substring(2);
+        return '0' + localNumber.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+    }
+    // Format internasional
+    else {
+        return '+' + cleaned.replace(/(\d{1,3})(\d{3})(\d{3})(\d{4})/, '$1 $2 $3 $4');
+    }
 }
