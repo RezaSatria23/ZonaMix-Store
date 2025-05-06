@@ -86,6 +86,14 @@ body {
     letter-spacing: 2px;
 }
 
+.loader-logo .logoname {
+    font-family: var(--font-heading);
+    font-size: 24px;
+    color: var(--secondary);
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
