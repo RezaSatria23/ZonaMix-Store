@@ -1152,7 +1152,6 @@ function setupAddressFormListeners() {
     const postalCodeInput = document.getElementById('postal_code');
     
     if (!provinceSelect || !regencySelect || !districtSelect || !villageSelect || !postalCodeInput) {
-        console.error('Elemen form alamat tidak ditemukan');
         return;
     }
     
