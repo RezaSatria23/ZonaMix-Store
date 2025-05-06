@@ -28,11 +28,9 @@ async function initializeApp() {
 document.addEventListener('DOMContentLoaded', () => {
     loadProductsFromSupabase();
     setupEventListeners();
-    setupProductModalListeners();
     setupCartEventListeners(); 
     updateCartCount();
     renderCartItems();
-    initProductViewButtons();
     
     // Animasi preloader
     setTimeout(() => {
@@ -43,19 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
             onComplete: () => preloader.style.display = 'none'
         });
     }, 1500);
-
-    
-    // Tutup modal ketika klik close
-    document.querySelector('.close-modal').addEventListener('click', () => {
-        document.getElementById('product-modal').style.display = 'none';
-    });
-    
-    // Tutup modal ketika klik di luar
-    window.addEventListener('click', (e) => {
-        if (e.target === document.getElementById('product-modal')) {
-            document.getElementById('product-modal').style.display = 'none';
-        }
-    });
 });
 // Panggil inisialisasi saat DOM siap
 document.addEventListener('DOMContentLoaded', () => {
@@ -162,8 +147,19 @@ function renderProducts() {
                 <h3 class="product-title">${product.name}</h3>
                 <p class="product-description">${product.description}</p>
                 <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
+                <button class="view-detail" data-id="${product.id}">
+                    <i class="fas fa-eye"></i> Lihat Detail
+                </button>
             </div>
         `;
+        // Di dalam fungsi renderProducts(), perbaiki menjadi:
+        productCard.querySelector('.view-detail').addEventListener('click', () => {
+            const productId = parseInt(productCard.querySelector('.view-detail').getAttribute('data-id'));
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                showProductModal(product);
+            }
+        });
 
         productGrid.appendChild(productCard);
     });
@@ -1324,69 +1320,76 @@ banner.addEventListener('mouseleave', () => {
 });
 
 // Fungsi untuk menampilkan modal produk
-async function showProductModal(productId) {
+function showProductModal(product) {
     const modal = document.getElementById('product-modal');
-    const details = await loadProductDetails(productId);
     
-    if (!details) {
-        showNotification('Gagal memuat detail produk', 'error');
-        return;
-    }
-
-    // Isi data utama
-    document.getElementById('modal-product-title').textContent = details.product.name;
-    document.getElementById('modal-product-category').textContent = details.product.category;
-    document.getElementById('modal-product-price').textContent = formatCurrency(details.product.price);
-    document.getElementById('modal-product-description').textContent = details.product.description;
+    // Isi data produk ke modal
+    document.getElementById('modal-product-image').src = product.image_url || 'https://via.placeholder.com/500';
+    document.getElementById('modal-product-image').alt = product.name;
+    document.getElementById('modal-product-title').textContent = product.name;
+    document.getElementById('modal-product-category').textContent = product.category;
+    document.getElementById('modal-product-price').textContent = `Rp ${product.price.toLocaleString('id-ID')}`;
+    document.getElementById('modal-product-description').textContent = product.description;
     
-    // Isi gambar produk
-    const primaryImage = details.images.find(img => img.is_primary) || details.images[0];
-    document.getElementById('modal-product-image').src = primaryImage?.image_url || 'placeholder.jpg';
-    
-    // Isi spesifikasi produk
+    // Isi spesifikasi produk (diasumsikan ada field specs di database)
     const specsList = document.getElementById('modal-product-specs');
     specsList.innerHTML = '';
-    details.specs.forEach(spec => {
-        const li = document.createElement('li');
-        li.innerHTML = `<strong>${spec.spec_name}:</strong> ${spec.spec_value}`;
-        specsList.appendChild(li);
-    });
     
-    // Isi badge produk jika ada
-    const badgeEl = document.getElementById('modal-product-badge');
-    if (details.product.is_new) {
-        badgeEl.textContent = 'Baru';
-        badgeEl.style.display = 'block';
-    } else if (details.product.discount > 0) {
-        badgeEl.textContent = `${details.product.discount}% OFF`;
-        badgeEl.style.display = 'block';
+    // Jika tidak ada spesifikasi, tampilkan pesan default
+    if (!product.specs || product.specs.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'Tidak ada spesifikasi tambahan';
+        specsList.appendChild(li);
     } else {
-        badgeEl.style.display = 'none';
+        product.specs.forEach(spec => {
+            const li = document.createElement('li');
+            li.textContent = spec;
+            specsList.appendChild(li);
+        });
     }
     
-    // Update tombol WhatsApp
-    const whatsappBtn = document.getElementById('whatsapp-contact');
-    whatsappBtn.href = `https://wa.me/6281234567890?text=Saya%20tertarik%20dengan%20produk%20${encodeURIComponent(details.product.name)}`;
+    // Set badge produk berdasarkan type
+    const badge = document.getElementById('modal-product-badge');
+    badge.textContent = product.type === 'fisik' ? 'Produk Fisik' : 'Produk Digital';
+    badge.style.display = 'block';
     
-    // Tampilkan modal
-    modal.style.display = 'block';
+    // Set WhatsApp button
+    const whatsappBtn = document.getElementById('whatsapp-contact');
+    const whatsappNumber = document.getElementById('whatsapp-number');
+    whatsappNumber.textContent = formatPhoneNumber(whatsappNumber); // Gunakan nomor default dari variabel
+    
+    const message = `Halo, saya tertarik dengan produk ${product.name} (ID: ${product.id}) di Luxury Store. Bisa dibantu?`;
+    whatsappBtn.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
     
     // Tambahkan event listener untuk tombol tambah ke keranjang
-    document.getElementById('modal-add-to-cart').onclick = () => {
-        const quantity = parseInt(document.querySelector('.quantity-value').value);
-        addToCart(productId, quantity);
-        modal.style.display = 'none';
+    const addToCartBtn = document.getElementById('modal-add-to-cart');
+    addToCartBtn.setAttribute('data-id', product.id);
+    addToCartBtn.onclick = function() {
+        addToCart(product.id);
+        showNotification(`${product.name} ditambahkan ke keranjang`, 'success');
+        closeModal(modal);
     };
-
-    const reviewTab = document.querySelector('.product-tab[data-tab="reviews"]');
-    if (reviewTab) {
-        reviewTab.dataset.productId = productId;
-    }
     
-    // Update review count
-    updateReviewCount(details.reviews.length);
+    // Kontrol kuantitas
+    const minusBtn = modal.querySelector('.quantity-btn.minus');
+    const plusBtn = modal.querySelector('.quantity-btn.plus');
+    const quantityInput = modal.querySelector('.quantity-value');
+    
+    minusBtn.addEventListener('click', () => {
+        let value = parseInt(quantityInput.value);
+        if (value > 1) {
+            quantityInput.value = value - 1;
+        }
+    });
+    
+    plusBtn.addEventListener('click', () => {
+        let value = parseInt(quantityInput.value);
+        quantityInput.value = value + 1;
+    });
+    
+    // Tampilkan modal
+    openModal(modal);
 }
-
 
 function formatPhoneNumber(number) {
     // Hilangkan semua karakter non-digit
@@ -1405,79 +1408,4 @@ function formatPhoneNumber(number) {
     else {
         return '+' + cleaned.replace(/(\d{1,3})(\d{3})(\d{3})(\d{4})/, '$1 $2 $3 $4');
     }
-}
-// Show product modal when clicking "View Detail"
-function setupProductModalListeners() {
-    // Event delegation for product cards and view buttons
-    document.addEventListener('click', function(e) {
-        // Check if clicked element is a product card or view detail button
-        const productCard = e.target.closest('.product-card');
-        const viewDetailBtn = e.target.closest('.view-detail');
-        
-        if (productCard || viewDetailBtn) {
-            e.preventDefault();
-            const productId = (productCard || viewDetailBtn).dataset.id;
-            showProductModal(productId);
-        }
-    });
-}
-// Fungsi untuk memuat detail produk
-async function loadProductDetails(productId) {
-    try {
-        // Ambil data produk utama
-        const { data: product, error: productError } = await supabase
-            .from('products')
-            .select('*')
-            .eq('id', productId)
-            .single();
-
-        if (productError) throw productError;
-
-        // Ambil spesifikasi produk
-        const { data: specs, error: specsError } = await supabase
-            .from('product_specs')
-            .select('*')
-            .eq('product_id', productId);
-
-        if (specsError) throw specsError;
-
-        // Ambil gambar produk
-        const { data: images, error: imagesError } = await supabase
-            .from('product_images')
-            .select('*')
-            .eq('product_id', productId)
-            .order('is_primary', { ascending: false });
-
-        if (imagesError) throw imagesError;
-
-        // Ambil ulasan produk
-        const { data: reviews, error: reviewsError } = await supabase
-            .from('product_reviews')
-            .select('*, user_id(username, avatar_url)')
-            .eq('product_id', productId)
-            .order('created_at', { ascending: false });
-
-        if (reviewsError) throw reviewsError;
-
-        return {
-            product,
-            specs,
-            images,
-            reviews
-        };
-    } catch (error) {
-        console.error('Error loading product details:', error);
-        return null;
-    }
-}
-
-// Fungsi untuk inisialisasi event listener produk
-function initProductViewButtons() {
-    document.querySelectorAll('.view-detail').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const productId = e.currentTarget.dataset.id;
-            showProductModal(productId);
-        });
-    });
 }
