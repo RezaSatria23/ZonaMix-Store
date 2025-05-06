@@ -802,19 +802,10 @@ function showQuickView(productId) {
 }
 // Konfigurasi API
 const WILAYAH_API = "https://www.emsifa.com/api-wilayah-indonesia/api";
-const RAJAONGKIR_API = "https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost";
-const RAJAONGKIR_KEY = "UYAVNGwHd0aca6b1808c712ctUAix4js"; // Ganti dengan API key RajaOngkir Anda
-const SHOP_ORIGIN_CITY_ID = "249"; // ID kota asal pengiriman (contoh: Jakarta)
 
 // Fungsi untuk memuat provinsi
 async function loadProvinces() {
     const provinceSelect = document.getElementById('province');
-    
-    // Pastikan elemen ada
-    if (!provinceSelect) {
-        console.error('Elemen province tidak ditemukan');
-        return;
-    }
     
     try {
         provinceSelect.innerHTML = '<option value="">Memuat provinsi...</option>';
@@ -1156,12 +1147,7 @@ function setupAddressFormListeners() {
     const districtSelect = document.getElementById('district');
     const villageSelect = document.getElementById('village');
     const postalCodeInput = document.getElementById('postal_code');
-    
-    if (!provinceSelect || !regencySelect || !districtSelect || !villageSelect || !postalCodeInput) {
-        console.error('Elemen form alamat tidak ditemukan');
-        return;
-    }
-    
+
      // Provinsi
      provinceSelect.addEventListener('change', function() {
         if (this.value) {
