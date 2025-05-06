@@ -113,7 +113,6 @@
         </div>
     </main>
 
-    <!-- Modal Produk Baru -->
     <div class="modal" id="product-modal">
         <div class="modal-content product-modal-content">
             <span class="close-modal">&times;</span>
@@ -121,7 +120,13 @@
                 <div class="product-modal-image">
                     <img id="modal-product-image" src="" alt="">
                     <div class="product-badge" id="modal-product-badge">New</div>
+                    
+                    <!-- Product Gallery -->
+                    <div class="product-gallery" id="product-gallery">
+                        <!-- Thumbnails will be added here by JavaScript -->
+                    </div>
                 </div>
+                
                 <div class="product-modal-details">
                     <h2 id="modal-product-title">Nama Produk</h2>
                     <div class="product-meta">
@@ -129,16 +134,27 @@
                         <span class="product-price" id="modal-product-price">Rp 0</span>
                     </div>
                     
-                    <div class="product-specs">
-                        <h3>Spesifikasi Produk</h3>
-                        <ul id="modal-product-specs">
-                            <!-- Spesifikasi akan diisi oleh JavaScript -->
-                        </ul>
+                    <!-- Product Tabs -->
+                    <div class="product-tabs">
+                        <div class="product-tab active" data-tab="specs">Spesifikasi</div>
+                        <div class="product-tab" data-tab="reviews">Ulasan (0)</div>
                     </div>
                     
-                    <div class="product-description">
-                        <h3>Deskripsi Lengkap</h3>
-                        <p id="modal-product-description">Deskripsi produk akan muncul disini...</p>
+                    <!-- Specs Tab -->
+                    <div class="product-tab-content active" id="specs-tab">
+                        <div class="product-specs">
+                            <ul id="modal-product-specs">
+                                <!-- Spesifikasi akan diisi oleh JavaScript -->
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Reviews Tab -->
+                    <div class="product-tab-content" id="reviews-tab">
+                        <div id="product-reviews">
+                            <!-- Reviews will be loaded here -->
+                            <div class="no-reviews">Belum ada ulasan untuk produk ini</div>
+                        </div>
                     </div>
                     
                     <div class="product-actions">

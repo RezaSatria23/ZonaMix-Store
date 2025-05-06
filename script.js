@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupCartEventListeners(); 
     updateCartCount();
     renderCartItems();
+    initProductViewButtons();
     
     // Animasi preloader
     setTimeout(() => {
@@ -42,6 +43,19 @@ document.addEventListener('DOMContentLoaded', () => {
             onComplete: () => preloader.style.display = 'none'
         });
     }, 1500);
+
+    
+    // Tutup modal ketika klik close
+    document.querySelector('.close-modal').addEventListener('click', () => {
+        document.getElementById('product-modal').style.display = 'none';
+    });
+    
+    // Tutup modal ketika klik di luar
+    window.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('product-modal')) {
+            document.getElementById('product-modal').style.display = 'none';
+        }
+    });
 });
 // Panggil inisialisasi saat DOM siap
 document.addEventListener('DOMContentLoaded', () => {
@@ -1321,68 +1335,61 @@ banner.addEventListener('mouseleave', () => {
 });
 
 // Fungsi untuk menampilkan modal produk
-function showProductModal(product) {
-    try {
-        // Populate modal with product data
-        document.getElementById('modal-product-image').src = product.image_url || 'images/placeholder.jpg';
-        document.getElementById('modal-product-image').alt = product.name;
-        document.getElementById('modal-product-title').textContent = product.name;
-        document.getElementById('modal-product-category').textContent = product.category;
-        document.getElementById('modal-product-price').textContent = formatCurrency(product.price);
-        document.getElementById('modal-product-description').textContent = product.description || 'No description available';
-
-        // Handle product badge
-        const badgeElement = document.getElementById('modal-product-badge');
-        if (product.is_new) {
-            badgeElement.textContent = 'New';
-            badgeElement.style.display = 'block';
-        } else if (product.is_best_seller) {
-            badgeElement.textContent = 'Best Seller';
-            badgeElement.style.display = 'block';
-        } else {
-            badgeElement.style.display = 'none';
-        }
-
-        // Handle product specs
-        const specsList = document.getElementById('modal-product-specs');
-        specsList.innerHTML = '';
-        if (product.specifications) {
-            try {
-                const specs = JSON.parse(product.specifications);
-                for (const [key, value] of Object.entries(specs)) {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<strong>${key}:</strong> ${value}`;
-                    specsList.appendChild(li);
-                }
-            } catch (e) {
-                specsList.innerHTML = '<li>No specifications available</li>';
-            }
-        } else {
-            specsList.innerHTML = '<li>No specifications available</li>';
-        }
-
-        // Set WhatsApp link
-        const whatsappNumber = '6281234567890'; // Replace with your number
-        const whatsappMessage = `Halo, saya tertarik dengan produk ${product.name} (${formatCurrency(product.price)})`;
-        document.getElementById('whatsapp-contact').href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
-        document.getElementById('whatsapp-number').textContent = whatsappNumber;
-
-        // Set up add to cart button
-        const addToCartBtn = document.getElementById('modal-add-to-cart');
-        addToCartBtn.onclick = function() {
-            const quantity = parseInt(document.querySelector('.quantity-value').value);
-            addToCart(product.id, quantity);
-            closeModal('product-modal');
-        };
-
-        // Open the modal
-        openModal('product-modal');
-
-    } catch (error) {
-        console.error('Error showing product modal:', error);
-        showNotification('Failed to load product details', 'error');
+async function showProductModal(productId) {
+    const modal = document.getElementById('product-modal');
+    const details = await loadProductDetails(productId);
+    
+    if (!details) {
+        showNotification('Gagal memuat detail produk', 'error');
+        return;
     }
+
+    // Isi data utama
+    document.getElementById('modal-product-title').textContent = details.product.name;
+    document.getElementById('modal-product-category').textContent = details.product.category;
+    document.getElementById('modal-product-price').textContent = formatCurrency(details.product.price);
+    document.getElementById('modal-product-description').textContent = details.product.description;
+    
+    // Isi gambar produk
+    const primaryImage = details.images.find(img => img.is_primary) || details.images[0];
+    document.getElementById('modal-product-image').src = primaryImage?.image_url || 'placeholder.jpg';
+    
+    // Isi spesifikasi produk
+    const specsList = document.getElementById('modal-product-specs');
+    specsList.innerHTML = '';
+    details.specs.forEach(spec => {
+        const li = document.createElement('li');
+        li.innerHTML = `<strong>${spec.spec_name}:</strong> ${spec.spec_value}`;
+        specsList.appendChild(li);
+    });
+    
+    // Isi badge produk jika ada
+    const badgeEl = document.getElementById('modal-product-badge');
+    if (details.product.is_new) {
+        badgeEl.textContent = 'Baru';
+        badgeEl.style.display = 'block';
+    } else if (details.product.discount > 0) {
+        badgeEl.textContent = `${details.product.discount}% OFF`;
+        badgeEl.style.display = 'block';
+    } else {
+        badgeEl.style.display = 'none';
+    }
+    
+    // Update tombol WhatsApp
+    const whatsappBtn = document.getElementById('whatsapp-contact');
+    whatsappBtn.href = `https://wa.me/6281234567890?text=Saya%20tertarik%20dengan%20produk%20${encodeURIComponent(details.product.name)}`;
+    
+    // Tampilkan modal
+    modal.style.display = 'block';
+    
+    // Tambahkan event listener untuk tombol tambah ke keranjang
+    document.getElementById('modal-add-to-cart').onclick = () => {
+        const quantity = parseInt(document.querySelector('.quantity-value').value);
+        addToCart(productId, quantity);
+        modal.style.display = 'none';
+    };
 }
+
 
 function formatPhoneNumber(number) {
     // Hilangkan semua karakter non-digit
@@ -1415,5 +1422,65 @@ function setupProductModalListeners() {
             const productId = (productCard || viewDetailBtn).dataset.id;
             showProductModal(productId);
         }
+    });
+}
+// Fungsi untuk memuat detail produk
+async function loadProductDetails(productId) {
+    try {
+        // Ambil data produk utama
+        const { data: product, error: productError } = await supabase
+            .from('products')
+            .select('*')
+            .eq('id', productId)
+            .single();
+
+        if (productError) throw productError;
+
+        // Ambil spesifikasi produk
+        const { data: specs, error: specsError } = await supabase
+            .from('product_specs')
+            .select('*')
+            .eq('product_id', productId);
+
+        if (specsError) throw specsError;
+
+        // Ambil gambar produk
+        const { data: images, error: imagesError } = await supabase
+            .from('product_images')
+            .select('*')
+            .eq('product_id', productId)
+            .order('is_primary', { ascending: false });
+
+        if (imagesError) throw imagesError;
+
+        // Ambil ulasan produk
+        const { data: reviews, error: reviewsError } = await supabase
+            .from('product_reviews')
+            .select('*, user_id(username, avatar_url)')
+            .eq('product_id', productId)
+            .order('created_at', { ascending: false });
+
+        if (reviewsError) throw reviewsError;
+
+        return {
+            product,
+            specs,
+            images,
+            reviews
+        };
+    } catch (error) {
+        console.error('Error loading product details:', error);
+        return null;
+    }
+}
+
+// Fungsi untuk inisialisasi event listener produk
+function initProductViewButtons() {
+    document.querySelectorAll('.view-detail').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const productId = e.currentTarget.dataset.id;
+            showProductModal(productId);
+        });
     });
 }
