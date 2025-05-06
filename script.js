@@ -825,9 +825,6 @@ async function loadProvinces() {
         
     } catch (error) {
         console.error("Error:", error);
-        if (provinceSelect) {
-            provinceSelect.innerHTML = '<option value="">Gagal memuat provinsi</option>';
-        }
         showNotification('Gagal memuat daftar provinsi', 'error');
     }
 }
