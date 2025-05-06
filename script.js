@@ -162,9 +162,6 @@ function renderProducts() {
                 <h3 class="product-title">${product.name}</h3>
                 <p class="product-description">${product.description}</p>
                 <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
-                <button class="view-detail" data-id="${product.id}">
-                    <i class="fas fa-eye"></i> Lihat Detail
-                </button>
             </div>
         `;
         // Di dalam fungsi renderProducts(), perbaiki menjadi:
