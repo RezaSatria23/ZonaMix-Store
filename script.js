@@ -807,6 +807,11 @@ const WILAYAH_API = "https://www.emsifa.com/api-wilayah-indonesia/api";
 async function loadProvinces() {
     const provinceSelect = document.getElementById('province');
     
+    // Pastikan elemen ada
+    if (!provinceSelect) {
+        return;
+    }
+    
     try {
         provinceSelect.innerHTML = '<option value="">Memuat provinsi...</option>';
         
@@ -825,6 +830,7 @@ async function loadProvinces() {
         
     } catch (error) {
         console.error("Error:", error);
+        
         showNotification('Gagal memuat daftar provinsi', 'error');
     }
 }
