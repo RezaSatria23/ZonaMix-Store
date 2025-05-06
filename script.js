@@ -164,15 +164,6 @@ function renderProducts() {
                 <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
             </div>
         `;
-        // Di dalam fungsi renderProducts(), perbaiki menjadi:
-        productCard.querySelector('.view-detail').addEventListener('click', () => {
-            const productId = parseInt(productCard.querySelector('.view-detail').getAttribute('data-id'));
-            const product = products.find(p => p.id === productId);
-            if (product) {
-                showProductModal(product);
-            }
-        });
-
         productGrid.appendChild(productCard);
     });
     
