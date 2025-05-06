@@ -135,7 +135,7 @@ function renderProducts() {
                 `<div class="product-badge animate__animated animate__pulse animate__infinite">Fisik</div>` : 
                 `<div class="product-badge animate__animated animate__pulse animate__infinite">Digital</div>`}
             <div class="product-image-container">
-                <img src="${product.image_url}" alt="${product.name}" class="product-image" loading="lazy">
+                <img src="${product.image_url}" alt="${product.name}" class="product-image" loading="lazy" width="300" height="300">
                 <div class="product-overlay">
                     <button class="quick-view" data-id="${product.id}">
                         <i class="fas fa-eye"></i> Quick View
@@ -420,7 +420,7 @@ function renderCartItems() {
         cartItemEl.className = 'cart-item animate__animated animate__fadeIn';
         cartItemEl.dataset.id = item.id;
         cartItemEl.innerHTML = `
-            <img src="${item.image_url}" alt="${item.name}" class="cart-item-image" loading="lazy">
+            <img src="${item.image_url}" alt="${item.name}" class="cart-item-image" loading="lazy" width="300" height="300">
             <div class="cart-item-details">
                 <div class="cart-item-title">${item.name}</div>
                 <div class="cart-item-category">${item.category.toUpperCase()}</div>
@@ -751,7 +751,7 @@ function showQuickView(productId) {
         <div class="quick-view-content animate__animated animate__fadeInUp">
             <span class="close-quick-view">&times;</span>
             <div class="quick-view-image">
-                <img src="${product.image_url}" alt="${product.name}" loading="lazy">
+                <img src="${product.image_url}" alt="${product.name}" loading="lazy" width="300" height="300">
             </div>
             <div class="quick-view-details">
                 <h3>${product.name}</h3>
