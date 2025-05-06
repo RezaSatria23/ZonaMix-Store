@@ -807,12 +807,6 @@ const WILAYAH_API = "https://www.emsifa.com/api-wilayah-indonesia/api";
 async function loadProvinces() {
     const provinceSelect = document.getElementById('province');
     
-    // Pastikan elemen ada
-    if (!provinceSelect) {
-        console.error('Elemen province tidak ditemukan');
-        return;
-    }
-    
     try {
         provinceSelect.innerHTML = '<option value="">Memuat provinsi...</option>';
         
