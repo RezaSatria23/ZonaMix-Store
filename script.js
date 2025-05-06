@@ -28,7 +28,7 @@ async function initializeApp() {
 document.addEventListener('DOMContentLoaded', () => {
     loadProductsFromSupabase();
     setupEventListeners();
-    setupProductModalListeners
+    setupProductModalListeners();
     setupCartEventListeners(); 
     updateCartCount();
     renderCartItems();
