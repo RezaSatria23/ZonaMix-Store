@@ -807,6 +807,12 @@ const WILAYAH_API = "https://www.emsifa.com/api-wilayah-indonesia/api";
 async function loadProvinces() {
     const provinceSelect = document.getElementById('province');
     
+    // Pastikan elemen ada
+    if (!provinceSelect) {
+        console.error('Elemen province tidak ditemukan');
+        return;
+    }
+    
     try {
         provinceSelect.innerHTML = '<option value="">Memuat provinsi...</option>';
         
@@ -1149,7 +1155,7 @@ function setupAddressFormListeners() {
     const postalCodeInput = document.getElementById('postal_code');
     
     if (!provinceSelect || !regencySelect || !districtSelect || !villageSelect || !postalCodeInput) {
-        console.error('Salah satu elemen tidak ditemukan: province, regency, district, village, postal_code');
+        console.error('Elemen form alamat tidak ditemukan');
         return;
     }
     
