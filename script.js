@@ -164,6 +164,7 @@ function renderProducts() {
                 <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
             </div>
         `;
+
         productGrid.appendChild(productCard);
     });
     
@@ -1376,6 +1377,14 @@ async function showProductModal(productId) {
         addToCart(productId, quantity);
         modal.style.display = 'none';
     };
+
+    const reviewTab = document.querySelector('.product-tab[data-tab="reviews"]');
+    if (reviewTab) {
+        reviewTab.dataset.productId = productId;
+    }
+    
+    // Update review count
+    updateReviewCount(details.reviews.length);
 }
 
 
