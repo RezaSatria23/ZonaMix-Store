@@ -1402,3 +1402,112 @@ function formatPhoneNumber(number) {
         return '+' + cleaned.replace(/(\d{1,3})(\d{3})(\d{3})(\d{4})/, '$1 $2 $3 $4');
     }
 }
+// Fungsi untuk menampilkan modal detail produk
+function showProductDetail(productId) {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    
+    const modal = document.getElementById('detail-modal');
+    
+    // Isi data produk ke modal
+    document.getElementById('detail-product-image').src = product.image_url || 'img/default-product.jpg';
+    document.getElementById('detail-product-image').alt = product.name;
+    document.getElementById('detail-product-title').textContent = product.name;
+    document.getElementById('detail-product-brand').textContent = product.brand || 'Zona Mix Store';
+    document.getElementById('detail-product-brand-text').textContent = product.brand || 'Zona Mix Store';
+    document.getElementById('detail-product-material').textContent = product.material || 'Premium Material';
+    document.getElementById('detail-product-material-text').textContent = product.material || 'Premium Material';
+    document.getElementById('detail-product-category').textContent = product.category;
+    document.getElementById('detail-product-price').textContent = `Rp ${product.price.toLocaleString('id-ID')}`;
+    document.getElementById('detail-product-description').textContent = product.description;
+    document.getElementById('detail-product-weight').textContent = product.weight ? `${product.weight} gram` : '500 gram';
+    
+    // Jika ada harga asli dan diskon
+    if (product.original_price && product.original_price > product.price) {
+        document.getElementById('detail-original-price').textContent = `Rp ${product.original_price.toLocaleString('id-ID')}`;
+        const discount = Math.round((1 - product.price / product.original_price) * 100);
+        document.getElementById('detail-discount').textContent = `${discount}% OFF`;
+    } else {
+        document.getElementById('detail-original-price').textContent = '';
+        document.getElementById('detail-discount').textContent = '';
+    }
+    
+    // Set WhatsApp button
+    const whatsappBtn = document.getElementById('detail-whatsapp-btn');
+    const message = `Halo, saya tertarik dengan produk *${product.name}* (ID: ${product.id}) di Zona Mix Store. Bisa dibantu?`;
+    whatsappBtn.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+    
+    // Tambahkan event listener untuk tombol tambah ke keranjang
+    const addToCartBtn = document.getElementById('detail-add-to-cart');
+    addToCartBtn.setAttribute('data-id', product.id);
+    addToCartBtn.onclick = function() {
+        const quantity = parseInt(document.querySelector('#detail-modal .quantity-value').value);
+        addToCartWithQuantity(product.id, quantity);
+        showNotification(`${product.name} ditambahkan ke keranjang`, 'success');
+        closeModal(modal);
+    };
+    
+    // Kontrol kuantitas
+    const minusBtn = modal.querySelector('.quantity-btn.minus');
+    const plusBtn = modal.querySelector('.quantity-btn.plus');
+    const quantityInput = modal.querySelector('.quantity-value');
+    
+    minusBtn.addEventListener('click', () => {
+        let value = parseInt(quantityInput.value);
+        if (value > 1) {
+            quantityInput.value = value - 1;
+        }
+    });
+    
+    plusBtn.addEventListener('click', () => {
+        let value = parseInt(quantityInput.value);
+        quantityInput.value = value + 1;
+    });
+    
+    // Tab system
+    const tabBtns = modal.querySelectorAll('.tab-btn');
+    const tabPanes = modal.querySelectorAll('.tab-pane');
+    
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.getAttribute('data-tab');
+            
+            // Update active tab button
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Update active tab pane
+            tabPanes.forEach(pane => pane.classList.remove('active'));
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+        });
+    });
+    
+    // Rating stars
+    const stars = modal.querySelectorAll('.rating-input .stars i');
+    stars.forEach(star => {
+        star.addEventListener('click', function() {
+            const rating = parseInt(this.getAttribute('data-rating'));
+            
+            // Update stars display
+            stars.forEach((s, index) => {
+                if (index < rating) {
+                    s.classList.remove('far');
+                    s.classList.add('fas');
+                } else {
+                    s.classList.remove('fas');
+                    s.classList.add('far');
+                }
+            });
+        });
+    });
+    
+    // Tampilkan modal
+    openModal(modal);
+}
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('view-detail') || e.target.closest('.view-detail')) {
+        const button = e.target.classList.contains('view-detail') ? e.target : e.target.closest('.view-detail');
+        const productId = parseInt(button.getAttribute('data-id'));
+        showProductDetail(productId);
+    }
+});

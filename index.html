@@ -110,32 +110,69 @@
         </div>
     </main>
 
-    <!-- Modal Produk Baru -->
-    <div class="modal" id="product-modal">
-        <div class="modal-content product-modal-content">
+    <!-- Modal Detail Produk -->
+    <div class="modal" id="detail-modal">
+        <div class="modal-content product-detail-content">
             <span class="close-modal">&times;</span>
-            <div class="product-modal-container">
-                <div class="product-modal-image">
-                    <img id="modal-product-image" src="" alt="">
-                    <div class="product-badge" id="modal-product-badge">New</div>
-                </div>
-                <div class="product-modal-details">
-                    <h2 id="modal-product-title">Nama Produk</h2>
-                    <div class="product-meta">
-                        <span class="product-category" id="modal-product-category">Kategori</span>
-                        <span class="product-price" id="modal-product-price">Rp 0</span>
+            <div class="product-detail-container">
+                <div class="product-detail-images">
+                    <div class="main-image">
+                        <img id="detail-product-image" src="" alt="">
                     </div>
+                    <div class="thumbnail-container" id="product-thumbnails">
+                        <!-- Thumbnail akan diisi oleh JavaScript -->
+                    </div>
+                </div>
+                <div class="product-detail-info">
+                    <h1 id="detail-product-title"></h1>
+                    <div class="product-meta">
+                        <span class="product-brand" id="detail-product-brand"></span>
+                        <span class="product-material" id="detail-product-material"></span>
+                        <div class="product-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star-half-alt"></i>
+                                <span class="rating-value">4.5</span>
+                                <span class="review-count">(42 ulasan)</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="product-price-container">
+                        <span class="current-price" id="detail-product-price"></span>
+                        <span class="original-price" id="detail-original-price"></span>
+                        <span class="discount-badge" id="detail-discount"></span>
+                    </div>
+                    
+                    <div class="product-description" id="detail-product-description"></div>
                     
                     <div class="product-specs">
-                        <h3>Spesifikasi Produk</h3>
-                        <ul id="modal-product-specs">
-                            <!-- Spesifikasi akan diisi oleh JavaScript -->
-                        </ul>
-                    </div>
-                    
-                    <div class="product-description">
-                        <h3>Deskripsi Lengkap</h3>
-                        <p id="modal-product-description">Deskripsi produk akan muncul disini...</p>
+                        <h3>Detail Produk</h3>
+                        <table>
+                            <tr>
+                                <th>Kategori</th>
+                                <td id="detail-product-category"></td>
+                            </tr>
+                            <tr>
+                                <th>Merek</th>
+                                <td id="detail-product-brand-text"></td>
+                            </tr>
+                            <tr>
+                                <th>Bahan</th>
+                                <td id="detail-product-material-text"></td>
+                            </tr>
+                            <tr>
+                                <th>Kondisi</th>
+                                <td>Baru</td>
+                            </tr>
+                            <tr>
+                                <th>Berat</th>
+                                <td id="detail-product-weight"></td>
+                            </tr>
+                        </table>
                     </div>
                     
                     <div class="product-actions">
@@ -144,24 +181,114 @@
                             <input type="number" class="quantity-value" value="1" min="1">
                             <button class="quantity-btn plus">+</button>
                         </div>
-                        <button class="add-to-cart" id="modal-add-to-cart">
+                        <button class="add-to-cart" id="detail-add-to-cart">
                             <i class="fas fa-shopping-cart"></i> Tambahkan ke Keranjang
                         </button>
+                        <a href="#" class="whatsapp-btn" id="detail-whatsapp-btn" target="_blank">
+                            <i class="fab fa-whatsapp"></i> Beli via WhatsApp
+                        </a>
                     </div>
                     
-                    <div class="product-whatsapp">
-                        <h3>Butuh Bantuan?</h3>
-                        <a href="#" class="whatsapp-btn" id="whatsapp-contact" target="_blank">
-                            <i class="fab fa-whatsapp"></i> Chat via WhatsApp
-                        </a>
-                        <p class="whatsapp-info">Nomor WhatsApp: <span id="whatsapp-number">0812-3456-7890</span></p>
-                        <p class="whatsapp-info">Respon cepat dalam 5 menit</p>
+                    <div class="product-tabs">
+                        <div class="tabs-header">
+                            <button class="tab-btn active" data-tab="reviews">Ulasan (42)</button>
+                            <button class="tab-btn" data-tab="qna">Tanya Jawab (15)</button>
+                        </div>
+                        
+                        <div class="tabs-content">
+                            <div class="tab-pane active" id="reviews-tab">
+                                <div class="review-form">
+                                    <h3>Tulis Ulasan</h3>
+                                    <div class="rating-input">
+                                        <span>Rating:</span>
+                                        <div class="stars">
+                                            <i class="far fa-star" data-rating="1"></i>
+                                            <i class="far fa-star" data-rating="2"></i>
+                                            <i class="far fa-star" data-rating="3"></i>
+                                            <i class="far fa-star" data-rating="4"></i>
+                                            <i class="far fa-star" data-rating="5"></i>
+                                        </div>
+                                    </div>
+                                    <textarea placeholder="Bagikan pengalaman Anda tentang produk ini..." rows="4"></textarea>
+                                    <button class="submit-review">Kirim Ulasan</button>
+                                </div>
+                                
+                                <div class="reviews-list">
+                                    <div class="review-item">
+                                        <div class="reviewer-info">
+                                            <div class="reviewer-avatar">
+                                                <i class="fas fa-user-circle"></i>
+                                            </div>
+                                            <div class="reviewer-meta">
+                                                <span class="reviewer-name">Budi Santoso</span>
+                                                <div class="review-rating">
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <span class="review-date">2 hari lalu</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="review-content">
+                                            <p>Produknya sangat bagus, kualitas bahan premium sesuai harga. Pengiriman cepat dan packing aman.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="review-item">
+                                        <div class="reviewer-info">
+                                            <div class="reviewer-avatar">
+                                                <i class="fas fa-user-circle"></i>
+                                            </div>
+                                            <div class="reviewer-meta">
+                                                <span class="reviewer-name">Ani Wijaya</span>
+                                                <div class="review-rating">
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="far fa-star"></i>
+                                                    <span class="review-date">1 minggu lalu</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="review-content">
+                                            <p>Warnanya sesuai gambar, ukuran pas. Hanya saja pengiriman agak lama.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-pane" id="qna-tab">
+                                <div class="question-form">
+                                    <h3>Ajukan Pertanyaan</h3>
+                                    <textarea placeholder="Tulis pertanyaan Anda tentang produk ini..." rows="3"></textarea>
+                                    <button class="submit-question">Kirim Pertanyaan</button>
+                                </div>
+                                
+                                <div class="questions-list">
+                                    <div class="question-item">
+                                        <div class="questioner-info">
+                                            <span class="questioner-name">Rudi Hartono</span>
+                                            <span class="question-date">3 hari lalu</span>
+                                        </div>
+                                        <div class="question-content">
+                                            <p>Apakah produk ini ready stok?</p>
+                                        </div>
+                                        <div class="answer-content">
+                                            <span class="answer-label">Admin:</span>
+                                            <p>Produk ready stok dan dikirim dari Jakarta.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
     <!-- Modal Keranjang -->
     <div class="modal" id="cart-modal">
         <div class="modal-content cart-content">
