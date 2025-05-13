@@ -128,13 +128,13 @@ function initEventListeners() {
         });
     });
     document.getElementById('product-type').addEventListener('change', function() {
-        const weightField = document.getElementById('weight-field-container');
+        const mediaField = document.getElementById('media-field-container');
         if (this.value === 'fisik') {
-            weightField.style.display = 'block';
-            document.getElementById('product-weight').required = true;
+            mediaField.style.display = 'block';
+            document.getElementById('product-media').required = true;
         } else {
-            weightField.style.display = 'none';
-            document.getElementById('product-weight').required = false;
+            mediaField.style.display = 'none';
+            document.getElementById('product-media').required = false;
         }
     });
     // Add Product Form
@@ -154,7 +154,7 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
 
     // Tambahkan berat jika produk fisik
     if (productData.type === 'fisik') {
-        productData.weight = parseInt(document.getElementById('product-weight').value) || 500; // default 500 gram
+        productData.media_url = document.getElementById('product-media').value.trim();
     }
 
     const messageElement = document.getElementById('product-message');
@@ -164,11 +164,6 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
     if (!productData.name || isNaN(productData.price) || !productData.category || 
         !productData.type || isNaN(productData.stock)) {
         showMessage('Harap isi semua field yang wajib diisi', 'error', messageElement);
-        return;
-    }
-
-    if (productData.type === 'fisik' && (isNaN(productData.weight) || productData.weight < 1)) {
-        showMessage('Berat produk harus minimal 1 gram', 'error', messageElement);
         return;
     }
 
@@ -277,6 +272,19 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
             summaryImage.onerror = function() {
                 this.src = 'https://via.placeholder.com/300x200?text=Gambar+Tidak+Tersedia';
             };
+        }
+
+        // Tambahkan ini di bagian detail produk
+        if (product.type === 'fisik' && product.media_url) {
+            const mediaRow = document.createElement('div');
+            mediaRow.className = 'detail-row';
+            mediaRow.innerHTML = `
+                <span class="detail-label">Media:</span>
+                <span class="detail-value">
+                    <a href="${product.media_url}" target="_blank">Lihat Media</a>
+                </span>
+            `;
+            document.querySelector('.summary-details').appendChild(mediaRow);
         }
         
         // Tampilkan ringkasan
@@ -500,16 +508,16 @@ async function showEditModal(productId) {
                                 <label>Stok Tersedia</label>
                                 <input type="number" id="edit-product-stock" min="0" value="${product.stock}" required>
                             </div>
-
-                            <div class="form-group" id="edit-weight-field-container" style="${product.type === 'fisik' ? '' : 'display: none;'}">
-                                <label>Berat Produk (gram)</label>
-                                <input type="number" id="edit-product-weight" min="1" value="${product.weight || 500}">
-                            </div>
                         </div>
 
                         <div class="form-group">
                             <label>Deskripsi Produk</label>
                             <textarea id="edit-product-description" rows="4">${product.description || ''}</textarea>
+                        </div>
+
+                        <div class="form-group" id="edit-media-field-container" style="${product.type === 'fisik' ? 'display: block;' : 'display: none;'}">
+                            <label>Media URL</label>
+                            <input type="url" id="edit-product-media" value="${product.media_url || ''}" ${product.type === 'fisik' ? 'required' : ''}>
                         </div>
                         
                         <div class="form-group">
@@ -544,11 +552,13 @@ async function showEditModal(productId) {
 
         // Toggle field berat berdasarkan jenis produk
         document.getElementById('edit-product-type').addEventListener('change', function() {
-            const weightField = document.getElementById('edit-weight-field-container');
+            const mediaField = document.getElementById('edit-media-field-container');
             if (this.value === 'fisik') {
-                weightField.style.display = 'block';
+                mediaField.style.display = 'block';
+                document.getElementById('edit-product-media').required = true;
             } else {
-                weightField.style.display = 'none';
+                mediaField.style.display = 'none';
+                document.getElementById('edit-product-media').required = false;
             }
         });
 
@@ -562,7 +572,7 @@ async function showEditModal(productId) {
             const category = document.getElementById('edit-product-category').value;
             const type = document.getElementById('edit-product-type').value;
             const stock = parseInt(document.getElementById('edit-product-stock').value);
-            const weight = type === 'fisik' ? parseInt(document.getElementById('edit-product-weight').value) : null;
+            const media_url = type === 'fisik' ? document.getElementById('edit-product-media').value.trim() : null;
             const description = document.getElementById('edit-product-description').value.trim();
             const image_url = document.getElementById('edit-product-image').value.trim();
             const messageElement = document.getElementById('edit-product-message');
@@ -576,7 +586,7 @@ async function showEditModal(productId) {
                         category,
                         type,
                         stock,
-                        weight,
+                        media_url,
                         description, 
                         image_url 
                     })
@@ -876,6 +886,15 @@ function showProductDetails(productId) {
             </div>
         </div>
     `;
+
+    if (product.type === 'fisik' && product.media_url) {
+        modalHTML += `
+            <div class="product-details-media">
+                <h4>Media:</h4>
+                <a href="${product.media_url}" target="_blank">Lihat Media</a>
+            </div>
+        `;
+    }
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     const modal = document.getElementById('product-details-modal');

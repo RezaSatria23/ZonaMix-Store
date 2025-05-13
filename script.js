@@ -469,56 +469,56 @@ function renderAddressFields() {
     document.getElementById('subtotal').value = subtotal;
     document.getElementById('subtotal-display').textContent = 'Rp ' + subtotal.toLocaleString('id-ID');
     
-    if (hasPhysicalProducts) {
-        addressFields.innerHTML = `
-            <div class="form-group">
-                <label for="province">Provinsi*</label>
-                <select id="province" class="form-control" required>
-                    <option value="">Memuat provinsi...</option>
-                </select>
-            </div>
+    // if (hasPhysicalProducts) {
+    //     addressFields.innerHTML = `
+    //         <div class="form-group">
+    //             <label for="province">Provinsi*</label>
+    //             <select id="province" class="form-control" required>
+    //                 <option value="">Memuat provinsi...</option>
+    //             </select>
+    //         </div>
 
-            <div class="form-group">
-                <label for="regency">Kabupaten/Kota*</label>
-                <select id="regency" class="form-control" required disabled>
-                    <option value="">Pilih provinsi terlebih dahulu</option>
-                </select>
-            </div>
+    //         <div class="form-group">
+    //             <label for="regency">Kabupaten/Kota*</label>
+    //             <select id="regency" class="form-control" required disabled>
+    //                 <option value="">Pilih provinsi terlebih dahulu</option>
+    //             </select>
+    //         </div>
 
-            <div class="form-group">
-                <label for="district">Kecamatan*</label>
-                <select id="district" class="form-control" required disabled>
-                    <option value="">Pilih kabupaten terlebih dahulu</option>
-                </select>
-            </div>
+    //         <div class="form-group">
+    //             <label for="district">Kecamatan*</label>
+    //             <select id="district" class="form-control" required disabled>
+    //                 <option value="">Pilih kabupaten terlebih dahulu</option>
+    //             </select>
+    //         </div>
 
-            <div class="form-group">
-                <label for="village">Kelurahan*</label>
-                <select id="village" class="form-control" required disabled>
-                    <option value="">Pilih kecamatan terlebih dahulu</option>
-                </select>
-            </div>
+    //         <div class="form-group">
+    //             <label for="village">Kelurahan*</label>
+    //             <select id="village" class="form-control" required disabled>
+    //                 <option value="">Pilih kecamatan terlebih dahulu</option>
+    //             </select>
+    //         </div>
 
-            <div class="form-group">
-                <label for="postal_code">Kode Pos*</label>
-                <input type="text" id="postal_code" class="form-control" required 
-                       placeholder="Pilih kelurahan terlebih dahulu">
-                <small class="text-muted" id="postal-code-help">Kode pos akan otomatis terisi jika tersedia</small>
-            </div>
+    //         <div class="form-group">
+    //             <label for="postal_code">Kode Pos*</label>
+    //             <input type="text" id="postal_code" class="form-control" required 
+    //                    placeholder="Pilih kelurahan terlebih dahulu">
+    //             <small class="text-muted" id="postal-code-help">Kode pos akan otomatis terisi jika tersedia</small>
+    //         </div>
 
-            <div id="shipping-options" class="shipping-options-container"></div>
-            <div id="shipping-cost-container" style="display: none;">
-                <div class="cost-row">
-                    <span>Ongkos Kirim:</span>
-                    <span id="shipping-cost-display">Rp 0</span>
-                    <input type="hidden" id="shipping-cost" value="0">
-                </div>
-            </div>
-        `;
+    //         <div id="shipping-options" class="shipping-options-container"></div>
+    //         <div id="shipping-cost-container" style="display: none;">
+    //             <div class="cost-row">
+    //                 <span>Ongkos Kirim:</span>
+    //                 <span id="shipping-cost-display">Rp 0</span>
+    //                 <input type="hidden" id="shipping-cost" value="0">
+    //             </div>
+    //         </div>
+    //     `;
         
-        loadProvinces();
-        setupAddressFormListeners();
-    }
+    //     loadProvinces();
+    //     setupAddressFormListeners();
+    // }
     
     if (hasDigitalProducts) {
         addressFields.innerHTML += `
@@ -565,19 +565,19 @@ async function processCustomerForm() {
         created_at: new Date().toISOString()
     };
 
-    // Tambahkan data alamat jika ada produk fisik
-    if (cart.some(item => item.type === 'fisik')) {
-        orderData.address = document.getElementById('customer-address').value;
-        orderData.city = document.getElementById('customer-city').value;
-        orderData.province = document.getElementById('customer-province').value;
-        orderData.postal_code = document.getElementById('customer-postal').value;
+    // // Tambahkan data alamat jika ada produk fisik
+    // if (cart.some(item => item.type === 'fisik')) {
+    //     orderData.address = document.getElementById('customer-address').value;
+    //     orderData.city = document.getElementById('customer-city').value;
+    //     orderData.province = document.getElementById('customer-province').value;
+    //     orderData.postal_code = document.getElementById('customer-postal').value;
         
-        // Validasi alamat
-        if (!orderData.address || !orderData.city || !orderData.province || !orderData.postal_code) {
-            showNotification('Alamat lengkap harus diisi untuk produk fisik', 'error');
-            return;
-        }
-    }
+    //     // Validasi alamat
+    //     if (!orderData.address || !orderData.city || !orderData.province || !orderData.postal_code) {
+    //         showNotification('Alamat lengkap harus diisi untuk produk fisik', 'error');
+    //         return;
+    //     }
+    // }
 
     // Tambahkan email khusus jika ada produk digital
     if (cart.some(item => item.type === 'digital')) {
@@ -939,199 +939,6 @@ function getCartItems() {
     return cart;
 }
 
-// Fungsi untuk menghitung ongkir
-async function calculateShipping() {
-    try {
-        const cartItems = getCartItems();
-        let totalWeight = 0;
-        
-        // Hitung total berat hanya untuk produk fisik
-        cartItems.forEach(item => {
-            if (item.type === 'fisik') {
-                totalWeight += (item.weight || 500) * item.quantity;
-            }
-        });
-
-        // Jika tidak ada produk fisik, set ongkir 0
-        if (totalWeight === 0) {
-            document.getElementById('shipping-cost').value = 0;
-            document.getElementById('shipping-cost-display').textContent = 'Rp 0';
-            document.getElementById('shipping-cost-container').style.display = 'none';
-            updateOrderTotal();
-            return;
-        }
-
-        const city = document.getElementById('regency').value;
-        if (!city) {
-            showNotification('Silakan pilih kota tujuan terlebih dahulu', 'error');
-            return;
-        }
-
-        // Gunakan API RajaOngkir
-        const response = await fetch('https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'key': 'UYAVNGwHd0aca6b1808c712ctUAix4js' // Ganti dengan API key Anda
-            },
-            body: `origin=${SHOP_ORIGIN_CITY_ID}&destination=${city}&weight=${totalWeight}&courier=jne`
-        });
-
-        const data = await response.json();
-        
-        if (!data.rajaongkir || !data.rajaongkir.results) {
-            throw new Error('Invalid API response');
-        }
-
-        const shippingOptions = data.rajaongkir.results[0]?.costs || [];
-        
-        if (shippingOptions.length > 0) {
-            const shippingCost = shippingOptions[0].cost[0].value;
-            document.getElementById('shipping-cost').value = shippingCost;
-            document.getElementById('shipping-cost-display').textContent = 'Rp ' + shippingCost.toLocaleString('id-ID');
-            document.getElementById('shipping-cost-container').style.display = 'block';
-            updateOrderTotal();
-            
-            // Tampilkan opsi pengiriman jika ada lebih dari 1 opsi
-            if (shippingOptions.length > 1) {
-                renderShippingOptions(shippingOptions);
-            }
-        } else {
-            // Default shipping cost jika tidak ada opsi
-            document.getElementById('shipping-cost').value = 15000;
-            document.getElementById('shipping-cost-display').textContent = 'Rp 15.000';
-            document.getElementById('shipping-cost-container').style.display = 'block';
-            updateOrderTotal();
-            showNotification('Layanan pengiriman tidak tersedia, menggunakan tarif default Rp15.000', 'warning');
-        }
-
-    } catch (error) {
-        console.error('Error calculating shipping:', error);
-        // Fallback ke ongkir flat 15rb jika error
-        document.getElementById('shipping-cost').value = 15000;
-        document.getElementById('shipping-cost-display').textContent = 'Rp 15.000';
-        document.getElementById('shipping-cost-container').style.display = 'block';
-        updateOrderTotal();
-        showNotification('Gagal menghitung ongkir. Menggunakan tarif default Rp15.000', 'error');
-    }
-}
-
-function updateOrderTotal() {
-    const subtotal = parseFloat(document.getElementById('subtotal').value) || 0;
-    let shippingCost = 0;
-    
-    // Hanya hitung ongkir jika ada produk fisik
-    if (cart.some(item => item.type === 'fisik')) {
-        shippingCost = parseFloat(document.getElementById('shipping-cost').value) || 0;
-    }
-    
-    const total = subtotal + shippingCost;
-    
-    document.getElementById('total-amount').value = total;
-    document.getElementById('order-total-display').textContent = 'Rp ' + total.toLocaleString('id-ID');
-}
-
-// Fungsi untuk menampilkan opsi pengiriman
-function renderShippingOptions(costs) {
-    const shippingOptions = document.getElementById('shipping-options');
-    shippingOptions.innerHTML = '';
-    
-    if (!costs || costs.length === 0) {
-        shippingOptions.innerHTML = `
-            <div class="shipping-not-available">
-                <i class="fas fa-truck"></i>
-                <p>Layanan pengiriman tidak tersedia untuk alamat ini</p>
-                <small>Silakan coba alamat lain atau hubungi kami</small>
-            </div>
-        `;
-        return;
-    }
-    
-    // Kelompokkan berdasarkan kurir
-    const couriers = {
-        jne: { name: 'JNE', options: [] },
-        jnt: { name: 'JNT', options: [] },
-        lainnya: { name: 'Lainnya', options: [] }
-    };
-    
-    costs.forEach(cost => {
-        if (!cost.service || !cost.cost || cost.cost.length === 0) return;
-        
-        const courierKey = cost.service.toLowerCase().includes('jne') ? 'jne' :
-                         cost.service.toLowerCase().includes('jnt') ? 'jnt' : 'lainnya';
-        
-        couriers[courierKey].options.push(cost);
-    });
-    
-    // Buat tampilan untuk masing-masing kurir
-    for (const [key, courier] of Object.entries(couriers)) {
-        if (courier.options.length === 0) continue;
-        
-        const courierSection = document.createElement('div');
-        courierSection.className = 'courier-section';
-        courierSection.innerHTML = `
-            <h5 class="courier-name">${courier.name}</h5>
-            <div class="courier-options" id="${key}-options"></div>
-        `;
-        
-        shippingOptions.appendChild(courierSection);
-        
-        const optionsContainer = document.getElementById(`${key}-options`);
-        
-        courier.options.forEach(cost => {
-            cost.cost.forEach(priceDetail => {
-                const option = document.createElement('div');
-                option.className = 'shipping-option';
-                option.innerHTML = `
-                    <input type="radio" name="shipping" id="shipping-${key}-${cost.service.toLowerCase()}" 
-                           value="${cost.service}" data-cost="${priceDetail.value}" data-etd="${priceDetail.etd}">
-                    <label for="shipping-${key}-${cost.service.toLowerCase()}">
-                        <span class="service-name">${cost.service.toUpperCase()}</span>
-                        <span class="service-price">Rp ${priceDetail.value.toLocaleString('id-ID')}</span>
-                        <span class="service-etd">${priceDetail.etd} hari</span>
-                    </label>
-                `;
-                
-                option.querySelector('input').addEventListener('change', function() {
-                    selectedShipping = {
-                        service: cost.service,
-                        cost: priceDetail.value,
-                        etd: priceDetail.etd
-                    };
-                    updateOrderSummary();
-                });
-                
-                optionsContainer.appendChild(option);
-            });
-        });
-    }
-    
-    // Otomatis pilih opsi pertama
-    const firstOption = shippingOptions.querySelector('input[type="radio"]');
-    if (firstOption) {
-        firstOption.checked = true;
-        const event = new Event('change');
-        firstOption.dispatchEvent(event);
-    }
-}
-
-function calculateTotalWeight() {
-    return cart.reduce((total, item) => {
-        return total + (item.weight || 500) * item.quantity;
-    }, 0);
-}
-
-// Update ringkasan pesanan setelah memilih pengiriman
-function updateOrderSummary() {
-  const selectedShipping = document.querySelector('input[name="shipping"]:checked');
-  const shippingCost = selectedShipping ? parseInt(selectedShipping.dataset.cost) : 0;
-  const subtotal = calculateTotal();
-  const total = subtotal + shippingCost;
-  
-  document.getElementById('subtotal-amount').textContent = subtotal.toLocaleString('id-ID');
-  document.getElementById('shipping-amount').textContent = shippingCost.toLocaleString('id-ID');
-  document.getElementById('total-amount').textContent = total.toLocaleString('id-ID');
-}
 
 // Inisialisasi event listeners untuk form alamat
 function setupAddressFormListeners() {
@@ -1302,78 +1109,7 @@ banner.addEventListener('mouseleave', () => {
     }, 5000);
 });
 
-// Fungsi untuk menampilkan modal produk
-function showProductModal(product) {
-    const modal = document.getElementById('product-modal');
-    
-    // Isi data produk ke modal
-    document.getElementById('modal-product-image').src = product.image_url || 'https://via.placeholder.com/500';
-    document.getElementById('modal-product-image').alt = product.name;
-    document.getElementById('modal-product-title').textContent = product.name;
-    document.getElementById('modal-product-category').textContent = product.category;
-    document.getElementById('modal-product-price').textContent = `Rp ${product.price.toLocaleString('id-ID')}`;
-    document.getElementById('modal-product-description').textContent = product.description;
-    
-    // Isi spesifikasi produk (diasumsikan ada field specs di database)
-    const specsList = document.getElementById('modal-product-specs');
-    specsList.innerHTML = '';
-    
-    // Jika tidak ada spesifikasi, tampilkan pesan default
-    if (!product.specs || product.specs.length === 0) {
-        const li = document.createElement('li');
-        li.textContent = 'Tidak ada spesifikasi tambahan';
-        specsList.appendChild(li);
-    } else {
-        product.specs.forEach(spec => {
-            const li = document.createElement('li');
-            li.textContent = spec;
-            specsList.appendChild(li);
-        });
-    }
-    
-    // Set badge produk berdasarkan type
-    const badge = document.getElementById('modal-product-badge');
-    badge.textContent = product.type === 'fisik' ? 'Produk Fisik' : 'Produk Digital';
-    badge.style.display = 'block';
-    
-    // Set WhatsApp button
-    const whatsappBtn = document.getElementById('whatsapp-contact');
-    const whatsappNumber = document.getElementById('whatsapp-number');
-    whatsappNumber.textContent = formatPhoneNumber(whatsappNumber); // Gunakan nomor default dari variabel
-    
-    const message = `Halo, saya tertarik dengan produk ${product.name} (ID: ${product.id}) di Luxury Store. Bisa dibantu?`;
-    whatsappBtn.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-    
-    // Tambahkan event listener untuk tombol tambah ke keranjang
-    const addToCartBtn = document.getElementById('modal-add-to-cart');
-    addToCartBtn.setAttribute('data-id', product.id);
-    addToCartBtn.onclick = function() {
-        addToCart(product.id);
-        showNotification(`${product.name} ditambahkan ke keranjang`, 'success');
-        closeModal(modal);
-    };
-    
-    // Kontrol kuantitas
-    const minusBtn = modal.querySelector('.quantity-btn.minus');
-    const plusBtn = modal.querySelector('.quantity-btn.plus');
-    const quantityInput = modal.querySelector('.quantity-value');
-    
-    minusBtn.addEventListener('click', () => {
-        let value = parseInt(quantityInput.value);
-        if (value > 1) {
-            quantityInput.value = value - 1;
-        }
-    });
-    
-    plusBtn.addEventListener('click', () => {
-        let value = parseInt(quantityInput.value);
-        quantityInput.value = value + 1;
-    });
-    
-    // Tampilkan modal
-    openModal(modal);
-}
-
+// Fungsi untuk memformat nomor telepon
 function formatPhoneNumber(number) {
     // Hilangkan semua karakter non-digit
     const cleaned = ('' + number).replace(/\D/g, '');
