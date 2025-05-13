@@ -146,8 +146,8 @@ function renderProducts() {
                 <h3 class="product-title">${product.name}</h3>
                 <p class="product-description">${product.description}</p>
                 <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
-                <button class="view-detail" data-id="${product.id}">
-                    <i class="fas fa-eye"></i> Lihat Detail
+                <button class="add-to-cart" data-id="${product.id}">
+                    <i class="fas fa-shopping-bag"></i> Tambah ke Keranjang
                 </button>
             </div>
         `;
