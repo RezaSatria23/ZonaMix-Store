@@ -780,47 +780,57 @@
                                     <option value="digital">Digital</option>
                                 </select>
                             </div>
-                            
-                            <div class="form-group" id="media-field-container" style="display: none;">
-                                <label>Marketplace Links (Minimal 1)</label>
-                                <div class="marketplace-options">
-                                    <label class="marketplace-checkbox">
-                                        <input type="checkbox" name="marketplace" value="shopee"> 
-                                        <span class="marketplace-label">
-                                            <i class="fab fa-shopify"></i> Shopee
-                                        </span>
-                                    </label>
-                                    <div id="shopee-input" class="marketplace-input-container">
-                                        <input type="url" class="marketplace-input" placeholder="https://shopee.co.id/product-link" data-marketplace="shopee">
-                                    </div>
-
-                                    <label class="marketplace-checkbox">
-                                        <input type="checkbox" name="marketplace" value="tokopedia"> 
-                                        <span class="marketplace-label">
-                                            <i class="fas fa-store"></i> Tokopedia
-                                        </span>
-                                    </label>
-                                    <div id="tokopedia-input" class="marketplace-input-container">
-                                        <input type="url" class="marketplace-input" placeholder="https://www.tokopedia.com/product-link" data-marketplace="tokopedia">
-                                    </div>
-
-                                    <label class="marketplace-checkbox">
-                                        <input type="checkbox" name="marketplace" value="tiktok"> 
-                                        <span class="marketplace-label">
-                                            <i class="fab fa-tiktok"></i> TikTok Shop
-                                        </span>
-                                    </label>
-                                    <div id="tiktok-input" class="marketplace-input-container">
-                                        <input type="url" class="marketplace-input" placeholder="https://www.tiktok.com/product-link" data-marketplace="tiktok">
-                                    </div>
-                                </div>
-                            </div>
 
                             <div class="form-group">
                                 <label for="product-stock">Stok Tersedia</label>
                                 <input type="number" id="product-stock" min="0" value="1" required>
                             </div>
                             
+                            <div class="form-group" id="media-field-container" style="display: none;">
+                                <label>Pilih Marketplace (Minimal 1)</label>
+                                <div class="marketplace-options">
+                                    <div class="marketplace-btn" data-marketplace="shopee">
+                                        <i class="fab fa-shopify"></i>
+                                        <span>Shopee</span>
+                                        <input type="hidden" name="marketplace" value="shopee">
+                                    </div>
+                                    
+                                    <div class="marketplace-btn" data-marketplace="tokopedia">
+                                        <i class="fas fa-store"></i>
+                                        <span>Tokopedia</span>
+                                        <input type="hidden" name="marketplace" value="tokopedia">
+                                    </div>
+                                    
+                                    <div class="marketplace-btn" data-marketplace="tiktok">
+                                        <i class="fab fa-tiktok"></i>
+                                        <span>TikTok Shop</span>
+                                        <input type="hidden" name="marketplace" value="tiktok">
+                                    </div>
+                                </div>
+                                
+                                <!-- Input containers will appear here when marketplace is selected -->
+                                <div id="shopee-input" class="marketplace-input-container">
+                                    <div class="marketplace-input-group">
+                                        <i class="fab fa-shopify"></i>
+                                        <input type="url" class="marketplace-input" placeholder="https://shopee.co.id/product-link" data-marketplace="shopee">
+                                    </div>
+                                </div>
+                                
+                                <div id="tokopedia-input" class="marketplace-input-container">
+                                    <div class="marketplace-input-group">
+                                        <i class="fas fa-store"></i>
+                                        <input type="url" class="marketplace-input" placeholder="https://www.tokopedia.com/product-link" data-marketplace="tokopedia">
+                                    </div>
+                                </div>
+                                
+                                <div id="tiktok-input" class="marketplace-input-container">
+                                    <div class="marketplace-input-group">
+                                        <i class="fab fa-tiktok"></i>
+                                        <input type="url" class="marketplace-input" placeholder="https://www.tiktok.com/product-link" data-marketplace="tiktok">
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="form-group full-width">
                                 <label for="product-description">Deskripsi Produk</label>
                                 <textarea id="product-description" rows="4"></textarea>

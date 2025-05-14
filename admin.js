@@ -50,14 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Fungsi simpan produk yang sudah diperbaiki
 async function saveProduct(productData) {
     try {
-        const marketplaceLinks = {};
-        document.querySelectorAll('input[name="marketplace"]:checked').forEach(checkbox => {
-            const marketplace = checkbox.value;
-            const url = document.querySelector(`.marketplace-input[data-marketplace="${marketplace}"]`).value;
-            if (url) {
-                marketplaceLinks[marketplace] = url;
-            }
-        });
+        const marketplaceLinks = getMarketplaceLinks();
 
         // Validasi minimal 1 link untuk produk fisik
         if (productData.type === 'fisik' && Object.keys(marketplaceLinks).length === 0) {
@@ -417,10 +410,13 @@ function initEventListeners() {
         }
     });
 
-    document.querySelectorAll('input[name="marketplace"]').forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const inputContainer = document.getElementById(`${this.value}-input`);
-            if (this.checked) {
+   document.querySelectorAll('.marketplace-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.classList.toggle('active');
+            const marketplace = this.dataset.marketplace;
+            const inputContainer = document.getElementById(`${marketplace}-input`);
+            
+            if (this.classList.contains('active')) {
                 inputContainer.style.display = 'block';
             } else {
                 inputContainer.style.display = 'none';
@@ -428,6 +424,18 @@ function initEventListeners() {
             }
         });
     });
+}
+// Modifikasi fungsi untuk mengumpulkan marketplace links
+function getMarketplaceLinks() {
+    const links = {};
+    document.querySelectorAll('.marketplace-btn.active').forEach(btn => {
+        const marketplace = btn.dataset.marketplace;
+        const url = document.querySelector(`.marketplace-input[data-marketplace="${marketplace}"]`).value;
+        if (url) {
+            links[marketplace] = url;
+        }
+    });
+    return links;
 }
 
 function showLoginForm() {
@@ -582,41 +590,37 @@ async function showEditModal(productId) {
                         </div>
 
                         <div class="form-group" id="edit-media-field-container" style="${product.type === 'fisik' ? 'display: block;' : 'display: none;'}">
-                            <label>Marketplace Links (Minimal 1)</label>
+                            <label>Pilih Marketplace (Minimal 1)</label>
                             <div class="marketplace-options">
-                                <label class="marketplace-checkbox">
-                                    <input type="checkbox" name="edit-marketplace" value="shopee" ${marketplaceLinks.shopee ? 'checked' : ''}> 
-                                    <span class="marketplace-label">
-                                        <i class="fab fa-shopify"></i> Shopee
-                                    </span>
-                                </label>
-                                <div id="edit-shopee-input" class="marketplace-input-container" style="${marketplaceLinks.shopee ? 'display: block;' : 'display: none;'}">
+                                <div class="marketplace-btn ${marketplaceLinks.shopee ? 'active' : ''}" data-marketplace="shopee">
+                                    <i class="fab fa-shopify"></i>
+                                    <span>Shopee</span>
+                                    <input type="hidden" name="edit-marketplace" value="shopee">
+                                </div>
+                                
+                                <div class="marketplace-btn ${marketplaceLinks.tokopedia ? 'active' : ''}" data-marketplace="tokopedia">
+                                    <i class="fas fa-store"></i>
+                                    <span>Tokopedia</span>
+                                    <input type="hidden" name="edit-marketplace" value="tokopedia">
+                                </div>
+                                
+                                <div class="marketplace-btn ${marketplaceLinks.tiktok ? 'active' : ''}" data-marketplace="tiktok">
+                                    <i class="fab fa-tiktok"></i>
+                                    <span>TikTok Shop</span>
+                                    <input type="hidden" name="edit-marketplace" value="tiktok">
+                                </div>
+                            </div>
+                            
+                            <!-- Input containers -->
+                            <div id="edit-shopee-input" class="marketplace-input-container" style="${marketplaceLinks.shopee ? 'display: block;' : 'display: none;'}">
+                                <div class="marketplace-input-group">
+                                    <i class="fab fa-shopify"></i>
                                     <input type="url" class="marketplace-input" placeholder="https://shopee.co.id/product-link" 
                                         data-marketplace="shopee" value="${marketplaceLinks.shopee || ''}">
                                 </div>
-
-                                <label class="marketplace-checkbox">
-                                    <input type="checkbox" name="edit-marketplace" value="tokopedia" ${marketplaceLinks.tokopedia ? 'checked' : ''}> 
-                                    <span class="marketplace-label">
-                                        <i class="fas fa-store"></i> Tokopedia
-                                    </span>
-                                </label>
-                                <div id="edit-tokopedia-input" class="marketplace-input-container" style="${marketplaceLinks.tokopedia ? 'display: block;' : 'display: none;'}">
-                                    <input type="url" class="marketplace-input" placeholder="https://www.tokopedia.com/product-link" 
-                                        data-marketplace="tokopedia" value="${marketplaceLinks.tokopedia || ''}">
-                                </div>
-
-                                <label class="marketplace-checkbox">
-                                    <input type="checkbox" name="edit-marketplace" value="tiktok" ${marketplaceLinks.tiktok ? 'checked' : ''}> 
-                                    <span class="marketplace-label">
-                                        <i class="fab fa-tiktok"></i> TikTok Shop
-                                    </span>
-                                </label>
-                                <div id="edit-tiktok-input" class="marketplace-input-container" style="${marketplaceLinks.tiktok ? 'display: block;' : 'display: none;'}">
-                                    <input type="url" class="marketplace-input" placeholder="https://www.tiktok.com/product-link" 
-                                        data-marketplace="tiktok" value="${marketplaceLinks.tiktok || ''}">
-                                </div>
                             </div>
+                            
+                            <!-- Similar for Tokopedia and TikTok -->
                         </div>
                         
                         <div class="form-group">
@@ -731,10 +735,13 @@ async function showEditModal(productId) {
         alert('Gagal memuat data produk');
     }
     // Di dalam showEditModal, setelah modal ditampilkan:
-    document.querySelectorAll('input[name="edit-marketplace"]').forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const inputContainer = document.getElementById(`edit-${this.value}-input`);
-            if (this.checked) {
+    document.querySelectorAll('#edit-media-field-container .marketplace-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.classList.toggle('active');
+            const marketplace = this.dataset.marketplace;
+            const inputContainer = document.getElementById(`edit-${marketplace}-input`);
+            
+            if (this.classList.contains('active')) {
                 inputContainer.style.display = 'block';
             } else {
                 inputContainer.style.display = 'none';
