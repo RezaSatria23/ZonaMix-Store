@@ -57,6 +57,16 @@ async function saveProduct(productData) {
             throw new Error('Harap masukkan minimal 1 link marketplace untuk produk fisik');
         }
             
+        // Jika produk digital, pastikan stok ada
+        if (productData.type === 'digital' && (!productData.stock || productData.stock < 0)) {
+            throw new Error('Harap masukkan stok yang valid untuk produk digital');
+        }
+        
+        // Jika produk fisik, set stok ke null
+        if (productData.type === 'fisik') {
+            productData.stock = null;
+        }
+
         // Pastikan is_published tidak NULL
         const completeData = {
             ...productData,
@@ -141,12 +151,10 @@ function initEventListeners() {
         if (this.value === 'fisik') {
             mediaField.style.display = 'block';
             stockField.style.display = 'none';
-            document.getElementById('product-stock').value = '0';
             document.getElementById('product-stock').required = false;
         } else {
             mediaField.style.display = 'none';
             stockField.style.display = 'block';
-            document.getElementById('product-stock').value = '1';
             document.getElementById('product-stock').required = true;
         }
     });
@@ -165,11 +173,6 @@ function initEventListeners() {
             description: document.getElementById('product-description').value.trim(),
             image_url: document.getElementById('product-image').value.trim()
         };
-
-        // Tambahkan berat jika produk fisik
-        if (productData.type === 'fisik') {
-            productData.media_url = document.getElementById('product-media').value.trim();
-        }
 
         const messageElement = document.getElementById('product-message');
         messageElement.style.display = 'none';
@@ -324,19 +327,6 @@ function initEventListeners() {
             summaryImage.onerror = function() {
                 this.src = 'https://via.placeholder.com/300x200?text=Gambar+Tidak+Tersedia';
             };
-        }
-
-        // Tambahkan ini di bagian detail produk
-        if (product.type === 'fisik' && product.media_url) {
-            const mediaRow = document.createElement('div');
-            mediaRow.className = 'detail-row';
-            mediaRow.innerHTML = `
-                <span class="detail-label">Media:</span>
-                <span class="detail-value">
-                    <a href="${product.media_url}" target="_blank">Lihat Media</a>
-                </span>
-            `;
-            document.querySelector('.summary-details').appendChild(mediaRow);
         }
         
         // Tampilkan ringkasan
@@ -584,11 +574,9 @@ async function showEditModal(productId) {
                             </div>
                         </div>
                         
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Stok Tersedia</label>
-                                <input type="number" id="edit-product-stock" min="0" value="${product.stock}" required>
-                            </div>
+                        <div class="form-group" id="edit-stock-field-container" style="${product.type === 'digital' ? 'display: block;' : 'display: none;'}">
+                            <label>Stok Tersedia</label>
+                            <input type="number" id="edit-product-stock" min="0" value="${product.stock || 1}" ${product.type === 'digital' ? 'required' : ''}>
                         </div>
 
                         <div class="form-group">
@@ -681,11 +669,14 @@ async function showEditModal(productId) {
             const price = parseFloat(document.getElementById('edit-product-price').value);
             const category = document.getElementById('edit-product-category').value;
             const type = document.getElementById('edit-product-type').value;
-            const stock = parseInt(document.getElementById('edit-product-stock').value);
-            const media_url = type === 'fisik' ? document.getElementById('edit-product-media').value.trim() : null;
+            const stock = type === 'digital' ? parseInt(document.getElementById('edit-product-stock').value) : null;
             const description = document.getElementById('edit-product-description').value.trim();
             const image_url = document.getElementById('edit-product-image').value.trim();
             const messageElement = document.getElementById('edit-product-message');
+
+            if (type === 'digital' && (isNaN(stock) || stock < 0)) {
+                throw new Error('Harap masukkan stok yang valid untuk produk digital');
+            }
 
             try {
                 const { data, error } = await supabase
@@ -696,7 +687,6 @@ async function showEditModal(productId) {
                         category,
                         type,
                         stock,
-                        media_url,
                         description, 
                         image_url 
                     })
@@ -756,22 +746,23 @@ async function showEditModal(productId) {
             }
         });
     });
-    document.getElementById('edit-product-type').addEventListener('change', function() {
-    const mediaField = document.getElementById('edit-media-field-container');
-    const stockField = document.getElementById('edit-stock-field-container');
-    
-    if (this.value === 'fisik') {
-        mediaField.style.display = 'block';
-        stockField.style.display = 'none';
-        document.getElementById('edit-product-stock').value = '0';
-        document.getElementById('edit-product-stock').required = false;
-    } else {
-        mediaField.style.display = 'none';
-        stockField.style.display = 'block';
-        document.getElementById('edit-product-stock').value = '1';
-        document.getElementById('edit-product-stock').required = true;
-    }
-});
+    // Di dalam showEditModal, tambahkan ini setelah inisialisasi modal:
+    const editTypeSelect = document.getElementById('edit-product-type');
+    const editStockField = document.getElementById('edit-stock-field-container');
+
+    editTypeSelect.addEventListener('change', function() {
+        const editMediaField = document.getElementById('edit-media-field-container');
+        
+        if (this.value === 'fisik') {
+            editMediaField.style.display = 'block';
+            editStockField.style.display = 'none';
+            document.getElementById('edit-product-stock').required = false;
+        } else {
+            editMediaField.style.display = 'none';
+            editStockField.style.display = 'block';
+            document.getElementById('edit-product-stock').required = true;
+        }
+    });
 }
 
 async function loadOrders() {
@@ -1027,15 +1018,6 @@ function showProductDetails(productId) {
             </div>
         </div>
     `;
-
-    if (product.type === 'fisik' && product.media_url) {
-        modalHTML += `
-            <div class="product-details-media">
-                <h4>Media:</h4>
-                <a href="${product.media_url}" target="_blank">Lihat Media</a>
-            </div>
-        `;
-    }
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     const modal = document.getElementById('product-details-modal');
