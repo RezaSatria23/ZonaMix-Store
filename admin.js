@@ -50,25 +50,39 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Fungsi simpan produk yang sudah diperbaiki
 async function saveProduct(productData) {
     try {
+        const marketplaceLinks = {};
+        document.querySelectorAll('input[name="marketplace"]:checked').forEach(checkbox => {
+            const marketplace = checkbox.value;
+            const url = document.querySelector(`.marketplace-input[data-marketplace="${marketplace}"]`).value;
+            if (url) {
+                marketplaceLinks[marketplace] = url;
+            }
+        });
 
-      // Pastikan is_published tidak NULL
-      const completeData = {
-        ...productData,
-        is_published: true // Langsung set TRUE
-      };
-      
-      const { data, error } = await supabase
-        .from('products')
-        .insert([completeData])
-        .select();
-  
-      if (error) throw error;
-  
-      console.log('Produk tersimpan:', data[0]);
-      return data[0];
+        // Validasi minimal 1 link untuk produk fisik
+        if (productData.type === 'fisik' && Object.keys(marketplaceLinks).length === 0) {
+            throw new Error('Harap masukkan minimal 1 link marketplace untuk produk fisik');
+        }
+            
+        // Pastikan is_published tidak NULL
+        const completeData = {
+            ...productData,
+            is_published: true, // Langsung set TRUE
+            marketplace_links: marketplaceLinks
+        };
+        
+        const { data, error } = await supabase
+            .from('products')
+            .insert([completeData])
+            .select();
+    
+        if (error) throw error;
+    
+        console.log('Produk tersimpan:', data[0]);
+        return data[0];
     } catch (error) {
-      console.error('Error menyimpan produk:', error.message);
-      return null;
+        console.error('Error menyimpan produk:', error.message);
+        return null;
     }
 }
 // ======================
@@ -138,64 +152,64 @@ function initEventListeners() {
         }
     });
     // Add Product Form
-document.getElementById('add-product-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    // Dapatkan semua nilai dari form
-    const productData = {
-        name: document.getElementById('product-name').value.trim(),
-        price: parseFloat(document.getElementById('product-price').value),
-        category: document.getElementById('product-category').value,
-        type: document.getElementById('product-type').value,
-        stock: parseInt(document.getElementById('product-stock').value),
-        description: document.getElementById('product-description').value.trim(),
-        image_url: document.getElementById('product-image').value.trim()
-    };
-
-    // Tambahkan berat jika produk fisik
-    if (productData.type === 'fisik') {
-        productData.media_url = document.getElementById('product-media').value.trim();
-    }
-
-    const messageElement = document.getElementById('product-message');
-    messageElement.style.display = 'none';
-
-    // Validasi
-    if (!productData.name || isNaN(productData.price) || !productData.category || 
-        !productData.type || isNaN(productData.stock)) {
-        showMessage('Harap isi semua field yang wajib diisi', 'error', messageElement);
-        return;
-    }
-
-    try {
-        // Validasi gambar
-        const img = new Image();
-        img.src = productData.image_url;
-        await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = () => reject(new Error('URL gambar tidak valid'));
-        });
-
-        // Simpan produk ke Supabase
-        const savedProduct = await saveProduct(productData);
+    document.getElementById('add-product-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
         
-        if (savedProduct) {
-            // Tampilkan ringkasan produk
-            showProductSummary(savedProduct);
-            showMessage('Produk berhasil ditambahkan!', 'success', messageElement);
-            
-            // Update preview gambar
-            const previewImg = document.getElementById('image-preview');
-            previewImg.src = savedProduct.image_url;
-            previewImg.style.display = 'block';
-        } else {
-            throw new Error('Gagal menyimpan produk');
+        // Dapatkan semua nilai dari form
+        const productData = {
+            name: document.getElementById('product-name').value.trim(),
+            price: parseFloat(document.getElementById('product-price').value),
+            category: document.getElementById('product-category').value,
+            type: document.getElementById('product-type').value,
+            stock: parseInt(document.getElementById('product-stock').value),
+            description: document.getElementById('product-description').value.trim(),
+            image_url: document.getElementById('product-image').value.trim()
+        };
+
+        // Tambahkan berat jika produk fisik
+        if (productData.type === 'fisik') {
+            productData.media_url = document.getElementById('product-media').value.trim();
         }
-    } catch (error) {
-        console.error('Error:', error);
-        showMessage(`Error: ${error.message}`, 'error', messageElement);
-    }
-});
+
+        const messageElement = document.getElementById('product-message');
+        messageElement.style.display = 'none';
+
+        // Validasi
+        if (!productData.name || isNaN(productData.price) || !productData.category || 
+            !productData.type || isNaN(productData.stock)) {
+            showMessage('Harap isi semua field yang wajib diisi', 'error', messageElement);
+            return;
+        }
+
+        try {
+            // Validasi gambar
+            const img = new Image();
+            img.src = productData.image_url;
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = () => reject(new Error('URL gambar tidak valid'));
+            });
+
+            // Simpan produk ke Supabase
+            const savedProduct = await saveProduct(productData);
+            
+            if (savedProduct) {
+                // Tampilkan ringkasan produk
+                showProductSummary(savedProduct);
+                showMessage('Produk berhasil ditambahkan!', 'success', messageElement);
+                
+                // Update preview gambar
+                const previewImg = document.getElementById('image-preview');
+                previewImg.src = savedProduct.image_url;
+                previewImg.style.display = 'block';
+            } else {
+                throw new Error('Gagal menyimpan produk');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showMessage(`Error: ${error.message}`, 'error', messageElement);
+        }
+    });
     // Fungsi untuk memeriksa dan menampilkan preview gambar
     document.getElementById('product-image').addEventListener('input', function() {
         const imageUrl = this.value.trim();
@@ -265,6 +279,44 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
         document.getElementById('summary-stock').textContent = product.stock || '0';
         document.getElementById('summary-description').textContent = product.description || 'Tidak ada deskripsi';
         
+        // Tambahkan marketplace links ke summary jika ada
+        if (product.marketplace_links && Object.keys(product.marketplace_links).length > 0) {
+            const marketplaceRow = document.createElement('div');
+            marketplaceRow.className = 'detail-row full-width';
+            marketplaceRow.innerHTML = '<span class="detail-label">Marketplace:</span><div class="marketplace-links"></div>';
+
+            const linksContainer = marketplaceRow.querySelector('.marketplace-links');
+            
+            Object.entries(product.marketplace_links).forEach(([marketplace, url]) => {
+                let icon, label;
+                switch(marketplace) {
+                    case 'shopee':
+                        icon = '<i class="fab fa-shopify"></i>';
+                        label = 'Shopee';
+                        break;
+                    case 'tokopedia':
+                        icon = '<i class="fas fa-store"></i>';
+                        label = 'Tokopedia';
+                        break;
+                    case 'tiktok':
+                        icon = '<i class="fab fa-tiktok"></i>';
+                        label = 'TikTok Shop';
+                        break;
+                    default:
+                        icon = '<i class="fas fa-link"></i>';
+                        label = marketplace;
+                }
+
+                linksContainer.innerHTML += `
+                    <div class="marketplace-link">
+                        ${icon} <a href="${url}" target="_blank">${label}</a>
+                    </div>
+                `;
+            });
+
+            document.querySelector('.summary-details').appendChild(marketplaceRow);
+        }
+
         // Handle gambar produk
         const summaryImage = document.getElementById('summary-image');
         if (summaryImage) {
@@ -324,24 +376,24 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
         // Reset input URL gambar
         document.getElementById('product-image').value = '';
     });
-   // Add event listeners for search and pagination
-document.getElementById('product-search').addEventListener('input', (e) => {
-    const searchTerm = e.target.value.trim().toLowerCase();
-    currentPage = 1;
-    
-    if (searchTerm) {
-        filteredProducts = allProducts.filter(product => 
-            product.name.toLowerCase().includes(searchTerm) ||
-            product.category.toLowerCase().includes(searchTerm) ||
-            product.description?.toLowerCase().includes(searchTerm)
-        );
-    } else {
-        filteredProducts = [...allProducts];
-    }
-    
-    renderProducts();
-    updateProductCount();
-});
+    // Add event listeners for search and pagination
+    document.getElementById('product-search').addEventListener('input', (e) => {
+        const searchTerm = e.target.value.trim().toLowerCase();
+        currentPage = 1;
+        
+        if (searchTerm) {
+            filteredProducts = allProducts.filter(product => 
+                product.name.toLowerCase().includes(searchTerm) ||
+                product.category.toLowerCase().includes(searchTerm) ||
+                product.description?.toLowerCase().includes(searchTerm)
+            );
+        } else {
+            filteredProducts = [...allProducts];
+        }
+        
+        renderProducts();
+        updateProductCount();
+    });
 
     document.getElementById('reset-search').addEventListener('click', () => {
         document.getElementById('product-search').value = '';
@@ -365,6 +417,17 @@ document.getElementById('product-search').addEventListener('input', (e) => {
         }
     });
 
+    document.querySelectorAll('input[name="marketplace"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const inputContainer = document.getElementById(`${this.value}-input`);
+            if (this.checked) {
+                inputContainer.style.display = 'block';
+            } else {
+                inputContainer.style.display = 'none';
+                inputContainer.querySelector('input').value = '';
+            }
+        });
+    });
 }
 
 function showLoginForm() {
@@ -459,6 +522,7 @@ function renderProducts(products) {
 
 async function showEditModal(productId) {
     try {
+        const marketplaceLinks = product.marketplace_links || {};
         // Fetch product data
         const { data: product, error } = await supabase
             .from('products')
@@ -467,6 +531,8 @@ async function showEditModal(productId) {
             .single();
 
         if (error) throw error;
+
+
 
         // Create modal HTML
         const modalHTML = `
@@ -516,8 +582,41 @@ async function showEditModal(productId) {
                         </div>
 
                         <div class="form-group" id="edit-media-field-container" style="${product.type === 'fisik' ? 'display: block;' : 'display: none;'}">
-                            <label>Media URL</label>
-                            <input type="url" id="edit-product-media" value="${product.media_url || ''}" ${product.type === 'fisik' ? 'required' : ''}>
+                            <label>Marketplace Links (Minimal 1)</label>
+                            <div class="marketplace-options">
+                                <label class="marketplace-checkbox">
+                                    <input type="checkbox" name="edit-marketplace" value="shopee" ${marketplaceLinks.shopee ? 'checked' : ''}> 
+                                    <span class="marketplace-label">
+                                        <i class="fab fa-shopify"></i> Shopee
+                                    </span>
+                                </label>
+                                <div id="edit-shopee-input" class="marketplace-input-container" style="${marketplaceLinks.shopee ? 'display: block;' : 'display: none;'}">
+                                    <input type="url" class="marketplace-input" placeholder="https://shopee.co.id/product-link" 
+                                        data-marketplace="shopee" value="${marketplaceLinks.shopee || ''}">
+                                </div>
+
+                                <label class="marketplace-checkbox">
+                                    <input type="checkbox" name="edit-marketplace" value="tokopedia" ${marketplaceLinks.tokopedia ? 'checked' : ''}> 
+                                    <span class="marketplace-label">
+                                        <i class="fas fa-store"></i> Tokopedia
+                                    </span>
+                                </label>
+                                <div id="edit-tokopedia-input" class="marketplace-input-container" style="${marketplaceLinks.tokopedia ? 'display: block;' : 'display: none;'}">
+                                    <input type="url" class="marketplace-input" placeholder="https://www.tokopedia.com/product-link" 
+                                        data-marketplace="tokopedia" value="${marketplaceLinks.tokopedia || ''}">
+                                </div>
+
+                                <label class="marketplace-checkbox">
+                                    <input type="checkbox" name="edit-marketplace" value="tiktok" ${marketplaceLinks.tiktok ? 'checked' : ''}> 
+                                    <span class="marketplace-label">
+                                        <i class="fab fa-tiktok"></i> TikTok Shop
+                                    </span>
+                                </label>
+                                <div id="edit-tiktok-input" class="marketplace-input-container" style="${marketplaceLinks.tiktok ? 'display: block;' : 'display: none;'}">
+                                    <input type="url" class="marketplace-input" placeholder="https://www.tiktok.com/product-link" 
+                                        data-marketplace="tiktok" value="${marketplaceLinks.tiktok || ''}">
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="form-group">
@@ -631,6 +730,18 @@ async function showEditModal(productId) {
         console.error('Error showing edit modal:', error);
         alert('Gagal memuat data produk');
     }
+    // Di dalam showEditModal, setelah modal ditampilkan:
+    document.querySelectorAll('input[name="edit-marketplace"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const inputContainer = document.getElementById(`edit-${this.value}-input`);
+            if (this.checked) {
+                inputContainer.style.display = 'block';
+            } else {
+                inputContainer.style.display = 'none';
+                inputContainer.querySelector('input').value = '';
+            }
+        });
+    });
 }
 
 async function loadOrders() {

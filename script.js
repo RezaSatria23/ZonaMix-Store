@@ -129,6 +129,16 @@ function renderProducts() {
         const productCard = document.createElement('div');
         productCard.className = 'product-card animate__animated animate__fadeInUp';
         productCard.style.animationDelay = `${index * 0.1}s`;
+
+        // Buat tombol berbeda berdasarkan jenis produk
+        const actionButton = product.type === 'fisik' ? 
+            `<button class="view-product" data-id="${product.id}">
+                <i class="fas fa-store"></i> Lihat Produk
+            </button>` : 
+            `<button class="add-to-cart" data-id="${product.id}">
+                <i class="fas fa-shopping-bag"></i> Tambah ke Keranjang
+            </button>`;
+
         productCard.innerHTML = `
             ${product.type === 'fisik' ? 
                 `<div class="product-badge animate__animated animate__pulse animate__infinite">Fisik</div>` : 
@@ -146,9 +156,7 @@ function renderProducts() {
                 <h3 class="product-title">${product.name}</h3>
                 <p class="product-description">${product.description}</p>
                 <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
-                <button class="add-to-cart" data-id="${product.id}">
-                    <i class="fas fa-shopping-bag"></i> Tambah ke Keranjang
-                </button>
+                ${actionButton}
             </div>
         `;
         productGrid.appendChild(productCard);
@@ -157,7 +165,56 @@ function renderProducts() {
     // Update product count
     document.getElementById('product-count').textContent = filteredProducts.length;
 }
+function showStoreOptions(productId) {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
 
+    // Buat modal
+    const modal = document.createElement('div');
+    modal.className = 'modal store-modal';
+    modal.innerHTML = `
+        <div class="modal-content animate__animated animate__fadeInUp">
+            <span class="close-modal">&times;</span>
+            <h2><i class="fas fa-store"></i> Beli di Toko Online</h2>
+            <p>Pilih platform untuk membeli produk ini:</p>
+            
+            <div class="store-options">
+                <a href="${product.shopee_link || '#'}" class="store-option" target="_blank">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/f/fe/Shopee.svg" alt="Shopee">
+                    <span>Shopee</span>
+                </a>
+                
+                <a href="${product.tokopedia_link || '#'}" class="store-option" target="_blank">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/8/8f/Tokopedia_Lambda.svg" alt="Tokopedia">
+                    <span>Tokopedia</span>
+                </a>
+                
+                <a href="${product.tiktokshop_link || '#'}" class="store-option" target="_blank">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/TikTok_logo.svg" alt="TikTok Shop">
+                    <span>TikTok Shop</span>
+                </a>
+            </div>
+            
+            <div class="store-note">
+                <p><i class="fas fa-info-circle"></i> Produk fisik hanya tersedia di marketplace</p>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    
+    // Event listener untuk tombol close
+    modal.querySelector('.close-modal').addEventListener('click', () => {
+        modal.remove();
+    });
+    
+    // Klik di luar modal untuk menutup
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
 // Fungsi Sorting Produk
 function sortProducts(products, sortType) {
     switch(sortType) {
@@ -286,6 +343,15 @@ function setupEventListeners() {
             const button = e.target.classList.contains('quick-view') ? e.target : e.target.closest('.quick-view');
             const productId = parseInt(button.getAttribute('data-id'));
             showQuickView(productId);
+        }
+    });
+
+    // Tambahkan event delegation untuk tombol view-product
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('view-product') || e.target.closest('.view-product')) {
+            const button = e.target.classList.contains('view-product') ? e.target : e.target.closest('.view-product');
+            const productId = parseInt(button.getAttribute('data-id'));
+            showStoreOptions(productId);
         }
     });
 }
@@ -790,257 +856,240 @@ function showQuickView(productId) {
         });
     });
 }
-// Konfigurasi API
-const WILAYAH_API = "https://www.emsifa.com/api-wilayah-indonesia/api";
+// // Konfigurasi API
+// const WILAYAH_API = "https://www.emsifa.com/api-wilayah-indonesia/api";
 
-// Fungsi untuk memuat provinsi
-async function loadProvinces() {
-    const provinceSelect = document.getElementById('province');
+// // Fungsi untuk memuat provinsi
+// async function loadProvinces() {
+//     const provinceSelect = document.getElementById('province');
     
-    // Pastikan elemen ada
-    if (!provinceSelect) {
-        return;
-    }
+//     // Pastikan elemen ada
+//     if (!provinceSelect) {
+//         return;
+//     }
     
-    try {
-        provinceSelect.innerHTML = '<option value="">Memuat provinsi...</option>';
+//     try {
+//         provinceSelect.innerHTML = '<option value="">Memuat provinsi...</option>';
         
-        const response = await fetch(`${WILAYAH_API}/provinces.json`);
-        if (!response.ok) throw new Error("Gagal memuat provinsi");
+//         const response = await fetch(`${WILAYAH_API}/provinces.json`);
+//         if (!response.ok) throw new Error("Gagal memuat provinsi");
         
-        const provinces = await response.json();
+//         const provinces = await response.json();
         
-        // Kosongkan dan isi dropdown
-        provinceSelect.innerHTML = '<option value="">Pilih Provinsi</option>';
+//         // Kosongkan dan isi dropdown
+//         provinceSelect.innerHTML = '<option value="">Pilih Provinsi</option>';
         
-        provinces.forEach(province => {
-            const option = new Option(province.name, province.id);
-            provinceSelect.add(option);
-        });
+//         provinces.forEach(province => {
+//             const option = new Option(province.name, province.id);
+//             provinceSelect.add(option);
+//         });
         
-    } catch (error) {
-        console.error("Error:", error);
+//     } catch (error) {
+//         console.error("Error:", error);
         
-        showNotification('Gagal memuat daftar provinsi', 'error');
-    }
-}
-// Fungsi untuk memuat kabupaten/kota
-async function loadRegencies(provinceId) {
-  const regencySelect = document.getElementById('regency');
+//         showNotification('Gagal memuat daftar provinsi', 'error');
+//     }
+// }
+// // Fungsi untuk memuat kabupaten/kota
+// async function loadRegencies(provinceId) {
+//   const regencySelect = document.getElementById('regency');
   
-  try {
-    regencySelect.disabled = true;
-    regencySelect.innerHTML = '<option value="">Memuat kabupaten...</option>';
+//   try {
+//     regencySelect.disabled = true;
+//     regencySelect.innerHTML = '<option value="">Memuat kabupaten...</option>';
     
-    const response = await fetch(`${WILAYAH_API}/regencies/${provinceId}.json`);
-    if (!response.ok) throw new Error("Gagal memuat kabupaten");
+//     const response = await fetch(`${WILAYAH_API}/regencies/${provinceId}.json`);
+//     if (!response.ok) throw new Error("Gagal memuat kabupaten");
     
-    const regencies = await response.json();
+//     const regencies = await response.json();
     
-    regencySelect.innerHTML = '<option value="">Pilih Kabupaten/Kota</option>';
+//     regencySelect.innerHTML = '<option value="">Pilih Kabupaten/Kota</option>';
     
-    regencies.forEach(regency => {
-      const option = new Option(regency.name, regency.id);
-      regencySelect.add(option);
-    });
+//     regencies.forEach(regency => {
+//       const option = new Option(regency.name, regency.id);
+//       regencySelect.add(option);
+//     });
     
-    regencySelect.disabled = false;
+//     regencySelect.disabled = false;
     
-  } catch (error) {
-    console.error("Error:", error);
-    regencySelect.innerHTML = '<option value="">Gagal memuat kabupaten</option>';
-  }
-}
+//   } catch (error) {
+//     console.error("Error:", error);
+//     regencySelect.innerHTML = '<option value="">Gagal memuat kabupaten</option>';
+//   }
+// }
 
 // Fungsi untuk memuat kecamatan
-async function loadDistricts(regencyId) {
-  const districtSelect = document.getElementById('district');
+// async function loadDistricts(regencyId) {
+//   const districtSelect = document.getElementById('district');
   
-  try {
-    districtSelect.disabled = true;
-    districtSelect.innerHTML = '<option value="">Memuat kecamatan...</option>';
+//   try {
+//     districtSelect.disabled = true;
+//     districtSelect.innerHTML = '<option value="">Memuat kecamatan...</option>';
     
-    const response = await fetch(`${WILAYAH_API}/districts/${regencyId}.json`);
-    if (!response.ok) throw new Error("Gagal memuat kecamatan");
+//     const response = await fetch(`${WILAYAH_API}/districts/${regencyId}.json`);
+//     if (!response.ok) throw new Error("Gagal memuat kecamatan");
     
-    const districts = await response.json();
+//     const districts = await response.json();
     
-    districtSelect.innerHTML = '<option value="">Pilih Kecamatan</option>';
+//     districtSelect.innerHTML = '<option value="">Pilih Kecamatan</option>';
     
-    districts.forEach(district => {
-      const option = new Option(district.name, district.id);
-      districtSelect.add(option);
-    });
+//     districts.forEach(district => {
+//       const option = new Option(district.name, district.id);
+//       districtSelect.add(option);
+//     });
     
-    districtSelect.disabled = false;
+//     districtSelect.disabled = false;
     
-  } catch (error) {
-    console.error("Error:", error);
-    districtSelect.innerHTML = '<option value="">Gagal memuat kecamatan</option>';
-  }
-}
+//   } catch (error) {
+//     console.error("Error:", error);
+//     districtSelect.innerHTML = '<option value="">Gagal memuat kecamatan</option>';
+//   }
+// }
 
 // Fungsi untuk memuat kelurahan dan kode pos
-async function loadVillages(districtId) {
-    const villageSelect = document.getElementById('village');
-    const postalCodeInput = document.getElementById('postal_code');
+// async function loadVillages(districtId) {
+//     const villageSelect = document.getElementById('village');
+//     const postalCodeInput = document.getElementById('postal_code');
     
-    if (!villageSelect || !postalCodeInput) {
-        console.error('Elemen village atau postal_code tidak ditemukan');
-        return;
-    }
+//     if (!villageSelect || !postalCodeInput) {
+//         console.error('Elemen village atau postal_code tidak ditemukan');
+//         return;
+//     }
     
-    try {
-        villageSelect.disabled = true;
-        villageSelect.innerHTML = '<option value="">Memuat kelurahan...</option>';
-        postalCodeInput.value = '';
-        postalCodeInput.placeholder = 'Pilih kelurahan terlebih dahulu';
+//     try {
+//         villageSelect.disabled = true;
+//         villageSelect.innerHTML = '<option value="">Memuat kelurahan...</option>';
+//         postalCodeInput.value = '';
+//         postalCodeInput.placeholder = 'Pilih kelurahan terlebih dahulu';
         
-        const response = await fetch(`${WILAYAH_API}/villages/${districtId}.json`);
-        if (!response.ok) throw new Error("Gagal memuat kelurahan");
+//         const response = await fetch(`${WILAYAH_API}/villages/${districtId}.json`);
+//         if (!response.ok) throw new Error("Gagal memuat kelurahan");
         
-        const villages = await response.json();
+//         const villages = await response.json();
         
-        villageSelect.innerHTML = '<option value="">Pilih Kelurahan</option>';
+//         villageSelect.innerHTML = '<option value="">Pilih Kelurahan</option>';
         
-        // Hitung berapa kelurahan yang punya kode pos
-        const villagesWithPostalCode = villages.filter(v => v.postal_code).length;
+//         // Hitung berapa kelurahan yang punya kode pos
+//         const villagesWithPostalCode = villages.filter(v => v.postal_code).length;
         
-        villages.forEach(village => {
-            const hasPostalCode = village.postal_code && village.postal_code.trim() !== '';
-            const displayText = hasPostalCode 
-                ? `${village.name} (${village.postal_code})` 
-                : `${village.name}`;
+//         villages.forEach(village => {
+//             const hasPostalCode = village.postal_code && village.postal_code.trim() !== '';
+//             const displayText = hasPostalCode 
+//                 ? `${village.name} (${village.postal_code})` 
+//                 : `${village.name}`;
             
-            const option = new Option(displayText, village.id);
-            option.dataset.postal = hasPostalCode ? village.postal_code : '';
-            option.style.color = hasPostalCode ? '' : '#999'; // Warna abu untuk yang tidak punya kode pos
-            villageSelect.add(option);
-        });
+//             const option = new Option(displayText, village.id);
+//             option.dataset.postal = hasPostalCode ? village.postal_code : '';
+//             option.style.color = hasPostalCode ? '' : '#999'; // Warna abu untuk yang tidak punya kode pos
+//             villageSelect.add(option);
+//         });
         
-        // Tampilkan notifikasi jika banyak kelurahan tanpa kode pos
-        if (villagesWithPostalCode === 0) {
-            postalCodeInput.readOnly = false;
-            postalCodeInput.placeholder = 'Masukkan kode pos manual';
-        } else {
-            postalCodeInput.readOnly = true;
-        }
+//         // Tampilkan notifikasi jika banyak kelurahan tanpa kode pos
+//         if (villagesWithPostalCode === 0) {
+//             postalCodeInput.readOnly = false;
+//             postalCodeInput.placeholder = 'Masukkan kode pos manual';
+//         } else {
+//             postalCodeInput.readOnly = true;
+//         }
         
-        villageSelect.disabled = false;
+//         villageSelect.disabled = false;
         
-    } catch (error) {
-        console.error("Error:", error);
-        villageSelect.innerHTML = '<option value="">Gagal memuat kelurahan</option>';
-        showNotification('Gagal memuat data kelurahan', 'error');
-    }
-}
+//     } catch (error) {
+//         console.error("Error:", error);
+//         villageSelect.innerHTML = '<option value="">Gagal memuat kelurahan</option>';
+//         showNotification('Gagal memuat data kelurahan', 'error');
+//     }
+// }
 
 function getCartItems() {
     return cart;
 }
 
 
-// Inisialisasi event listeners untuk form alamat
-function setupAddressFormListeners() {
-    const provinceSelect = document.getElementById('province');
-    const regencySelect = document.getElementById('regency');
-    const districtSelect = document.getElementById('district');
-    const villageSelect = document.getElementById('village');
-    const postalCodeInput = document.getElementById('postal_code');
+// // Inisialisasi event listeners untuk form alamat
+// function setupAddressFormListeners() {
+//     const provinceSelect = document.getElementById('province');
+//     const regencySelect = document.getElementById('regency');
+//     const districtSelect = document.getElementById('district');
+//     const villageSelect = document.getElementById('village');
+//     const postalCodeInput = document.getElementById('postal_code');
     
-    if (!provinceSelect || !regencySelect || !districtSelect || !villageSelect || !postalCodeInput) {
-        return;
-    }
+//     if (!provinceSelect || !regencySelect || !districtSelect || !villageSelect || !postalCodeInput) {
+//         return;
+//     }
     
-     // Provinsi
-     provinceSelect.addEventListener('change', function() {
-        if (this.value) {
-            loadRegencies(this.value);
-            resetDependentFields('province');
-            postalCodeInput.value = '';
-            document.getElementById('shipping-cost-container').style.display = 'none';
-        }
-    });
+//      // Provinsi
+//      provinceSelect.addEventListener('change', function() {
+//         if (this.value) {
+//             loadRegencies(this.value);
+//             resetDependentFields('province');
+//             postalCodeInput.value = '';
+//             document.getElementById('shipping-cost-container').style.display = 'none';
+//         }
+//     });
     
-    // Kabupaten/Kota
-    regencySelect.addEventListener('change', function() {
-        if (this.value) {
-            loadDistricts(this.value);
-            resetDependentFields('regency');
-            postalCodeInput.value = '';
-            document.getElementById('shipping-cost-container').style.display = 'none';
-        }
-    });
+//     // Kabupaten/Kota
+//     regencySelect.addEventListener('change', function() {
+//         if (this.value) {
+//             loadDistricts(this.value);
+//             resetDependentFields('regency');
+//             postalCodeInput.value = '';
+//             document.getElementById('shipping-cost-container').style.display = 'none';
+//         }
+//     });
     
-    // Kecamatan
-    districtSelect.addEventListener('change', function() {
-        if (this.value) {
-            loadVillages(this.value);
-            resetDependentFields('district');
-            postalCodeInput.value = '';
-            document.getElementById('shipping-cost-container').style.display = 'none';
-        }
-    });
+//     // Kecamatan
+//     districtSelect.addEventListener('change', function() {
+//         if (this.value) {
+//             loadVillages(this.value);
+//             resetDependentFields('district');
+//             postalCodeInput.value = '';
+//             document.getElementById('shipping-cost-container').style.display = 'none';
+//         }
+//     });
     
-    // Kelurahan - Update kode pos saat dipilih
-    villageSelect.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const postalCode = selectedOption.dataset.postal || '';
-        const postalCodeInput = document.getElementById('postal_code');
+//     // Kelurahan - Update kode pos saat dipilih
+//     villageSelect.addEventListener('change', function() {
+//         const selectedOption = this.options[this.selectedIndex];
+//         const postalCode = selectedOption.dataset.postal || '';
+//         const postalCodeInput = document.getElementById('postal_code');
         
-        postalCodeInput.value = postalCode;
-        
-        if (postalCode) {
-            postalCodeInput.readOnly = true;
-            // Hitung ongkir setelah memilih kelurahan
-            calculateShipping();
-        } else {
-            postalCodeInput.readOnly = false;
-            postalCodeInput.placeholder = 'Masukkan kode pos manual';
-            showNotification('Kode pos tidak tersedia untuk kelurahan ini. Silakan masukkan manual lalu tekan Enter.', 'warning');
-            
-            // Hitung ongkir saat tekan Enter di input kode pos
-            postalCodeInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    calculateShipping();
-                }
-            });
-        }
-    });
-}
+//         postalCodeInput.value = postalCode;
+//     });
+// }
 
-// Reset field yang tergantung
-function resetDependentFields(fieldName) {
-    const fields = {
-        'province': ['regency', 'district', 'village'],
-        'regency': ['district', 'village'],
-        'district': ['village']
-    };
+// // Reset field yang tergantung
+// function resetDependentFields(fieldName) {
+//     const fields = {
+//         'province': ['regency', 'district', 'village'],
+//         'regency': ['district', 'village'],
+//         'district': ['village']
+//     };
 
-    if (fields[fieldName]) {
-        fields[fieldName].forEach(field => {
-            const element = document.getElementById(field);
-            if (element) {
-                element.value = '';
-                element.disabled = true;
-                element.innerHTML = `<option value="">Pilih ${field === 'regency' ? 'Kabupaten/Kota' : 
-                                    field === 'district' ? 'Kecamatan' : 'Kelurahan'}</option>`;
-            }
-        });
-    }
+//     if (fields[fieldName]) {
+//         fields[fieldName].forEach(field => {
+//             const element = document.getElementById(field);
+//             if (element) {
+//                 element.value = '';
+//                 element.disabled = true;
+//                 element.innerHTML = `<option value="">Pilih ${field === 'regency' ? 'Kabupaten/Kota' : 
+//                                     field === 'district' ? 'Kecamatan' : 'Kelurahan'}</option>`;
+//             }
+//         });
+//     }
     
-    // Reset shipping options
-    const shippingOptions = document.getElementById('shipping-options');
-    if (shippingOptions) {
-        shippingOptions.innerHTML = '';
-    }
+//     // Reset shipping options
+//     const shippingOptions = document.getElementById('shipping-options');
+//     if (shippingOptions) {
+//         shippingOptions.innerHTML = '';
+//     }
     
-    // Reset kode pos
-    const postalCode = document.getElementById('postal_code');
-    if (postalCode) {
-        postalCode.value = '';
-    }
-}
+//     // Reset kode pos
+//     const postalCode = document.getElementById('postal_code');
+//     if (postalCode) {
+//         postalCode.value = '';
+//     }
+// }
 function showNotification(message, type = 'success') {
     notificationMessage.textContent = message;
     notification.className = `notification show animate__animated animate__fadeInUp ${type}`;
