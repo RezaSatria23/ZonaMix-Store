@@ -136,14 +136,21 @@ function initEventListeners() {
     });
     document.getElementById('product-type').addEventListener('change', function() {
         const mediaField = document.getElementById('media-field-container');
+        const stockField = document.getElementById('stock-field-container');
+        
         if (this.value === 'fisik') {
             mediaField.style.display = 'block';
-            document.getElementById('product-media').required = true;
+            stockField.style.display = 'none';
+            document.getElementById('product-stock').value = '0';
+            document.getElementById('product-stock').required = false;
         } else {
             mediaField.style.display = 'none';
-            document.getElementById('product-media').required = false;
+            stockField.style.display = 'block';
+            document.getElementById('product-stock').value = '1';
+            document.getElementById('product-stock').required = true;
         }
     });
+
     // Add Product Form
     document.getElementById('add-product-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -749,6 +756,22 @@ async function showEditModal(productId) {
             }
         });
     });
+    document.getElementById('edit-product-type').addEventListener('change', function() {
+    const mediaField = document.getElementById('edit-media-field-container');
+    const stockField = document.getElementById('edit-stock-field-container');
+    
+    if (this.value === 'fisik') {
+        mediaField.style.display = 'block';
+        stockField.style.display = 'none';
+        document.getElementById('edit-product-stock').value = '0';
+        document.getElementById('edit-product-stock').required = false;
+    } else {
+        mediaField.style.display = 'none';
+        stockField.style.display = 'block';
+        document.getElementById('edit-product-stock').value = '1';
+        document.getElementById('edit-product-stock').required = true;
+    }
+});
 }
 
 async function loadOrders() {
