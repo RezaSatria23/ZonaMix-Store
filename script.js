@@ -140,44 +140,9 @@ function renderProducts() {
         const isPhysical = product.type === 'fisik';
         const badgeClass = isPhysical ? 'fisik' : 'digital';
         const badgeText = isPhysical ? 'Fisik' : 'Digital';
-
-        // Generate marketplace links if physical product
-        const marketplaceLinks = isPhysical && product.marketplace_links ? 
-            Object.entries(product.marketplace_links).map(([marketplace, url]) => {
-                if (!url) return '';
-                
-                const icons = {
-                    'shopee': 'fab fa-shopify',
-                    'tokopedia': 'fas fa-store',
-                    'tiktok': 'fab fa-tiktok'
-                };
-                
-                const names = {
-                    'shopee': 'Shopee',
-                    'tokopedia': 'Tokopedia',
-                    'tiktok': 'TikTok Shop'
-                };
-                
-                return `
-                    <a href="${url}" target="_blank" rel="noopener noreferrer" 
-                       class="marketplace-link" data-marketplace="${marketplace}">
-                        <i class="${icons[marketplace] || 'fas fa-link'}"></i>
-                        ${names[marketplace] || marketplace}
-                    </a>
-                `;
-            }).join('') : '';
-        
-        
-        const actionButton = isPhysical ? 
-            `<div class="marketplace-links-container">
-                ${marketplaceLinks || '<p class="no-links">Tidak ada link marketplace</p>'}
-            </div>` : 
-            `<button class="btn btn-primary add-to-cart" data-id="${product.id}">
-                <i class="fas fa-shopping-cart"></i> + Keranjang
-            </button>`;
         
         return `
-            <div class="product-card animate__animated animate__fadeIn">
+            <div class="product-card animate__animated animate__fadeIn" data-id="${product.id}">
                 <div class="product-badge ${badgeClass}">${badgeText}</div>
                 
                 <div class="product-image-container">
@@ -193,18 +158,89 @@ function renderProducts() {
                     <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
                     
                     <div class="product-actions">
-                        ${actionButton}
+                        ${isPhysical ? `
+                            <button class="btn btn-primary show-marketplace" data-id="${product.id}">
+                                <i class="fas fa-shopping-bag"></i> Beli
+                            </button>
+                        ` : `
+                            <button class="btn btn-primary add-to-cart" data-id="${product.id}">
+                                <i class="fas fa-shopping-cart"></i> + Keranjang
+                            </button>
+                        `}
                         <button class="btn btn-secondary quick-view" data-id="${product.id}">
                             <i class="fas fa-eye"></i> Detail
                         </button>
                     </div>
+                    
+                    ${isPhysical ? `
+                        <div class="marketplace-popup" id="marketplace-popup-${product.id}">
+                            <div class="marketplace-popup-content">
+                                <h4>Pilih Marketplace:</h4>
+                                <div class="marketplace-options">
+                                    ${product.marketplace_links ? Object.entries(product.marketplace_links).map(([marketplace, url]) => {
+                                        if (!url) return '';
+                                        return `
+                                            <a href="${url}" target="_blank" rel="noopener noreferrer" class="marketplace-option">
+                                                <i class="${getMarketplaceIcon(marketplace)}"></i>
+                                                <span>${getMarketplaceName(marketplace)}</span>
+                                            </a>
+                                        `;
+                                    }).join('') : 'Tidak ada link marketplace'}
+                                </div>
+                                <button class="close-popup">&times;</button>
+                            </div>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
         `;
     }).join('');
     
-    // Update product count
+    // Add event listeners
+    document.querySelectorAll('.show-marketplace').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const productId = this.dataset.id;
+            const popup = document.getElementById(`marketplace-popup-${productId}`);
+            popup.style.display = 'flex';
+        });
+    });
+    
+    document.querySelectorAll('.close-popup').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.closest('.marketplace-popup').style.display = 'none';
+        });
+    });
+    
+    document.querySelectorAll('.marketplace-popup').forEach(popup => {
+        popup.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+    });
+    
     document.getElementById('product-count').textContent = filteredProducts.length;
+    
+    // Helper functions
+    function getMarketplaceIcon(marketplace) {
+        const icons = {
+            'shopee': 'fab fa-shopify',
+            'tokopedia': 'fas fa-store',
+            'tiktok': 'fab fa-tiktok'
+        };
+        return icons[marketplace] || 'fas fa-link';
+    }
+    
+    function getMarketplaceName(marketplace) {
+        const names = {
+            'shopee': 'Shopee',
+            'tokopedia': 'Tokopedia',
+            'tiktok': 'TikTok Shop'
+        };
+        return names[marketplace] || marketplace;
+    }
 }
 function showStoreOptions(productId) {
     const product = products.find(p => p.id === productId);
