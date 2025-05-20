@@ -304,15 +304,8 @@ body {
 }
 
 .product-card {
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     position: relative;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+    overflow: visible; /* Changed from hidden to visible for popup */
 }
 
 .product-card:hover {
@@ -596,14 +589,13 @@ body {
 }
 
 .btn-primary {
-    background-color: #2a2a2a;
+    background-color: #4361ee;
     color: white;
     border: none;
 }
 
 .btn-primary:hover {
-    background-color: #4361ee;
-    transform: translateY(-2px);
+    background-color: #3a56d4;
 }
 
 .btn-secondary {
@@ -617,7 +609,6 @@ body {
     border-color: #4361ee;
     color: #4361ee;
 }
-
 
 .btn-checkout {
     width: 100%;
@@ -2899,14 +2890,14 @@ input:required, select:required {
 
 .product-actions {
     display: flex;
-    flex-direction: column;
     gap: 10px;
+    margin-top: 10px;
 }
 
 .product-actions .btn {
     flex: 1;
     padding: 10px;
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 14px;
     font-weight: 600;
     display: flex;
