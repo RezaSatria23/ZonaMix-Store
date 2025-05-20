@@ -2899,7 +2899,8 @@ input:required, select:required {
 
 .product-actions {
     display: flex;
-    gap: 15px;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .product-actions .btn {
@@ -3261,4 +3262,54 @@ input:required, select:required {
         width: 50%;
         padding: 40px;
     }
+}
+/* Marketplace Links in Product Card */
+.marketplace-links-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.marketplace-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    color: #2a2a2a;
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.3s;
+}
+
+.marketplace-link:hover {
+    border-color: #4361ee;
+    background-color: rgba(67, 97, 238, 0.05);
+    transform: translateY(-2px);
+}
+
+.marketplace-link i {
+    font-size: 16px;
+}
+
+.marketplace-link[data-marketplace="shopee"] i {
+    color: #EE4D2D;
+}
+
+.marketplace-link[data-marketplace="tokopedia"] i {
+    color: #42B549;
+}
+
+.marketplace-link[data-marketplace="tiktok"] i {
+    color: #000000;
+}
+
+.no-links {
+    font-size: 13px;
+    color: #6c757d;
+    text-align: center;
+    margin: 5px 0;
 }

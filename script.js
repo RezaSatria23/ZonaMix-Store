@@ -140,11 +140,38 @@ function renderProducts() {
         const isPhysical = product.type === 'fisik';
         const badgeClass = isPhysical ? 'fisik' : 'digital';
         const badgeText = isPhysical ? 'Fisik' : 'Digital';
+
+        // Generate marketplace links if physical product
+        const marketplaceLinks = isPhysical && product.marketplace_links ? 
+            Object.entries(product.marketplace_links).map(([marketplace, url]) => {
+                if (!url) return '';
+                
+                const icons = {
+                    'shopee': 'fab fa-shopify',
+                    'tokopedia': 'fas fa-store',
+                    'tiktok': 'fab fa-tiktok'
+                };
+                
+                const names = {
+                    'shopee': 'Shopee',
+                    'tokopedia': 'Tokopedia',
+                    'tiktok': 'TikTok Shop'
+                };
+                
+                return `
+                    <a href="${url}" target="_blank" rel="noopener noreferrer" 
+                       class="marketplace-link" data-marketplace="${marketplace}">
+                        <i class="${icons[marketplace] || 'fas fa-link'}"></i>
+                        ${names[marketplace] || marketplace}
+                    </a>
+                `;
+            }).join('') : '';
+        
         
         const actionButton = isPhysical ? 
-            `<button class="btn btn-secondary view-product" data-id="${product.id}">
-                <i class="fas fa-external-link-alt"></i> Beli
-            </button>` : 
+            `<div class="marketplace-links-container">
+                ${marketplaceLinks || '<p class="no-links">Tidak ada link marketplace</p>'}
+            </div>` : 
             `<button class="btn btn-primary add-to-cart" data-id="${product.id}">
                 <i class="fas fa-shopping-cart"></i> + Keranjang
             </button>`;
@@ -156,11 +183,6 @@ function renderProducts() {
                 <div class="product-image-container">
                     <img src="${product.image_url}" alt="${product.name}" class="product-image" 
                          onerror="this.src='https://via.placeholder.com/300?text=Gambar+Tidak+Tersedia'">
-                    <div class="product-overlay">
-                        <button class="quick-view" data-id="${product.id}">
-                            <i class="fas fa-search"></i> Lihat Detail
-                        </button>
-                    </div>
                 </div>
                 
                 <div class="product-info">
@@ -852,7 +874,7 @@ function showQuickView(productId) {
                             <h3>Tersedia di Marketplace</h3>
                             <div class="marketplace-links">
                                 ${product.marketplace_links ? Object.entries(product.marketplace_links).map(([marketplace, url]) => `
-                                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="marketplace-link">
+                                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="marketplace-link" data-marketplace="${marketplace}">
                                         <i class="${getMarketplaceIcon(marketplace)}"></i>
                                         ${getMarketplaceName(marketplace)}
                                     </a>
@@ -863,19 +885,11 @@ function showQuickView(productId) {
                         <div class="product-stock">
                             <i class="fas fa-box"></i> Stok: ${product.stock || 0}
                         </div>
+                        
+                        <button class="btn btn-primary add-to-cart" data-id="${product.id}" style="width:100%">
+                            <i class="fas fa-shopping-cart"></i> Tambah ke Keranjang
+                        </button>
                     `}
-                    
-                    <div class="product-actions">
-                        ${isPhysical ? `
-                            <button class="btn btn-secondary view-product" data-id="${product.id}">
-                                <i class="fas fa-external-link-alt"></i> Beli di Marketplace
-                            </button>
-                        ` : `
-                            <button class="btn btn-primary add-to-cart" data-id="${product.id}">
-                                <i class="fas fa-shopping-cart"></i> Tambah ke Keranjang
-                            </button>
-                        `}
-                    </div>
                 </div>
             </div>
         </div>
