@@ -52,40 +52,39 @@ async function saveProduct(productData) {
     try {
         const marketplaceLinks = getMarketplaceLinks();
 
-        // Validasi minimal 1 link untuk produk fisik
-        if (productData.type === 'fisik' && Object.keys(marketplaceLinks).length === 0) {
-            throw new Error('Harap masukkan minimal 1 link marketplace untuk produk fisik');
-        }
-            
-        // Jika produk digital, pastikan stok ada
-        if (productData.type === 'digital' && (!productData.stock || productData.stock < 0)) {
-            throw new Error('Harap masukkan stok yang valid untuk produk digital');
-        }
-        
-        // Jika produk fisik, set stok ke null
+        // Validasi untuk produk fisik
         if (productData.type === 'fisik') {
+            if (Object.keys(marketplaceLinks).length === 0) {
+                throw new Error('Harap masukkan minimal 1 link marketplace untuk produk fisik');
+            }
+            // Untuk produk fisik, set stock ke null
             productData.stock = null;
+        } else {
+            // Untuk produk digital, validasi stok
+            if (!productData.stock || productData.stock < 0) {
+                throw new Error('Harap masukkan stok yang valid untuk produk digital');
+            }
         }
 
-        // Pastikan is_published tidak NULL
+        // Siapkan data untuk disimpan
         const completeData = {
             ...productData,
-            is_published: true, // Langsung set TRUE
-            marketplace_links: marketplaceLinks
+            is_published: true,
+            marketplace_links: productData.type === 'fisik' ? marketplaceLinks : null,
+            created_at: new Date().toISOString()
         };
-        
+
         const { data, error } = await supabase
             .from('products')
             .insert([completeData])
             .select();
-    
+
         if (error) throw error;
-    
-        console.log('Produk tersimpan:', data[0]);
+
         return data[0];
     } catch (error) {
         console.error('Error menyimpan produk:', error.message);
-        return null;
+        throw error;
     }
 }
 // ======================
@@ -475,54 +474,147 @@ async function loadProducts(searchTerm = '') {
         container.innerHTML = '<div class="error-message">Gagal memuat produk</div>';
     }
 }
+function showStoreOptions(productId) {
+    const product = products.find(p => p.id === productId);
+    if (!product || !product.marketplace_links) return;
 
-function renderProducts(products) {
-    const container = document.getElementById('admin-product-grid');
-    
-    if (!products.length) {
-        container.innerHTML = '<p class="no-products">Tidak ada produk yang ditemukan</p>';
+    // Filter marketplace yang memiliki link
+    const availableMarketplaces = Object.entries(product.marketplace_links)
+        .filter(([_, url]) => url && url.trim() !== '');
+
+    if (availableMarketplaces.length === 0) {
+        showNotification('Produk ini tidak tersedia di marketplace', 'warning');
         return;
     }
 
-    container.innerHTML = products.map(product => `
-        <div class="product-card">
-            <img src="${product.image_url}" alt="${product.name}">
-            <div class="product-info">
-                <h3>${product.name}</h3>
-                <p>Rp ${product.price.toLocaleString('id-ID')}</p>
-                <p class="product-description">${product.description || 'Tidak ada deskripsi'}</p>
-                <div class="product-actions">
-                    <button class="edit-btn" data-id="${product.id}">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button class="delete-btn" data-id="${product.id}">
-                        <i class="fas fa-trash"></i> Hapus
+    // Buat modal
+    const modal = document.createElement('div');
+    modal.className = 'modal store-modal';
+    modal.innerHTML = `
+        <div class="modal-content animate__animated animate__fadeInUp">
+            <span class="close-modal">&times;</span>
+            <h2><i class="fas fa-store"></i> Beli di Toko Online</h2>
+            <p>Pilih platform untuk membeli produk ini:</p>
+            
+            <div class="store-options">
+                ${availableMarketplaces.map(([marketplace, url]) => {
+                    let icon, label;
+                    switch(marketplace) {
+                        case 'shopee':
+                            icon = '<i class="fab fa-shopify"></i>';
+                            label = 'Shopee';
+                            break;
+                        case 'tokopedia':
+                            icon = '<i class="fas fa-store"></i>';
+                            label = 'Tokopedia';
+                            break;
+                        case 'tiktok':
+                            icon = '<i class="fab fa-tiktok"></i>';
+                            label = 'TikTok Shop';
+                            break;
+                        default:
+                            icon = '<i class="fas fa-link"></i>';
+                            label = marketplace;
+                    }
+                    return `
+                        <a href="${url}" class="store-option" target="_blank" rel="noopener noreferrer">
+                            ${icon}
+                            <span>${label}</span>
+                        </a>
+                    `;
+                }).join('')}
+            </div>
+            
+            <div class="store-note">
+                <p><i class="fas fa-info-circle"></i> Produk fisik hanya tersedia di marketplace</p>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Event listener untuk tombol close
+    modal.querySelector('.close-modal').addEventListener('click', () => {
+        modal.remove();
+    });
+    
+    // Klik di luar modal untuk menutup
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+function renderProducts() {
+    if (!productGrid) {
+        console.error('Product grid element not found!');
+        return;
+    }
+
+    // Filter produk berdasarkan kategori
+    let filteredProducts = currentCategory === 'all' 
+        ? [...products] 
+        : products.filter(product => product.category === currentCategory);
+    
+    // Sort produk
+    filteredProducts = sortProducts(filteredProducts, currentSort);
+    
+    // Render produk dengan animasi
+    productGrid.innerHTML = '';
+    
+    if (filteredProducts.length === 0) {
+        productGrid.innerHTML = `
+            <div class="empty-state animate__animated animate__fadeIn">
+                <i class="fas fa-box-open"></i>
+                <p>Tidak ada produk yang tersedia</p>
+            </div>
+        `;
+        return;
+    }
+    
+    filteredProducts.forEach((product, index) => {
+        const productCard = document.createElement('div');
+        productCard.className = 'product-card animate__animated animate__fadeInUp';
+        productCard.style.animationDelay = `${index * 0.1}s`;
+
+        // Buat tombol berbeda berdasarkan jenis produk
+        const actionButton = product.type === 'fisik' ? 
+            `<button class="view-product" data-id="${product.id}">
+                <i class="fas fa-store"></i> Beli di Marketplace
+            </button>` : 
+            `<button class="add-to-cart" data-id="${product.id}">
+                <i class="fas fa-shopping-bag"></i> Tambah ke Keranjang
+            </button>`;
+
+        // Badge untuk jenis produk
+        const productBadge = product.type === 'fisik' ? 
+            `<div class="product-badge animate__animated animate__pulse animate__infinite">Fisik</div>` : 
+            `<div class="product-badge animate__animated animate__pulse animate__infinite">Digital</div>`;
+
+        productCard.innerHTML = `
+            ${productBadge}
+            <div class="product-image-container">
+                <img src="${product.image_url}" alt="${product.name}" class="product-image">
+                <div class="product-overlay">
+                    <button class="quick-view" data-id="${product.id}">
+                        <i class="fas fa-eye"></i> Quick View
                     </button>
                 </div>
             </div>
-        </div>
-    `).join('');
-
-    // Add delete event listeners
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
-                const { error } = await supabase
-                    .from('products')
-                    .delete()
-                    .eq('id', btn.dataset.id);
-                
-                if (!error) loadProducts();
-            }
-        });
+            <div class="product-info">
+                <span class="product-category">${product.category.toUpperCase()}</span>
+                <h3 class="product-title">${product.name}</h3>
+                <p class="product-description">${product.description}</p>
+                <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
+                ${actionButton}
+            </div>
+        `;
+        productGrid.appendChild(productCard);
     });
-
-    // Add edit event listeners
-    document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            showEditModal(btn.dataset.id);
-        });
-    });
+    
+    // Update product count
+    document.getElementById('product-count').textContent = filteredProducts.length;
 }
 
 async function showEditModal(productId) {

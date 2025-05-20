@@ -3042,7 +3042,7 @@ input:required, select:required {
 
 .store-options {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 15px;
     margin: 25px 0;
 }
@@ -3058,12 +3058,18 @@ input:required, select:required {
     transition: all 0.3s ease;
     text-decoration: none;
     color: #333;
+    background: white;
 }
 
 .store-option:hover {
     transform: translateY(-5px);
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    border-color: #d4af37;
+    border-color: var(--secondary);
+}
+
+.store-option i {
+    font-size: 32px;
+    margin-bottom: 10px;
 }
 
 .store-option img {
@@ -3080,14 +3086,19 @@ input:required, select:required {
     border-radius: 8px;
     font-size: 14px;
     color: #666;
+    text-align: center;
 }
 
 .store-note i {
-    color: #d4af37;
+    color: var(--secondary);
     margin-right: 5px;
 }
+
+.store-option .fa-shopify { color: #EE4D2D; } /* Shopee */
+.store-option .fa-store { color: #42B549; } /* Tokopedia */
+.store-option .fa-tiktok { color: #000000; } /* TikTok Shop */
+
 /* Marketplace Styles */
-/* New Marketplace Button Styles */
 .marketplace-options {
     display: flex;
     gap: 10px;
