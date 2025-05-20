@@ -50,40 +50,58 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Fungsi simpan produk yang sudah diperbaiki
 async function saveProduct(productData) {
     try {
-        const marketplaceLinks = getMarketplaceLinks();
-
-        // Validasi untuk produk fisik
-        if (productData.type === 'fisik') {
-            if (Object.keys(marketplaceLinks).length === 0) {
-                throw new Error('Harap masukkan minimal 1 link marketplace untuk produk fisik');
-            }
-            // Untuk produk fisik, set stock ke null
-            productData.stock = null;
-        } else {
-            // Untuk produk digital, validasi stok
-            if (!productData.stock || productData.stock < 0) {
-                throw new Error('Harap masukkan stok yang valid untuk produk digital');
-            }
+        // Validasi data produk
+        if (!productData.name || !productData.price || !productData.category || 
+            !productData.type || !productData.image_url) {
+            throw new Error('Harap isi semua field yang wajib diisi');
         }
 
-        // Siapkan data untuk disimpan
-        const completeData = {
-            ...productData,
-            is_published: true,
-            marketplace_links: productData.type === 'fisik' ? marketplaceLinks : null,
-            created_at: new Date().toISOString()
+        // Validasi gambar
+        const img = new Image();
+        img.src = productData.image_url;
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = () => reject(new Error('URL gambar tidak valid'));
+        });
+
+        // Persiapkan data untuk disimpan
+        const dataToSave = {
+            name: productData.name,
+            description: productData.description || '',
+            price: parseFloat(productData.price),
+            category: productData.category,
+            type: productData.type,
+            image_url: productData.image_url,
+            is_published: true
         };
 
+        // Handle stock dan marketplace links berdasarkan jenis produk
+        if (productData.type === 'digital') {
+            dataToSave.stock = parseInt(productData.stock) || 0;
+            dataToSave.marketplace_links = null;
+        } else {
+            dataToSave.stock = null;
+            const marketplaceLinks = getMarketplaceLinks();
+            
+            if (Object.keys(marketplaceLinks).length === 0) {
+                throw new Error('Produk fisik membutuhkan minimal 1 link marketplace');
+            }
+            
+            dataToSave.marketplace_links = marketplaceLinks;
+        }
+
+        // Simpan ke Supabase
         const { data, error } = await supabase
             .from('products')
-            .insert([completeData])
+            .insert([dataToSave])
             .select();
 
         if (error) throw error;
+        if (!data || data.length === 0) throw new Error('Gagal menyimpan produk');
 
         return data[0];
     } catch (error) {
-        console.error('Error menyimpan produk:', error.message);
+        console.error('Error saving product:', error);
         throw error;
     }
 }
@@ -424,13 +442,16 @@ function initEventListeners() {
 // Modifikasi fungsi untuk mengumpulkan marketplace links
 function getMarketplaceLinks() {
     const links = {};
+    
     document.querySelectorAll('.marketplace-btn.active').forEach(btn => {
         const marketplace = btn.dataset.marketplace;
-        const url = document.querySelector(`.marketplace-input[data-marketplace="${marketplace}"]`).value;
-        if (url) {
-            links[marketplace] = url;
+        const input = document.querySelector(`.marketplace-input[data-marketplace="${marketplace}"]`);
+        
+        if (input && input.value.trim()) {
+            links[marketplace] = input.value.trim();
         }
     });
+    
     return links;
 }
 
