@@ -166,12 +166,10 @@ function renderProducts() {
                             <button class="btn btn-primary add-to-cart" data-id="${product.id}">
                                 <i class="fas fa-shopping-cart"></i> + Keranjang
                             </button>
-
-                            
+                        `}
                         <button class="btn btn-secondary quick-view" data-id="${product.id}">
                             <i class="fas fa-eye"></i> Detail
                         </button>
-                        `}
                     </div>
                     
                     ${isPhysical ? `
