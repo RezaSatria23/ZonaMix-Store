@@ -99,6 +99,16 @@ function setupCartEventListeners() {
 // Render Produk dengan Filter dan Sorting
 function renderProducts() {
 
+    const container = document.getElementById('product-grid');
+    
+    // Loading state
+    container.innerHTML = `
+        <div class="loading-state">
+            <i class="fas fa-spinner"></i>
+            <p>Memuat produk...</p>
+        </div>
+    `;
+
     if (!productGrid) {
         console.error('Product grid element not found!');
         return;
@@ -125,42 +135,51 @@ function renderProducts() {
         return;
     }
     
-    filteredProducts.forEach((product, index) => {
-        const productCard = document.createElement('div');
-        productCard.className = 'product-card animate__animated animate__fadeInUp';
-        productCard.style.animationDelay = `${index * 0.1}s`;
-
-        // Buat tombol berbeda berdasarkan jenis produk
-        const actionButton = product.type === 'fisik' ? 
-            `<button class="view-product" data-id="${product.id}">
-                <i class="fas fa-store"></i> Lihat Produk
+    // Render produk
+    container.innerHTML = filteredProducts.map(product => {
+        const isPhysical = product.type === 'fisik';
+        const badgeClass = isPhysical ? 'fisik' : 'digital';
+        const badgeText = isPhysical ? 'Fisik' : 'Digital';
+        
+        const actionButton = isPhysical ? 
+            `<button class="btn btn-secondary view-product" data-id="${product.id}">
+                <i class="fas fa-external-link-alt"></i> Beli
             </button>` : 
-            `<button class="add-to-cart" data-id="${product.id}">
-                <i class="fas fa-shopping-bag"></i> Tambah ke Keranjang
+            `<button class="btn btn-primary add-to-cart" data-id="${product.id}">
+                <i class="fas fa-shopping-cart"></i> + Keranjang
             </button>`;
-
-        productCard.innerHTML = `
-            ${product.type === 'fisik' ? 
-                `<div class="product-badge animate__animated animate__pulse animate__infinite">Fisik</div>` : 
-                `<div class="product-badge animate__animated animate__pulse animate__infinite">Digital</div>`}
-            <div class="product-image-container">
-                <img src="${product.image_url}" alt="${product.name}" class="product-image">
-                <div class="product-overlay">
-                    <button class="quick-view" data-id="${product.id}">
-                        <i class="fas fa-eye"></i> Quick View
-                    </button>
+        
+        return `
+            <div class="product-card animate__animated animate__fadeIn">
+                <div class="product-badge ${badgeClass}">${badgeText}</div>
+                
+                <div class="product-image-container">
+                    <img src="${product.image_url}" alt="${product.name}" class="product-image" 
+                         onerror="this.src='https://via.placeholder.com/300?text=Gambar+Tidak+Tersedia'">
+                    <div class="product-overlay">
+                        <button class="quick-view" data-id="${product.id}">
+                            <i class="fas fa-search"></i> Lihat Detail
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="product-info">
+                    <span class="product-category">${product.category.toUpperCase()}</span>
+                    <h3 class="product-title">${product.name}</h3>
+                    <p class="product-description">${product.description || 'Tidak ada deskripsi'}</p>
+                    
+                    <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
+                    
+                    <div class="product-actions">
+                        ${actionButton}
+                        <button class="btn btn-secondary quick-view" data-id="${product.id}">
+                            <i class="fas fa-eye"></i> Detail
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div class="product-info">
-                <span class="product-category">${product.category.toUpperCase()}</span>
-                <h3 class="product-title">${product.name}</h3>
-                <p class="product-description">${product.description}</p>
-                <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
-                ${actionButton}
-            </div>
         `;
-        productGrid.appendChild(productCard);
-    });
+    }).join('');
     
     // Update product count
     document.getElementById('product-count').textContent = filteredProducts.length;
@@ -801,59 +820,109 @@ function showQuickView(productId) {
     const product = products.find(p => p.id === productId);
     if (!product) return;
     
-    const quickViewModal = document.createElement('div');
-    quickViewModal.className = 'quick-view-modal';
-    quickViewModal.innerHTML = `
-        <div class="quick-view-content animate__animated animate__fadeInUp">
-            <span class="close-quick-view">&times;</span>
-            <div class="quick-view-image">
-                <img src="${product.image_url}" alt="${product.name}">
-            </div>
-            <div class="quick-view-details">
-                <h3>${product.name}</h3>
-                <div class="quick-view-price">Rp ${product.price.toLocaleString('id-ID')}</div>
-                <div class="quick-view-category">${product.category.toUpperCase()} • ${product.type === 'physical' ? 'Produk Fisik' : 'Produk Digital'}</div>
-                <p class="quick-view-description">${product.description}</p>
-                <button class="add-to-cart quick-view-add" data-id="${product.id}">
-                    <i class="fas fa-shopping-bag"></i> Tambah ke Keranjang
-                </button>
+    const isPhysical = product.type === 'fisik';
+    
+    const modalHTML = `
+        <div class="quick-view-modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                
+                <div class="quick-view-image">
+                    <img src="${product.image_url}" alt="${product.name}" 
+                         onerror="this.src='https://via.placeholder.com/500?text=Gambar+Tidak+Tersedia'">
+                </div>
+                
+                <div class="quick-view-details">
+                    <span class="product-badge ${isPhysical ? 'fisik' : 'digital'}">
+                        ${isPhysical ? 'Produk Fisik' : 'Produk Digital'}
+                    </span>
+                    
+                    <h2>${product.name}</h2>
+                    <span class="product-category">${product.category.toUpperCase()}</span>
+                    
+                    <div class="product-price">Rp ${product.price.toLocaleString('id-ID')}</div>
+                    
+                    <div class="product-description">
+                        <h3>Deskripsi Produk</h3>
+                        <p>${product.description || 'Tidak ada deskripsi tersedia'}</p>
+                    </div>
+                    
+                    ${isPhysical ? `
+                        <div class="product-specs">
+                            <h3>Tersedia di Marketplace</h3>
+                            <div class="marketplace-links">
+                                ${product.marketplace_links ? Object.entries(product.marketplace_links).map(([marketplace, url]) => `
+                                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="marketplace-link">
+                                        <i class="${getMarketplaceIcon(marketplace)}"></i>
+                                        ${getMarketplaceName(marketplace)}
+                                    </a>
+                                `).join('') : 'Tidak ada link marketplace'}
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="product-stock">
+                            <i class="fas fa-box"></i> Stok: ${product.stock || 0}
+                        </div>
+                    `}
+                    
+                    <div class="product-actions">
+                        ${isPhysical ? `
+                            <button class="btn btn-secondary view-product" data-id="${product.id}">
+                                <i class="fas fa-external-link-alt"></i> Beli di Marketplace
+                            </button>
+                        ` : `
+                            <button class="btn btn-primary add-to-cart" data-id="${product.id}">
+                                <i class="fas fa-shopping-cart"></i> Tambah ke Keranjang
+                            </button>
+                        `}
+                    </div>
+                </div>
             </div>
         </div>
     `;
     
-    document.body.appendChild(quickViewModal);
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
     
-    // Close button
-    quickViewModal.querySelector('.close-quick-view').addEventListener('click', () => {
-        gsap.to(quickViewModal.querySelector('.quick-view-content'), {
-            y: 20,
-            opacity: 0,
-            duration: 0.3,
-            onComplete: () => quickViewModal.remove()
-        });
+    // Helper functions
+    function getMarketplaceIcon(marketplace) {
+        const icons = {
+            'shopee': 'fab fa-shopify',
+            'tokopedia': 'fas fa-store',
+            'tiktok': 'fab fa-tiktok'
+        };
+        return icons[marketplace] || 'fas fa-link';
+    }
+    
+    function getMarketplaceName(marketplace) {
+        const names = {
+            'shopee': 'Shopee',
+            'tokopedia': 'Tokopedia',
+            'tiktok': 'TikTok Shop'
+        };
+        return names[marketplace] || marketplace;
+    }
+    const modal = document.querySelector('.quick-view-modal');
+    
+    modal.querySelector('.close-modal').addEventListener('click', () => {
+        modal.remove();
     });
     
-    // Click outside to close
-    quickViewModal.addEventListener('click', (e) => {
-        if (e.target === quickViewModal) {
-            gsap.to(quickViewModal.querySelector('.quick-view-content'), {
-                y: 20,
-                opacity: 0,
-                duration: 0.3,
-                onComplete: () => quickViewModal.remove()
-            });
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
         }
     });
     
-    // Add to cart button
-    quickViewModal.querySelector('.quick-view-add').addEventListener('click', () => {
-        addToCart(productId);
-        gsap.to(quickViewModal.querySelector('.quick-view-content'), {
-            y: 20,
-            opacity: 0,
-            duration: 0.3,
-            onComplete: () => quickViewModal.remove()
-        });
+    // Handle add to cart/view product buttons
+    modal.querySelector('.add-to-cart')?.addEventListener('click', () => {
+        addToCart(product.id);
+        modal.remove();
+        showNotification(`${product.name} ditambahkan ke keranjang`, 'success');
+    });
+    
+    modal.querySelector('.view-product')?.addEventListener('click', () => {
+        showStoreOptions(product.id);
+        modal.remove();
     });
 }
 // // Konfigurasi API
