@@ -786,6 +786,13 @@
                                 <label for="product-stock">Stok Tersedia</label>
                                 <input type="number" id="product-stock" min="0" value="1" required>
                             </div>
+
+                            <!-- Di dalam form tambah produk, tambahkan ini setelah stock field -->
+                            <div class="form-group full-width" id="media-url-container" style="display: none;">
+                                <label for="product-media-url">Link Media (untuk produk digital)</label>
+                                <input type="url" id="product-media-url" placeholder="https://example.com/media.zip">
+                                <small class="image-preview-text">Link ini akan dikirim ke pembeli saat order selesai</small>
+                            </div>
                             
                             <div class="form-group full-width" id="media-field-container" style="display: none;">
                                 <label>Pilih Marketplace (Minimal 1)</label>

@@ -75,12 +75,19 @@ async function saveProduct(productData) {
             is_published: true
         };
 
-        // Handle stock dan marketplace links berdasarkan jenis produk
+        // Handle stock dan media_url berdasarkan jenis produk
         if (productData.type === 'digital') {
             dataToSave.stock = parseInt(productData.stock) || 0;
+            dataToSave.media_url = productData.media_url || null;
             dataToSave.marketplace_links = null;
+            
+            // Validasi media_url untuk produk digital
+            if (!productData.media_url) {
+                throw new Error('Produk digital membutuhkan link media');
+            }
         } else {
             dataToSave.stock = null;
+            dataToSave.media_url = null;
             const marketplaceLinks = getMarketplaceLinks();
             
             if (Object.keys(marketplaceLinks).length === 0) {
@@ -164,15 +171,20 @@ function initEventListeners() {
     document.getElementById('product-type').addEventListener('change', function() {
         const mediaField = document.getElementById('media-field-container');
         const stockField = document.getElementById('stock-field-container');
+        const mediaUrlField = document.getElementById('media-url-container');
         
         if (this.value === 'fisik') {
             mediaField.style.display = 'block';
             stockField.style.display = 'none';
+            mediaUrlField.style.display = 'none';
             document.getElementById('product-stock').required = false;
+            document.getElementById('product-media-url').required = false;
         } else {
             mediaField.style.display = 'none';
             stockField.style.display = 'block';
+            mediaUrlField.style.display = 'block';
             document.getElementById('product-stock').required = true;
+            document.getElementById('product-media-url').required = true;
         }
     });
 
@@ -692,6 +704,12 @@ async function showEditModal(productId) {
                             <input type="number" id="edit-product-stock" min="0" value="${product.stock || 1}" ${product.type === 'digital' ? 'required' : ''}>
                         </div>
 
+                        <div class="form-group" id="edit-media-url-container" style="${product.type === 'digital' ? 'display: block;' : 'display: none;'}">
+                            <label>Link Media (untuk produk digital)</label>
+                            <input type="url" id="edit-product-media-url" value="${product.media_url || ''}" ${product.type === 'digital' ? 'required' : ''}>
+                            <small class="image-preview-text">Link ini akan dikirim ke pembeli saat order selesai</small>
+                        </div>
+
                         <div class="form-group">
                             <label>Deskripsi Produk</label>
                             <textarea id="edit-product-description" rows="4">${product.description || ''}</textarea>
@@ -861,19 +879,23 @@ async function showEditModal(productId) {
     });
     // Di dalam showEditModal, tambahkan ini setelah inisialisasi modal:
     const editTypeSelect = document.getElementById('edit-product-type');
-    const editStockField = document.getElementById('edit-stock-field-container');
-
     editTypeSelect.addEventListener('change', function() {
         const editMediaField = document.getElementById('edit-media-field-container');
+        const editStockField = document.getElementById('edit-stock-field-container');
+        const editMediaUrlField = document.getElementById('edit-media-url-container');
         
         if (this.value === 'fisik') {
             editMediaField.style.display = 'block';
             editStockField.style.display = 'none';
+            editMediaUrlField.style.display = 'none';
             document.getElementById('edit-product-stock').required = false;
+            document.getElementById('edit-product-media-url').required = false;
         } else {
             editMediaField.style.display = 'none';
             editStockField.style.display = 'block';
+            editMediaUrlField.style.display = 'block';
             document.getElementById('edit-product-stock').required = true;
+            document.getElementById('edit-product-media-url').required = true;
         }
     });
 }
@@ -1173,3 +1195,95 @@ async function deleteProduct(productId) {
         alert('Gagal menghapus produk');
     }
 }
+async function updateOrderStatus(orderId, newStatus) {
+    try {
+        // Dapatkan data order
+        const { data: order, error: orderError } = await supabase
+            .from('orders')
+            .select(`
+                *,
+                order_items:order_items(
+                    product:products(
+                        id,
+                        type,
+                        media_url
+                    )
+                )
+            `)
+            .eq('id', orderId)
+            .single();
+
+        if (orderError) throw orderError;
+
+        // Update status order
+        const { error: updateError } = await supabase
+            .from('orders')
+            .update({ status: newStatus })
+            .eq('id', orderId);
+
+        if (updateError) throw updateError;
+
+        // Jika status diubah menjadi completed dan ada produk digital
+        if (newStatus === 'completed') {
+            const digitalProducts = order.order_items.filter(item => 
+                item.product.type === 'digital' && item.product.media_url
+            );
+
+            if (digitalProducts.length > 0) {
+                // Kirim email atau notifikasi dengan link media
+                await sendMediaLinks(order, digitalProducts);
+            }
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Error updating order status:', error);
+        throw error;
+    }
+}
+
+// Fungsi untuk mengirim link media (simulasi)
+async function sendMediaLinks(order, digitalProducts) {
+    // Dalam implementasi nyata, ini bisa mengirim email atau notifikasi
+    console.log('Mengirim media links untuk order:', order.id);
+    
+    const mediaLinks = digitalProducts.map(item => ({
+        product: item.product.name,
+        link: item.product.media_url
+    }));
+
+    // Simpan informasi pengiriman media
+    const { error } = await supabase
+        .from('order_deliveries')
+        .insert({
+            order_id: order.id,
+            delivery_type: 'digital',
+            content: JSON.stringify(mediaLinks),
+            delivered_at: new Date().toISOString()
+        });
+
+    if (error) {
+        console.error('Gagal menyimpan data pengiriman:', error);
+        throw error;
+    }
+
+    return true;
+}
+
+// Modifikasi event listener untuk update status order
+document.querySelectorAll('.update-status-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const orderId = btn.dataset.orderId;
+        const statusSelect = document.querySelector(`.status-select[data-order-id="${orderId}"]`);
+        const newStatus = statusSelect.value;
+
+        try {
+            await updateOrderStatus(orderId, newStatus);
+            // Reload orders to show updated status
+            loadOrders();
+        } catch (error) {
+            console.error('Error updating order status:', error);
+            alert('Gagal mengupdate status pesanan');
+        }
+    });
+});
