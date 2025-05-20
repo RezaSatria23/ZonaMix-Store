@@ -56,6 +56,16 @@ async function saveProduct(productData) {
             throw new Error('Harap isi semua field yang wajib diisi');
         }
 
+        // Validasi khusus untuk produk digital
+        if (productData.type === 'digital') {
+            if (!productData.media_url) {
+                throw new Error('Produk digital membutuhkan link media');
+            }
+            if (isNaN(productData.stock) || productData.stock < 0) {
+                throw new Error('Stok produk digital harus angka positif');
+            }
+        }
+
         // Validasi gambar
         const img = new Image();
         img.src = productData.image_url;
@@ -77,14 +87,9 @@ async function saveProduct(productData) {
 
         // Handle stock dan media_url berdasarkan jenis produk
         if (productData.type === 'digital') {
-            dataToSave.stock = parseInt(productData.stock) || 0;
-            dataToSave.media_url = productData.media_url || null;
+            dataToSave.stock = parseInt(productData.stock);
+            dataToSave.media_url = productData.media_url;
             dataToSave.marketplace_links = null;
-            
-            // Validasi media_url untuk produk digital
-            if (!productData.media_url) {
-                throw new Error('Produk digital membutuhkan link media');
-            }
         } else {
             dataToSave.stock = null;
             dataToSave.media_url = null;
@@ -200,18 +205,12 @@ function initEventListeners() {
             type: document.getElementById('product-type').value,
             stock: parseInt(document.getElementById('product-stock').value),
             description: document.getElementById('product-description').value.trim(),
-            image_url: document.getElementById('product-image').value.trim()
+            image_url: document.getElementById('product-image').value.trim(),
+            media_url: document.getElementById('product-media-url')?.value.trim() || null
         };
 
         const messageElement = document.getElementById('product-message');
         messageElement.style.display = 'none';
-
-        // Validasi
-        if (!productData.name || isNaN(productData.price) || !productData.category || 
-            !productData.type || isNaN(productData.stock)) {
-            showMessage('Harap isi semua field yang wajib diisi', 'error', messageElement);
-            return;
-        }
 
         try {
             // Validasi gambar
@@ -292,6 +291,19 @@ function initEventListeners() {
 
     // Function to show product summary
     function showProductSummary(product) {
+
+        if (product.type === 'digital' && product.media_url) {
+            const mediaRow = document.createElement('div');
+            mediaRow.className = 'detail-row full-width';
+            mediaRow.innerHTML = `
+                <span class="detail-label">Link Media:</span>
+                <span class="detail-value">
+                    <a href="${product.media_url}" target="_blank">${product.media_url}</a>
+                </span>
+            `;
+            document.querySelector('.summary-details').appendChild(mediaRow);
+        }
+
         // Sembunyikan placeholder
         const placeholder = document.querySelector('.summary-placeholder');
         if (placeholder) placeholder.style.display = 'none';
